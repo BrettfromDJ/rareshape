@@ -57,7 +57,7 @@ one interpolation rule. Adding a type means adding all four.
 | `range` | `[number, number]` | dual slider | `min`, `max`, `step` |
 | `boolean` | `boolean` | switch | — |
 | `select` | `string` | segmented control, or dropdown past 4 options | `options: {value,label}[]` |
-| `color` | `string` (`#rrggbb` / `#rrggbbaa`) | swatch + hex field + alpha | `alpha` |
+| `color` | `string` (`#rrggbb` / `#rrggbbaa`) | swatch opening a drag picker + hex field | `alpha`, `role` |
 | `palette` | `string[]` | swatch list, add / remove / shuffle | `min`, `max` |
 | `angle` | `number` (degrees) | dial + numeric field | `step` |
 | `point` | `{x,y}` (0..1) | 2D pad | — |
@@ -71,6 +71,11 @@ Shared options on every param: `label`, `default`, `group`, `hint`, `key`
 
 `seed` is special in one way: **randomize always changes it**, and every other
 param honours `randomize`.
+
+`color` takes a `role` — `ink` (default), `ground` or `line`. Randomize-colours
+(⇧R) generates one harmonious scheme and places it by role, so grounds stay
+near-neutral and hairlines stay quiet against their ground. A tool that skips
+the roles still works; its randomised colours are just less considered.
 
 ---
 
@@ -199,6 +204,7 @@ Shortcuts, global to every tool:
 | Key | Action |
 |---|---|
 | `R` | Randomize |
+| `⇧R` | Randomize colours only |
 | `Z` / `⇧Z` | Undo / redo |
 | `Space` | Play / pause |
 | `E` | Export sheet |

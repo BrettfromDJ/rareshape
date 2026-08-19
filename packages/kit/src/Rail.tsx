@@ -36,6 +36,11 @@ export function Rail<S extends ParamSchema>({
 
   const record = params as Record<string, unknown>
 
+  // Only worth offering where there is a colour to re-roll.
+  const hasColours = Object.values(tool.params).some(
+    (def) => (def.type === 'color' || def.type === 'palette') && def.randomize !== false,
+  )
+
   return (
     <aside className="rule border-b lg:border-b-0 lg:border-r w-full lg:w-[19rem] shrink-0 bg-[var(--surface)] overflow-y-auto overscroll-contain">
       <div className="px-4 py-3 rule border-b sticky top-0 bg-[var(--surface)] z-10">
@@ -47,6 +52,11 @@ export function Rail<S extends ParamSchema>({
         <Button onClick={() => store.randomize()} title="Randomize (R)">
           Randomize
         </Button>
+        {hasColours && (
+          <Button onClick={() => store.randomizeColours()} title="Randomize colours (⇧R)">
+            Colours
+          </Button>
+        )}
         <Button onClick={() => store.undo()} disabled={!store.canUndo()} title="Undo (Z)">
           Undo
         </Button>

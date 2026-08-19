@@ -77,6 +77,12 @@ export interface ColorDef extends Common<string> {
   type: 'color'
   /** Allow an alpha channel in the picker and in the value. */
   alpha?: boolean
+  /**
+   * What the colour is for. Randomize-colours uses this to keep a generated
+   * scheme usable: grounds stay near-neutral, lines stay quiet against the
+   * ground, ink carries the hue.
+   */
+  role?: 'ink' | 'ground' | 'line'
 }
 export interface PaletteDef extends Common<string[]> {
   type: 'palette'

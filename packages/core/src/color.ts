@@ -1,4 +1,5 @@
 import { clamp, lerp, mod } from './math'
+import type { Rng } from './rng'
 
 export interface Rgba {
   r: number // 0..255
@@ -131,4 +132,124 @@ export function luminance(color: string): number {
     return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
   }
   return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+}
+
+/* -------------------------------------------------------------------------- */
+/* HSV — what a colour picker's saturation/value square is built on.           */
+/* -------------------------------------------------------------------------- */
+
+export interface Hsv {
+  h: number // 0..360
+  s: number // 0..1
+  v: number // 0..1
+  a: number
+}
+
+export function rgbToHsv({ r, g, b, a }: Rgba): Hsv {
+  const rn = r / 255
+  const gn = g / 255
+  const bn = b / 255
+  const max = Math.max(rn, gn, bn)
+  const min = Math.min(rn, gn, bn)
+  const d = max - min
+  let h = 0
+  if (d !== 0) {
+    if (max === rn) h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6
+    else if (max === gn) h = ((bn - rn) / d + 2) / 6
+    else h = ((rn - gn) / d + 4) / 6
+  }
+  return { h: h * 360, s: max === 0 ? 0 : d / max, v: max, a }
+}
+
+export function hsvToRgb({ h, s, v, a }: Hsv): Rgba {
+  const hn = mod(h, 360) / 60
+  const i = Math.floor(hn)
+  const f = hn - i
+  const p = v * (1 - s)
+  const q = v * (1 - s * f)
+  const t = v * (1 - s * (1 - f))
+  const table: Array<[number, number, number]> = [
+    [v, t, p],
+    [q, v, p],
+    [p, v, t],
+    [p, q, v],
+    [t, p, v],
+    [v, p, q],
+  ]
+  const [r, g, b] = table[i % 6] as [number, number, number]
+  return { r: r * 255, g: g * 255, b: b * 255, a }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Palette generation                                                          */
+/* -------------------------------------------------------------------------- */
+
+export type Harmony = 'analogous' | 'complementary' | 'triad' | 'split' | 'mono'
+
+const HARMONY_OFFSETS: Record<Harmony, number[]> = {
+  analogous: [0, 24, -22, 46, -44, 68],
+  complementary: [0, 180, 12, 192, -14, 168],
+  triad: [0, 120, 240, 18, 138, 258],
+  split: [0, 150, 210, 20, 168, 192],
+  mono: [0, 0, 0, 0, 0, 0],
+}
+
+/**
+ * A palette that hangs together: one hue family, varied in saturation and
+ * value, with the odd near-neutral for punch. Random hex values look muddy
+ * together; this is the difference between a randomize button worth pressing
+ * and one nobody presses twice.
+ */
+export function harmonyPalette(rng: Rng, count: number, harmony?: Harmony): string[] {
+  const scheme: Harmony =
+    harmony ?? rng.pick(['analogous', 'complementary', 'triad', 'split', 'mono'] as const)
+  const offsets = HARMONY_OFFSETS[scheme]
+  const baseHue = rng.float(0, 360)
+  const baseSaturation = rng.float(0.45, 0.95)
+
+  // One neutral in a palette of three or more keeps it from turning to soup.
+  const neutralAt = count >= 3 && rng.bool(0.7) ? rng.int(1, count - 1) : -1
+
+  return Array.from({ length: count }, (_, i) => {
+    if (i === neutralAt) {
+      const dark = rng.bool()
+      return toHex(hsvToRgb({ h: baseHue, s: 0.05, v: dark ? rng.float(0.06, 0.14) : rng.float(0.94, 1), a: 1 }), false)
+    }
+    const hue = baseHue + (offsets[i % offsets.length] ?? 0) + rng.float(-6, 6)
+    const saturation =
+      scheme === 'mono' ? baseSaturation * rng.float(0.25, 1) : baseSaturation * rng.float(0.7, 1.05)
+    const value = 0.45 + ((i * 0.37) % 1) * 0.5 + rng.float(-0.08, 0.08)
+    return toHex(
+      hsvToRgb({ h: hue, s: Math.min(1, saturation), v: Math.min(1, Math.max(0.12, value)), a: 1 }),
+      false,
+    )
+  })
+}
+
+/** A page colour: nearly neutral, tinted towards the palette, light or dark. */
+export function groundColor(rng: Rng, hue: number): string {
+  const dark = rng.bool(0.25)
+  return toHex(
+    hsvToRgb({
+      h: hue + rng.float(-20, 20),
+      s: rng.float(0.02, 0.1),
+      v: dark ? rng.float(0.06, 0.13) : rng.float(0.9, 0.99),
+      a: 1,
+    }),
+    false,
+  )
+}
+
+/** A hairline colour that sits quietly on a given ground. */
+export function lineColor(rng: Rng, hue: number, ground: string): string {
+  const light = luminance(ground) > 0.4
+  return toHex(
+    hsvToRgb({
+      h: hue + rng.float(-30, 30),
+      s: rng.float(0.1, 0.35),
+      v: light ? rng.float(0.62, 0.85) : rng.float(0.28, 0.45),
+      a: 1,
+    }),
+    false,
+  )
 }

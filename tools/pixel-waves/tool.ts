@@ -40,6 +40,7 @@ export const tool = defineTool({
     gridColor: p.color({
       label: 'Grid',
       default: '#b4c6d6',
+      role: 'line',
       group: 'Grid',
       when: (params) => params.grid === true,
     }),
@@ -150,7 +151,7 @@ export const tool = defineTool({
       hint: 'Whole turns per loop, so the animation closes.',
     }),
 
-    background: p.color({ label: 'Paper', default: '#f4f2ed', group: 'Colour' }),
+    background: p.color({ label: 'Paper', default: '#f4f2ed', role: 'ground', group: 'Colour' }),
     palette: p.palette({
       label: 'Bands',
       default: ['#e04a26', '#8ea3b8', '#151515', '#ffffff'],
@@ -159,60 +160,13 @@ export const tool = defineTool({
       group: 'Colour',
     }),
 
-    word: p.text({
-      label: 'Word',
-      default: '',
-      maxLength: 24,
-      placeholder: 'Optional',
-      group: 'Word',
-    }),
-    wordSize: p.number({
-      label: 'Size',
-      default: 0.17,
-      min: 0.04,
-      max: 0.4,
-      step: 0.005,
-      group: 'Word',
-      when: (params) => String(params.word ?? '').trim().length > 0,
-    }),
-    wordWeight: p.select({
-      label: 'Weight',
-      default: '500',
-      group: 'Word',
-      options: [
-        { value: '400', label: 'Regular' },
-        { value: '500', label: 'Medium' },
-        { value: '700', label: 'Bold' },
-      ],
-      when: (params) => String(params.word ?? '').trim().length > 0,
-    }),
-    wordBand: p.boolean({
-      label: 'Clear band',
-      default: true,
-      group: 'Word',
-      when: (params) => String(params.word ?? '').trim().length > 0,
-    }),
-    ink: p.color({
-      label: 'Ink',
-      default: '#151515',
-      group: 'Word',
-      when: (params) => String(params.word ?? '').trim().length > 0,
-    }),
-
     seed: p.seed({ label: 'Seed', default: 4, group: 'Colour' }),
   },
 
   presets: [
     {
       name: 'Volatility',
-      params: {
-        word: 'volatility',
-        columns: 120,
-        layers: 4,
-        thickness: 0.12,
-        roughness: 0.6,
-        amplitude: 0.13,
-      },
+      params: { columns: 120, layers: 4, thickness: 0.12, roughness: 0.6, amplitude: 0.13 },
     },
     {
       name: 'Fine',

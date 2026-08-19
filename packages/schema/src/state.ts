@@ -5,7 +5,7 @@
  * Holds params, undo/redo history, presets, randomize and reset, and knows how
  * to encode itself for the URL.
  */
-import { makeRng } from '@rareshape/core'
+import { groundColor, harmonyPalette, hashString, lineColor, makeRng, rgbToHsv, parseColor } from '@rareshape/core'
 import type { ParamSchema, ParamsOf } from './params'
 import { cloneValue, coerce, randomValue, sameValue } from './params'
 import type { Preset, Tool } from './define'
@@ -28,6 +28,8 @@ export interface Store<S extends ParamSchema = ParamSchema> {
   patch(values: Partial<ParamsOf<S>>, options?: { history?: boolean }): void
   replace(values: ParamsOf<S>, options?: { history?: boolean }): void
   randomize(): void
+  /** Re-rolls only the colour and palette params, leaving the geometry alone. */
+  randomizeColours(): void
   reset(): void
   loadPreset(name: string): void
   presets(): Preset<S>[]
@@ -126,6 +128,46 @@ export function createStore<S extends ParamSchema>(
         if (def.type !== 'seed' && def.randomize === false) continue
         next[name] = randomValue(def, rng)
       }
+      commit(next as ParamsOf<S>, true, null)
+    },
+
+    randomizeColours() {
+      const colourNames = Object.entries(tool.params).filter(
+        ([, def]) => (def.type === 'color' || def.type === 'palette') && def.randomize !== false,
+      )
+      if (colourNames.length === 0) return
+
+      // Seeded from the colours currently on screen, so pressing the button
+      // again always moves somewhere new while the state stays reproducible
+      // from the URL alone.
+      const current = colourNames.map(([name]) => JSON.stringify((params as Record<string, unknown>)[name])).join('|')
+      const rng = makeRng(hashString(current) ^ 0x9e37)
+
+      const scheme = harmonyPalette(rng, 6)
+      const hue = rgbToHsv(parseColor(scheme[0] as string)).h
+      const next = { ...params } as Record<string, unknown>
+
+      // Grounds first: a line colour is only quiet relative to its ground.
+      let ground: string | null = null
+      for (const [name, def] of colourNames) {
+        if (def.type === 'color' && def.role === 'ground') {
+          ground = groundColor(rng, hue)
+          next[name] = ground
+        }
+      }
+
+      let inkIndex = 0
+      for (const [name, def] of colourNames) {
+        if (def.type === 'palette') {
+          const length = (params as Record<string, string[]>)[name]?.length ?? 3
+          next[name] = harmonyPalette(rng, Math.max(1, length))
+        } else if (def.type === 'color' && def.role === 'line') {
+          next[name] = lineColor(rng, hue, ground ?? '#ffffff')
+        } else if (def.type === 'color' && def.role !== 'ground') {
+          next[name] = scheme[inkIndex++ % scheme.length] as string
+        }
+      }
+
       commit(next as ParamsOf<S>, true, null)
     },
 

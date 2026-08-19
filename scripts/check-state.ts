@@ -85,9 +85,14 @@ async function main(): Promise<void> {
     touched.push('seed')
     await fill('#p-caption', 'hello')
     touched.push('text')
-    await fill('#p-background', '#223344')
+    // Colour controls open a picker panel; the hex field inside it is the
+    // deterministic way to set a value.
+    await page.locator('#p-background button').first().click()
+    await fill('#p-background input[type="text"]', '#223344')
     touched.push('color')
-    await fill('#p-palette input[type="color"]', '#ff0055')
+
+    await page.locator('#p-palette button').first().click()
+    await fill('#p-palette input[type="text"]', '#ff0055')
     touched.push('palette')
     await page.getByRole('radio', { name: 'Square' }).click()
     touched.push('select')

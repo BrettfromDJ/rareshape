@@ -76,6 +76,7 @@ export function ToolHost<S extends ParamSchema>({
     useMemo(
       () => ({
         r: () => store.randomize(),
+        'shift+r': () => store.randomizeColours(),
         z: () => store.undo(),
         'shift+z': () => store.redo(),
         '0': () => store.reset(),

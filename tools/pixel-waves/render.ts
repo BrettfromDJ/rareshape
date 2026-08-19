@@ -126,38 +126,8 @@ export function render(frame: Frame<Params>): SvgFrame {
     if (path) parts.push(`<path d="${path}" fill="${colour}"/>`)
   }
 
-  /* --- word --------------------------------------------------------------- */
-
-  const word = params.word.trim()
-  if (word) {
-    const size = params.wordSize * height
-    const baseline = height / 2 + size * 0.35
-
-    if (params.wordBand) {
-      // A cleared strip, snapped to the grid like everything else, so the word
-      // sits in the artwork rather than on top of it.
-      const bandTop = Math.round((height / 2 - size * 0.72) / rowHeight) * rowHeight
-      const bandBottom = Math.round((height / 2 + size * 0.72) / rowHeight) * rowHeight
-      parts.push(
-        `<rect x="0" y="${n(bandTop)}" width="${n(width)}" ` +
-          `height="${n(bandBottom - bandTop)}" fill="${params.background}"/>`,
-      )
-    }
-
-    // The grid goes over the cleared band too, but under the letters.
-    parts.push(gridOverlay(params, width, height))
-
-    parts.push(
-      `<text x="${n(width / 2)}" y="${n(baseline)}" fill="${params.ink}" ` +
-        `font-family="Helvetica, Arial, ui-sans-serif, sans-serif" ` +
-        `font-weight="${params.wordWeight}" ` +
-        `font-size="${n(size)}" letter-spacing="${n(size * -0.02)}" ` +
-        `text-anchor="middle">${escapeText(word)}</text>`,
-    )
-  }
-
-  // Without a word, the grid is simply the last thing painted.
-  if (!word) parts.push(gridOverlay(params, width, height))
+  // The grid is the last thing painted, over everything else.
+  parts.push(gridOverlay(params, width, height))
 
   return {
     background: params.background,
@@ -210,8 +180,4 @@ function staircase(
   d.push('H0', 'Z')
 
   return d.join('')
-}
-
-function escapeText(value: string): string {
-  return value.replace(/[<>&]/g, (c) => (c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&amp;'))
 }
