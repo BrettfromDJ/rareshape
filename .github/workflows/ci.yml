@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Lint includes the layer rule: a render function that reaches for React,
+      # Math.random or a clock fails here.
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      # Chrome rather than Chromium: open-source builds ship WebCodecs with no
+      # H.264 encoder, and previews have to be playable everywhere.
+      - name: Install Chrome for Playwright
+        run: pnpm exec playwright install --with-deps chrome
+
+      - name: Build
+        run: pnpm build
+        env:
+          CHROMIUM_PATH: ''
+
+      # Previews are generated from the built site, then the site is rebuilt so
+      # they are copied into the export.
+      - name: Build previews
+        run: pnpm previews
+
+      - name: Rebuild with previews
+        run: pnpm build
+
+      - name: Determinism
+        run: pnpm test:tools
+
+      - name: Export pipeline
+        run: pnpm exec tsx scripts/check-exports.ts
+
+      - name: Standalone HTML
+        run: pnpm exec tsx scripts/check-eject.ts
+
+      - name: Bundle budget
+        run: pnpm size
+
+      - name: Registry is up to date
+        run: |
+          pnpm registry
+          git diff --exit-code registry.generated.ts
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-output
+          path: |
+            .export-check
+            .eject-check
+          retention-days: 3

@@ -15,7 +15,9 @@
     "previews": "tsx scripts/build-previews.ts",
     "test:tools": "tsx scripts/test-determinism.ts",
     "size": "tsx scripts/check-bundle-size.ts",
-    "eject": "tsx scripts/build-eject.ts"
+    "eject": "tsx scripts/build-eject.ts",
+    "check": "pnpm lint && pnpm typecheck && pnpm test:tools && tsx scripts/check-exports.ts && tsx scripts/check-eject.ts && pnpm size",
+    "check:index": "tsx scripts/check-index.ts"
   },
   "dependencies": {
     "@rareshape/core": "workspace:*",
