@@ -111,6 +111,19 @@ the budget was really protecting against. If the 120KB figure has to hold
 literally, the index would need to be rendered without React — the grid, filters
 and ⌘K are about 12KB of behaviour, so a hand-written script could carry them.
 
+## Open items from the brief
+
+`BUILD_BRIEF.md` §8 left five things undecided. Where a decision was needed to
+build, one was made — all of them are cheap to change:
+
+| Item | What was assumed | Where to change it |
+|---|---|---|
+| Name, wordmark, domain | `Rareshape`, set in plain type, `rareshape.dev` | `lib/site.ts` |
+| Typefaces | Geist Sans and Geist Mono, as the brief proposed | `app/tokens.css` — one variable each |
+| Categories | Patterns, Shapes, Effects, Shaders, Type, Image | `packages/schema/src/meta.ts` |
+| Index column | The added date, as `MM/DD`, matching the reference | `lib/registry.ts` (`shortDate`) |
+| Analytics | None | — |
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`TOOL_SPEC.md`](./TOOL_SPEC.md).
