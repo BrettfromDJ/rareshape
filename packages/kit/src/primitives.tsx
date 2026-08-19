@@ -29,7 +29,7 @@ export function Field({
         )}
       </div>
       {children}
-      {hint && <p className="meta normal-case tracking-normal mt-2 text-[var(--faint)]">{hint}</p>}
+      {hint && <p className="meta normal-case tracking-normal mt-2 text-[var(--dim)]">{hint}</p>}
     </div>
   )
 }

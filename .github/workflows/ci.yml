@@ -55,11 +55,17 @@ jobs:
       - name: Determinism
         run: pnpm test:tools
 
+      - name: Tool state — URL round-trip, undo, presets
+        run: pnpm exec tsx scripts/check-state.ts
+
       - name: Export pipeline
         run: pnpm exec tsx scripts/check-exports.ts
 
       - name: Standalone HTML
         run: pnpm exec tsx scripts/check-eject.ts
+
+      - name: Accessibility
+        run: pnpm exec tsx scripts/check-a11y.ts
 
       - name: Bundle budget
         run: pnpm size

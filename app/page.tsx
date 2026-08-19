@@ -15,6 +15,7 @@ export default function IndexPage() {
     <>
       <Header current="Index" />
 
+      <main id="content">
       <section className="rule border-b px-[var(--gutter)] py-10 md:py-14">
         <div className="grid gap-8 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
           <dl className="grid grid-cols-2 gap-y-6 gap-x-8 self-start max-w-xs">
@@ -47,6 +48,8 @@ export default function IndexPage() {
           outputs={outputs}
         />
       )}
+
+      </main>
 
       <footer className="rule border-t px-[var(--gutter)] py-6 flex flex-wrap gap-x-6 gap-y-2">
         <span className="meta">MIT</span>

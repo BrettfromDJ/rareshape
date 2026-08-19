@@ -39,7 +39,7 @@ export function Rail<S extends ParamSchema>({
   return (
     <aside className="rule border-b lg:border-b-0 lg:border-r w-full lg:w-[19rem] shrink-0 bg-[var(--surface)] overflow-y-auto overscroll-contain">
       <div className="px-4 py-3 rule border-b sticky top-0 bg-[var(--surface)] z-10">
-        <div className="text-[var(--text)]">{tool.meta.name}</div>
+        <h1 className="text-[var(--text)] text-[length:var(--text-md)] font-normal">{tool.meta.name}</h1>
         <p className="meta normal-case tracking-normal mt-1 text-[var(--dim)]">{tool.meta.tagline}</p>
       </div>
 
@@ -79,7 +79,7 @@ export function Rail<S extends ParamSchema>({
         if (visible.length === 0) return null
         return (
           <section key={group}>
-            <h2 className="meta px-4 pt-4 pb-2 text-[var(--faint)]">{group}</h2>
+            <h2 className="meta px-4 pt-4 pb-2">{group}</h2>
             {visible.map((name) => (
               <Control
                 key={name}

@@ -105,8 +105,8 @@ function Handle({
   return (
     <div {...bind} id={id} className="absolute inset-0 touch-none">
       <span
-        role="presentation"
-        aria-label={label}
+        aria-hidden="true"
+        title={label}
         className="absolute w-2 h-2 -ml-1 -mt-1 bg-[var(--text)] cursor-grab active:cursor-grabbing"
         style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
       />

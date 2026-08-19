@@ -17,7 +17,7 @@ export default function InfoPage() {
     <>
       <Header current="Info" />
 
-      <div className="px-[var(--gutter)] py-12 md:py-16 max-w-[68ch]">
+      <main className="px-[var(--gutter)] py-12 md:py-16 max-w-[68ch]">
         <h1 className="hero mb-8">{SITE.statement}</h1>
 
         <Section title="What this is">
@@ -106,7 +106,7 @@ export default function InfoPage() {
             ]}
           />
         </Section>
-      </div>
+      </main>
 
       <footer className="rule border-t px-[var(--gutter)] py-6 flex gap-6">
         <Link href="/" className="meta hover:text-[var(--text)]">

@@ -47,8 +47,18 @@ scripts/        Registry, previews, scaffolder, and the checks
 | `pnpm registry` | Rescans `tools/` into `registry.generated.ts` |
 | `pnpm previews` | Renders posters and preview videos through the real export pipeline |
 | `pnpm test:tools` | Determinism: every tool rendered twice, pixel-hashed |
-| `pnpm check` | Lint, types, determinism, exports, eject, bundle budget |
+| `pnpm check` | Everything below, in one go |
 | `pnpm check:index` | Pads the registry to 100 entries and measures the index |
+
+The checks behind `pnpm check`, each runnable on its own:
+
+| Script | What it proves |
+|---|---|
+| `scripts/check-state.ts` | Every param type has a control, changes write to the URL, a copied URL hard-reloads identically, undo/redo/randomize/reset/presets work |
+| `scripts/check-exports.ts` | PNG at 1×/2×/4×, byte-identical repeat exports, a 10s 60fps MP4 with 600 frames, no seam at the loop point, animated SVG that animates inside an `img` |
+| `scripts/check-eject.ts` | Every tool ejects, and each file opens over `file://` with the network off |
+| `scripts/check-a11y.ts` | axe-core clean on the index, info and tool pages, with visible focus |
+| `scripts/check-index.ts` | The index at 100 entries: scroll smoothness, preview limits, keyboard filtering and search |
 
 `pnpm previews` needs a build first — it drives the built site in headless
 Chromium so previews come out of the same code users run. In CI the order is
