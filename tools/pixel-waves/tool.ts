@@ -83,12 +83,12 @@ export const tool = defineTool({
     }),
     inset: p.number({
       label: 'Margin',
-      default: 0.07,
+      default: 0,
       min: 0,
       max: 0.35,
       step: 0.005,
       group: 'Waves',
-      hint: 'Paper left showing at the top and bottom.',
+      hint: 'Paper left showing at the top and bottom. Zero fills the frame.',
       when: (params) => params.fill === 'edges',
     }),
     thickness: p.number({
