@@ -10,3 +10,7 @@ next-env.d.ts
 /.export-check
 /public/eject
 /.eject-check
+
+# Written by `next dev`/`next build` on each machine, not shared.
+AGENTS.md
+CLAUDE.md
