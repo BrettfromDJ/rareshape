@@ -32,12 +32,11 @@ export function render(frame: Frame<Params>): SvgFrame {
 
   if (params.grid) {
     // One <pattern> rather than thousands of lines: a 300-column grid stays a
-    // handful of nodes in the exported SVG.
+    // handful of nodes in the exported SVG. It is painted last, over the bands.
     defs +=
       `<pattern id="pw-grid" width="${n(cell)}" height="${n(rowHeight)}" patternUnits="userSpaceOnUse">` +
       `<path d="M${n(cell)} 0H0V${n(rowHeight)}" fill="none" ` +
       `stroke="${params.gridColor}" stroke-width="${n(params.gridWeight)}"/></pattern>`
-    parts.push(`<rect width="${n(width)}" height="${n(height)}" fill="url(#pw-grid)"/>`)
   }
 
   /* --- bands -------------------------------------------------------------- */
@@ -143,13 +142,10 @@ export function render(frame: Frame<Params>): SvgFrame {
         `<rect x="0" y="${n(bandTop)}" width="${n(width)}" ` +
           `height="${n(bandBottom - bandTop)}" fill="${params.background}"/>`,
       )
-      if (params.grid) {
-        parts.push(
-          `<rect x="0" y="${n(bandTop)}" width="${n(width)}" ` +
-            `height="${n(bandBottom - bandTop)}" fill="url(#pw-grid)"/>`,
-        )
-      }
     }
+
+    // The grid goes over the cleared band too, but under the letters.
+    parts.push(gridOverlay(params, width, height))
 
     parts.push(
       `<text x="${n(width / 2)}" y="${n(baseline)}" fill="${params.ink}" ` +
@@ -160,11 +156,24 @@ export function render(frame: Frame<Params>): SvgFrame {
     )
   }
 
+  // Without a word, the grid is simply the last thing painted.
+  if (!word) parts.push(gridOverlay(params, width, height))
+
   return {
     background: params.background,
     defs: defs || undefined,
-    body: parts.join(''),
+    // Isolated so the blend mixes with the artwork, never with whatever sits
+    // behind the SVG on the page.
+    body: `<g style="isolation:isolate">${parts.join('')}</g>`,
   }
+}
+
+/** The graph paper, painted over the bands and tinted by what is underneath. */
+function gridOverlay(params: Params, width: number, height: number): string {
+  if (!params.grid) return ''
+  const blend =
+    params.gridBlend === 'normal' ? '' : ` style="mix-blend-mode:${params.gridBlend}"`
+  return `<rect width="${n(width)}" height="${n(height)}" fill="url(#pw-grid)"${blend}/>`
 }
 
 /**

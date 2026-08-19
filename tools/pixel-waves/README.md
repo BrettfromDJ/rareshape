@@ -15,7 +15,13 @@ an ordinary area chart.
 - The animation loops because both terms are periodic over `t`: the sine moves
   by whole turns (`Drift` is an integer for exactly this reason), and the noise
   is sampled around a circle rather than along a line.
-- Runs of columns at the same height are merged into one rect, so a 240-column
-  grid still exports as a small SVG.
+- Each band is one staircase polygon, not a rect per column: abutting rects
+  leave hairline seams where their antialiased edges meet, and the polygon is a
+  fraction of the nodes.
+- The grid is painted last, over the bands, and takes its tint from whatever is
+  underneath it through `mix-blend-mode`. Overlay stays visible on dark and
+  light alike; multiply behaves like ink printed on paper and disappears into
+  black. The whole drawing is isolated, so the blend never reaches the page
+  behind the artwork.
 - `Fill` decides how a band relates to the canvas: floating **ribbons**, masses
   anchored to the nearest **edge**, or a **stacked** area chart.

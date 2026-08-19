@@ -43,6 +43,21 @@ export const tool = defineTool({
       group: 'Grid',
       when: (params) => params.grid === true,
     }),
+    gridBlend: p.select({
+      label: 'Grid blend',
+      default: 'overlay',
+      group: 'Grid',
+      hint: 'How the grid takes its tint from the colour beneath it.',
+      options: [
+        { value: 'overlay', label: 'Overlay' },
+        { value: 'multiply', label: 'Multiply' },
+        { value: 'soft-light', label: 'Soft light' },
+        { value: 'screen', label: 'Screen' },
+        { value: 'difference', label: 'Difference' },
+        { value: 'normal', label: 'None' },
+      ],
+      when: (params) => params.grid === true,
+    }),
     gridWeight: p.number({
       label: 'Grid weight',
       default: 0.75,
