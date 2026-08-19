@@ -14,6 +14,10 @@ pnpm new-tool wave-grid --engine svg --category Patterns
 pnpm dev
 ```
 
+`pnpm dev` shows the three harness fixtures on the index as well as your tool,
+and tool previews only appear once you run `pnpm previews` — before that, cells
+show the tool's name on a plain plate.
+
 That scaffolds `tools/wave-grid/` with a `tool.ts` (metadata, params, presets)
 and a `render.ts` (the drawing). It already builds, already appears on the index,
 and already passes the determinism test. Now make it yours:
