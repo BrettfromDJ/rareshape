@@ -2,7 +2,7 @@
 
 import { mod } from '@rareshape/core'
 import type { AngleDef } from '@rareshape/schema'
-import { Field, NumberInput, useDrag } from '../primitives'
+import { Field, ValueInput, useDrag } from '../primitives'
 
 export function AngleControl({
   name,
@@ -24,7 +24,19 @@ export function AngleControl({
   const radians = (value * Math.PI) / 180
 
   return (
-    <Field label={def.label} hint={def.hint} value={`${Math.round(mod(value, 360))}°`}>
+    <Field
+      label={def.label}
+      hint={def.hint}
+      value={
+        <ValueInput
+          value={Math.round(mod(value, 360))}
+          onChange={onChange}
+          step={step}
+          suffix="°"
+          ariaLabel={`${def.label} degrees`}
+        />
+      }
+    >
       <div className="flex items-center gap-3">
         <div
           id={`p-${name}`}
@@ -48,9 +60,6 @@ export function AngleControl({
             className="absolute left-1/2 top-1/2 h-px w-[45%] bg-[var(--text)] origin-left"
             style={{ transform: `rotate(${radians}rad)` }}
           />
-        </div>
-        <div className="flex-1">
-          <NumberInput value={value} onChange={onChange} step={step} ariaLabel={`${def.label} degrees`} />
         </div>
       </div>
     </Field>

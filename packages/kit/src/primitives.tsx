@@ -30,6 +30,51 @@ export function Field({
   )
 }
 
+/**
+ * The value in a control's header row, typed directly. It reads as text until
+ * you touch it — one number per row, right-aligned to the rail's margin, so a
+ * column of values can be scanned without a box around each one.
+ */
+export function ValueInput({
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  suffix,
+  id,
+  ariaLabel,
+}: {
+  value: number
+  onChange: (value: number) => void
+  min?: number
+  max?: number
+  step?: number
+  suffix?: string
+  id?: string
+  ariaLabel: string
+}) {
+  return (
+    <span className="flex items-baseline gap-1">
+      <input
+        id={id}
+        type="number"
+        aria-label={ariaLabel}
+        value={Number.isFinite(value) ? value : 0}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(event) => {
+          const next = Number(event.target.value)
+          if (Number.isFinite(next)) onChange(next)
+        }}
+        className="rs-value w-[6ch] bg-transparent text-right outline-none border-b border-transparent hover:border-[var(--faint)] focus:border-[var(--text)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+      {suffix && <span className="rs-label">{suffix}</span>}
+    </span>
+  )
+}
+
 /** A bare numeric input in the mono register. */
 export function NumberInput({
   value,

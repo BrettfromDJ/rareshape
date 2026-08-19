@@ -95,7 +95,9 @@ export function Rail<S extends ParamSchema>({
             {/* A heavier rule and more air above mark a new section; the
                 heading itself is brighter and more widely spaced than the
                 control labels under it. */}
-            <div className="flex items-center justify-between gap-3 px-4 pt-6 pb-3 rule border-t border-[var(--faint)]">
+            {/* Pulled up a pixel so the section rule replaces the last field's
+                hairline instead of sitting beside it as a double line. */}
+            <div className="flex items-center justify-between gap-3 px-4 pt-6 pb-3 -mt-px rule border-t border-[var(--faint)]">
               <h2 className="rs-section">{group}</h2>
               {group === colourGroup && (
                 <Button

@@ -13,10 +13,12 @@
   --radius-none: 0px;
 }
 
-*,
-*::before,
-*::after {
-  border-radius: 0;
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-radius: 0;
+  }
 }
 
 html {
@@ -35,19 +37,23 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Hairlines are the only decoration in the system. */
-.rule {
-  border-color: var(--line);
-  border-style: solid;
-  border-width: 0;
-}
+@layer components {
+  /* Hairlines are the only decoration in the system. Zero-width by default so
+     a `border-t`/`border-b` utility picks the side — which only works while
+     this rule stays in a layer the utilities can beat. */
+  .rule {
+    border-color: var(--line);
+    border-style: solid;
+    border-width: 0;
+  }
 
-.meta {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: var(--tracking-meta);
-  text-transform: uppercase;
-  color: var(--dim);
+  .meta {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--dim);
+  }
 }
 
 .hero {
@@ -208,9 +214,11 @@ body {
 
 /* Long grids: let the browser skip layout and paint for rows nobody can see.
    The intrinsic size keeps the scrollbar honest while they are skipped. */
+@layer components {
 .rs-cell {
   content-visibility: auto;
   contain-intrinsic-size: auto 320px;
+}
 }
 
 /* ---------------------------------------------------------------------------
@@ -219,6 +227,7 @@ body {
    explains a control. Values stay mono because they are data.
    --------------------------------------------------------------------------- */
 
+@layer components {
 .rs-section {
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
@@ -250,4 +259,5 @@ body {
   color: var(--dim);
   text-transform: none;
   letter-spacing: 0;
+}
 }

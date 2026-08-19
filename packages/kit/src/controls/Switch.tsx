@@ -16,7 +16,12 @@ export function SwitchControl({
 }) {
   const id = `p-${name}`
   return (
-    <Field label={def.label} htmlFor={id} hint={def.hint}>
+    <Field
+      label={def.label}
+      htmlFor={id}
+      hint={def.hint}
+      value={<span className="rs-value">{value ? 'On' : 'Off'}</span>}
+    >
       <button
         id={id}
         type="button"
