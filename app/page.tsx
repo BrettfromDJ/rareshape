@@ -74,9 +74,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 function Empty() {
   return (
     <div className="px-[var(--gutter)] py-16">
-      <p className="text-[var(--dim)] max-w-[40ch]">
-        No tools yet. Run <code className="font-mono text-[var(--text)]">pnpm new-tool my-tool</code> to
-        scaffold one, then <code className="font-mono text-[var(--text)]">pnpm registry</code>.
+      <p className="text-[var(--dim)] max-w-[46ch]">
+        No tools yet. Run{' '}
+        <code className="font-mono text-[var(--text)]">pnpm new-tool my-tool</code> to scaffold one —
+        it appears here as soon as it exists.
       </p>
     </div>
   )
