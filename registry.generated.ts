@@ -4,7 +4,7 @@ import type { ToolMeta } from '@rareshape/schema'
 import type { ToolModuleLoaders } from '@rareshape/schema'
 
 export const registry: ToolMeta[] = [
-
+  {"slug":"pixel-waves","name":"Pixel Waves","tagline":"Wave bands quantised to a pixel grid.","category":"Patterns","engine":"svg","outputs":["SVG","PNG","GIF","MP4","HTML"],"added":"2026-08-19","animated":true,"duration":8,"fps":60,"aspect":"16:9","keywords":["grid","graph paper","waveform","bitmap","chart","halftone"]},
 ] as ToolMeta[]
 
 export const harness: ToolMeta[] = [
@@ -26,5 +26,9 @@ export const loaders: ToolModuleLoaders = {
   "_harness-webgl": {
     tool: () => import('@/tools/_harness-webgl/tool'),
     render: () => import('@/tools/_harness-webgl/render'),
+  },
+  "pixel-waves": {
+    tool: () => import('@/tools/pixel-waves/tool'),
+    render: () => import('@/tools/pixel-waves/render'),
   },
 }
