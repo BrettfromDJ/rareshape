@@ -10,6 +10,7 @@ export * from './types'
 export { createFrameRenderer, svgMarkup } from './render-frame'
 export { canExportMp4, isMp4Supported } from './mp4'
 export { optimizeSvg } from './svgo'
+export { buildHtmlDocument, THREE_CDN } from './html'
 
 export async function runExport(request: ExportRequest): Promise<ExportResult> {
   switch (request.format) {
@@ -54,7 +55,7 @@ export function availableFormats(tool: Tool, mp4Supported = canExportMp4()): For
     out.push({ format: 'gif', label: 'GIF', animated: true })
   }
 
-  out.push({ format: 'html', label: 'HTML', animated: false })
+  out.push({ format: 'html', label: 'Standalone HTML', animated: false })
   return out
 }
 

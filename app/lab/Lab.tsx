@@ -19,6 +19,8 @@ export interface LabExportRequest {
   params?: Record<string, unknown>
   /** Lets CI's Chromium fall back to an open codec — see mp4.ts. */
   allowFallbackCodec?: boolean
+  /** Import map override for HTML export. */
+  htmlImports?: Record<string, string>
 }
 
 export interface LabApi {
@@ -121,6 +123,7 @@ export function Lab() {
           background: request.background,
           seed: seedOf(tool, params),
           allowFallbackCodec: request.allowFallbackCodec === true,
+          htmlImports: request.htmlImports,
         })
         return {
           filename: result.filename,

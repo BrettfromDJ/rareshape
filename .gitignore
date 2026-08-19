@@ -8,3 +8,5 @@ next-env.d.ts
 /public/previews
 /scratch
 /.export-check
+/public/eject
+/.eject-check

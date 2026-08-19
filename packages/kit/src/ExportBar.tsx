@@ -90,6 +90,7 @@ export function ExportBar<S extends ParamSchema>({
         t,
         seed,
         background: transparent ? null : undefined,
+        htmlSource: typeof window === 'undefined' ? undefined : window.location.href,
         signal: controller.signal,
         onProgress: setProgress,
       })

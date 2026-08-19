@@ -23,6 +23,12 @@ export interface ExportRequest<S extends ParamSchema = ParamSchema> {
   seed: number
   /** Build tooling only — see the note in mp4.ts. */
   allowFallbackCodec?: boolean
+  /** Where the HTML exporter fetches the prebuilt standalone bundle from. */
+  htmlBase?: string
+  /** Link written into an exported HTML file's header. */
+  htmlSource?: string
+  /** Import map override for the exported HTML — used to self-host Three.js. */
+  htmlImports?: Record<string, string>
   signal?: AbortSignal
   onProgress?: (fraction: number) => void
 }

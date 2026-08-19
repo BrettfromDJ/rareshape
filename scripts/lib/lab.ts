@@ -27,6 +27,7 @@ export interface LabExportOptions {
   background?: string | null
   params?: Record<string, unknown>
   allowFallbackCodec?: boolean
+  htmlImports?: Record<string, string>
 }
 
 export interface LabSession {
