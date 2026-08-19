@@ -1,0 +1,46 @@
+/* ---------------------------------------------------------------------------
+   Design tokens. Everything visual is declared here and nowhere else.
+   Swapping a typeface or shifting the palette is a change to this file only.
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Palette — monochrome by design. The only color on the site is tool output. */
+  --bg: #0a0a0a;
+  --surface: #131313;
+  --line: #222222;
+  --text: #f0f0f0;
+  --dim: #8a8a8a;
+  --faint: #4a4a4a;
+
+  /* Type families. Set by next/font on <html>; these are the indirection. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  /* Type scale */
+  --text-hero: clamp(2rem, 1.2rem + 3.4vw, 4rem); /* 32 -> 64 */
+  --text-lg: 1.125rem;
+  --text-md: 0.9375rem;
+  --text-sm: 0.8125rem;
+  --text-xs: 0.6875rem;
+
+  --leading-hero: 1.06;
+  --leading-body: 1.5;
+  --tracking-meta: 0.06em;
+  --tracking-hero: -0.02em;
+
+  /* Space */
+  --gutter: 1.25rem;
+  --rule: 1px;
+
+  /* Motion */
+  --stagger-step: 28ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur-mid: 260ms;
+}
+
+@media (min-width: 900px) {
+  :root {
+    --gutter: 2rem;
+  }
+}

@@ -1,0 +1,207 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-dim: var(--dim);
+  --color-faint: var(--faint);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --radius-none: 0px;
+}
+
+*,
+*::before,
+*::after {
+  border-radius: 0;
+}
+
+html {
+  background: var(--bg);
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Hairlines are the only decoration in the system. */
+.rule {
+  border-color: var(--line);
+  border-style: solid;
+  border-width: 0;
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-meta);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.hero {
+  font-size: var(--text-hero);
+  line-height: var(--leading-hero);
+  letter-spacing: var(--tracking-hero);
+  font-weight: 400;
+  text-wrap: balance;
+}
+
+::selection {
+  background: var(--text);
+  color: var(--bg);
+}
+
+:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 2px;
+}
+
+/* Scrollbars, kept in the same register as everything else. */
+* {
+  scrollbar-color: var(--faint) transparent;
+  scrollbar-width: thin;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stagger > * {
+  animation: rise var(--dur-mid) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger-step));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger > * {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Controls. Native inputs, restyled to the same flat register as everything
+   else — native gives keyboard and screen-reader behaviour for free.
+   --------------------------------------------------------------------------- */
+
+.rs-range {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  height: 1.25rem;
+  cursor: pointer;
+}
+
+.rs-range::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--line);
+}
+
+.rs-range::-moz-range-track {
+  height: 1px;
+  background: var(--line);
+}
+
+.rs-range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 3px;
+  height: 0.875rem;
+  margin-top: -0.4375rem;
+  background: var(--text);
+  border: none;
+}
+
+.rs-range::-moz-range-thumb {
+  width: 3px;
+  height: 0.875rem;
+  background: var(--text);
+  border: none;
+  border-radius: 0;
+}
+
+.rs-range:disabled {
+  cursor: not-allowed;
+}
+
+.rs-range:disabled::-webkit-slider-thumb {
+  background: var(--faint);
+}
+
+/* Two thumbs on one track: both inputs overlap, only the thumbs take pointers. */
+.rs-range-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  pointer-events: none;
+  background: transparent;
+}
+
+.rs-range-overlay::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.rs-range-overlay::-moz-range-track {
+  background: transparent;
+}
+
+.rs-range-overlay::-webkit-slider-thumb {
+  pointer-events: auto;
+}
+
+.rs-range-overlay::-moz-range-thumb {
+  pointer-events: auto;
+}
+
+.rs-range-overlay:focus-visible {
+  outline-offset: 4px;
+}
+
+/* Transparency checkerboard, behind anything the tool does not paint. */
+.rs-checker {
+  background-image:
+    linear-gradient(45deg, #191919 25%, transparent 25%),
+    linear-gradient(-45deg, #191919 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #191919 75%),
+    linear-gradient(-45deg, transparent 75%, #191919 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-color: var(--bg);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

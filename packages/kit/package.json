@@ -1,0 +1,17 @@
+{
+  "name": "@rareshape/kit",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@rareshape/core": "workspace:*",
+    "@rareshape/schema": "workspace:*",
+    "@rareshape/export": "workspace:*"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "rareshape",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "registry": "tsx scripts/build-registry.ts",
+    "dev": "pnpm registry && next dev",
+    "build": "pnpm registry && next build",
+    "start": "npx serve out",
+    "lint": "eslint app packages tools scripts lib",
+    "typecheck": "tsc --noEmit",
+    "new-tool": "tsx scripts/new-tool.ts",
+    "previews": "tsx scripts/build-previews.ts",
+    "test:tools": "tsx scripts/test-determinism.ts",
+    "size": "tsx scripts/check-bundle-size.ts"
+  },
+  "dependencies": {
+    "@rareshape/core": "workspace:*",
+    "@rareshape/eject": "workspace:*",
+    "@rareshape/export": "workspace:*",
+    "@rareshape/kit": "workspace:*",
+    "@rareshape/schema": "workspace:*",
+    "geist": "1.7.2",
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.8",
+    "@types/react-dom": "19.2.4",
+    "@types/three": "0.185.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.1",
+    "playwright": "1.62.1",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.12",
+    "typescript": "5.9.3"
+  }
+}
