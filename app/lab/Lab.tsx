@@ -21,6 +21,7 @@ export interface LabExportRequest {
   allowFallbackCodec?: boolean
   /** Import map override for HTML export. */
   htmlImports?: Record<string, string>
+  bitrate?: number
 }
 
 export interface LabApi {
@@ -29,6 +30,14 @@ export interface LabApi {
   export(request: LabExportRequest): Promise<{ filename: string; size: number; base64: string }>
   /** Whether this browser can actually encode the locked H.264 profile. */
   mp4Supported(): Promise<boolean>
+  /** Cover-crops a PNG (base64) to a box. Used for OG images and thumbnails. */
+  crop(request: {
+    base64: string
+    width: number
+    height: number
+    type?: 'image/png' | 'image/jpeg'
+    quality?: number
+  }): Promise<string>
   /** Mean absolute pixel difference between two frames, 0..255. */
   diffFrames(request: {
     slug: string
@@ -124,6 +133,7 @@ export function Lab() {
           seed: seedOf(tool, params),
           allowFallbackCodec: request.allowFallbackCodec === true,
           htmlImports: request.htmlImports,
+          ...(request.bitrate ? { bitrate: request.bitrate } : {}),
         })
         return {
           filename: result.filename,
@@ -133,6 +143,29 @@ export function Lab() {
       },
 
       mp4Supported: () => isMp4Supported(),
+
+      async crop(request) {
+        const image = new Image()
+        await new Promise<void>((resolve, reject) => {
+          image.onload = () => resolve()
+          image.onerror = () => reject(new Error('Could not read the poster'))
+          image.src = `data:image/png;base64,${request.base64}`
+        })
+        const canvas = document.createElement('canvas')
+        canvas.width = request.width
+        canvas.height = request.height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) throw new Error('No 2D context')
+        const scale = Math.max(request.width / image.width, request.height / image.height)
+        const w = image.width * scale
+        const h = image.height * scale
+        ctx.drawImage(image, (request.width - w) / 2, (request.height - h) / 2, w, h)
+        const blob = await new Promise<Blob | null>((resolve) =>
+          canvas.toBlob((result) => resolve(result), request.type ?? 'image/png', request.quality),
+        )
+        if (!blob) throw new Error('Image encoding failed')
+        return toBase64(blob)
+      },
 
       async diffFrames(request) {
         const { tool, module } = await load(request.slug)

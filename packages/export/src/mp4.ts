@@ -54,9 +54,10 @@ async function pickConfig(
   height: number,
   fps: number,
   allowFallback: boolean,
+  requestedBitrate?: number,
 ): Promise<{ config: VideoEncoderConfig; muxer: 'avc' | 'vp9' | 'av1' }> {
   const candidates = allowFallback ? FALLBACK_CODECS : FALLBACK_CODECS.slice(0, 1)
-  const bitrate = bitrateFor(width, height, fps)
+  const bitrate = requestedBitrate ?? bitrateFor(width, height, fps)
 
   for (const candidate of candidates) {
     for (const hardware of ['prefer-hardware', undefined] as const) {
@@ -104,7 +105,13 @@ export async function exportMp4(request: ExportRequest): Promise<ExportResult> {
     background: request.background ?? '#0a0a0a',
   })
 
-  const chosen = await pickConfig(pixelWidth, pixelHeight, fps, request.allowFallbackCodec === true)
+  const chosen = await pickConfig(
+    pixelWidth,
+    pixelHeight,
+    fps,
+    request.allowFallbackCodec === true,
+    request.bitrate,
+  )
 
   const muxer = new Muxer({
     target: new ArrayBufferTarget(),

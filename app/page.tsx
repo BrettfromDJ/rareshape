@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { CATEGORIES } from '@rareshape/schema'
 import { Header } from './_components/Header'
-import { FilterBar } from './_components/FilterBar'
-import { ToolCard } from './_components/ToolCard'
+import { ToolGrid } from './_components/ToolGrid'
 import { lastUpdated, listedTools, shortDate, usedCategories, usedOutputs } from '@/lib/registry'
 import { SITE } from '@/lib/site'
 
@@ -39,20 +38,14 @@ export default function IndexPage() {
         </div>
       </section>
 
-      <div id="tools">
-        <FilterBar categories={categories.length ? categories : CATEGORIES} outputs={outputs} />
-      </div>
-
       {tools.length === 0 ? (
         <Empty />
       ) : (
-        <ul className="stagger grid gap-x-6 gap-y-10 px-[var(--gutter)] py-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {tools.map((tool, i) => (
-            <li key={tool.slug}>
-              <ToolCard tool={tool} index={i} />
-            </li>
-          ))}
-        </ul>
+        <ToolGrid
+          tools={tools}
+          categories={categories.length ? categories : CATEGORIES}
+          outputs={outputs}
+        />
       )}
 
       <footer className="rule border-t px-[var(--gutter)] py-6 flex flex-wrap gap-x-6 gap-y-2">

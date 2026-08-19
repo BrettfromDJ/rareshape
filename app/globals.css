@@ -205,3 +205,10 @@ body {
   white-space: nowrap;
   border-width: 0;
 }
+
+/* Long grids: let the browser skip layout and paint for rows nobody can see.
+   The intrinsic size keeps the scrollbar honest while they are skipped. */
+.rs-cell {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}

@@ -28,6 +28,7 @@ export interface LabExportOptions {
   params?: Record<string, unknown>
   allowFallbackCodec?: boolean
   htmlImports?: Record<string, string>
+  bitrate?: number
 }
 
 export interface LabSession {
@@ -35,6 +36,13 @@ export interface LabSession {
   page: Page
   origin: string
   export(options: LabExportOptions): Promise<{ filename: string; size: number; bytes: Buffer }>
+  crop(options: {
+    base64: string
+    width: number
+    height: number
+    type?: 'image/png' | 'image/jpeg'
+    quality?: number
+  }): Promise<Buffer>
   hashFrame(options: {
     slug: string
     t: number
@@ -73,6 +81,14 @@ export async function openLab(root = 'out', port = 4310): Promise<LabSession> {
         size: result.size,
         bytes: Buffer.from(result.base64, 'base64'),
       }
+    },
+
+    async crop(options) {
+      const base64 = await page.evaluate(
+        (request) => window.rareshapeLab!.crop(request),
+        options as never,
+      )
+      return Buffer.from(base64, 'base64')
     },
 
     async hashFrame(options) {

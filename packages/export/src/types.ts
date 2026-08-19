@@ -21,6 +21,8 @@ export interface ExportRequest<S extends ParamSchema = ParamSchema> {
   /** Paint this behind the frame. Omit for true transparency. */
   background?: string | null
   seed: number
+  /** Overrides the computed bitrate. Used by the preview builder's budget. */
+  bitrate?: number
   /** Build tooling only — see the note in mp4.ts. */
   allowFallbackCodec?: boolean
   /** Where the HTML exporter fetches the prebuilt standalone bundle from. */
