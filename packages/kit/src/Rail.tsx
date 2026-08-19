@@ -36,10 +36,15 @@ export function Rail<S extends ParamSchema>({
 
   const record = params as Record<string, unknown>
 
-  // Only worth offering where there is a colour to re-roll.
-  const hasColours = Object.values(tool.params).some(
-    (def) => (def.type === 'color' || def.type === 'palette') && def.randomize !== false,
-  )
+  // Re-rolling colours belongs beside the colours themselves, not in the row
+  // of global actions. It lands on the group holding the palette, or failing
+  // that the first group with a colour in it.
+  const colourGroup = (() => {
+    const entries = Object.values(tool.params).filter((def) => def.randomize !== false)
+    const palette = entries.find((def) => def.type === 'palette')
+    const colour = palette ?? entries.find((def) => def.type === 'color')
+    return colour ? (colour.group ?? 'Parameters') : null
+  })()
 
   return (
     <aside className="rule border-b lg:border-b-0 lg:border-r w-full lg:w-[19rem] shrink-0 bg-[var(--surface)] overflow-y-auto overscroll-contain">
@@ -52,11 +57,6 @@ export function Rail<S extends ParamSchema>({
         <Button onClick={() => store.randomize()} title="Randomize (R)">
           Randomize
         </Button>
-        {hasColours && (
-          <Button onClick={() => store.randomizeColours()} title="Randomize colours (⇧R)">
-            Colours
-          </Button>
-        )}
         <Button onClick={() => store.undo()} disabled={!store.canUndo()} title="Undo (Z)">
           Undo
         </Button>
@@ -89,7 +89,18 @@ export function Rail<S extends ParamSchema>({
         if (visible.length === 0) return null
         return (
           <section key={group}>
-            <h2 className="meta px-4 pt-4 pb-2">{group}</h2>
+            <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
+              <h2 className="meta">{group}</h2>
+              {group === colourGroup && (
+                <Button
+                  onClick={() => store.randomizeColours()}
+                  title="Randomize colours (⇧R)"
+                  className="py-0.5"
+                >
+                  Randomize
+                </Button>
+              )}
+            </div>
             {visible.map((name) => (
               <Control
                 key={name}
