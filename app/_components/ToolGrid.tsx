@@ -192,6 +192,13 @@ function Cell({ tool, index }: { tool: ToolMeta; index: number }) {
   // checkout has none. Missing media should read as a plate, not as breakage.
   const [posterMissing, setPosterMissing] = useState(false)
 
+  // The poster is server-rendered, so a 404 usually lands before React
+  // hydrates and the error event is gone by the time onError is attached.
+  // Checking the element on mount catches that case; onError catches the rest.
+  const posterRef = useCallback((node: HTMLImageElement | null) => {
+    if (node?.complete && node.naturalWidth === 0) setPosterMissing(true)
+  }, [])
+
   useEffect(() => {
     const node = cellRef.current
     if (!node) return
@@ -264,6 +271,7 @@ function Cell({ tool, index }: { tool: ToolMeta; index: number }) {
         {!posterMissing && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
+            ref={posterRef}
             src={`/previews/${tool.slug}/thumb.jpg`}
             alt=""
             width={800}
