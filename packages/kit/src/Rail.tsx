@@ -49,8 +49,11 @@ export function Rail<S extends ParamSchema>({
   return (
     <aside className="rule border-b lg:border-b-0 lg:border-r w-full lg:w-[19rem] shrink-0 bg-[var(--surface)] overflow-y-auto overscroll-contain">
       <div className="px-4 py-3 rule border-b sticky top-0 bg-[var(--surface)] z-10">
-        <h1 className="text-[var(--text)] text-[length:var(--text-md)] font-normal">{tool.meta.name}</h1>
-        <p className="meta normal-case tracking-normal mt-1 text-[var(--dim)]">{tool.meta.tagline}</p>
+        <h1 className="text-[var(--text)] text-[length:var(--text-md)] font-normal leading-tight">
+          {tool.meta.name}
+        </h1>
+        {/* The tagline is a sentence, so it is set as one — not as metadata. */}
+        <p className="rs-hint mt-1 max-w-[32ch]">{tool.meta.tagline}</p>
       </div>
 
       <div className="px-4 py-3 rule border-b flex flex-wrap gap-1">
@@ -73,7 +76,7 @@ export function Rail<S extends ParamSchema>({
 
       {tool.presets.length > 0 && (
         <div className="px-4 py-3 rule border-b">
-          <div className="meta mb-2">Presets</div>
+          <div className="rs-label mb-2">Presets</div>
           <div className="flex flex-wrap gap-1">
             {tool.presets.map((preset) => (
               <Button key={preset.name} onClick={() => store.loadPreset(preset.name)}>
@@ -89,8 +92,11 @@ export function Rail<S extends ParamSchema>({
         if (visible.length === 0) return null
         return (
           <section key={group}>
-            <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
-              <h2 className="meta">{group}</h2>
+            {/* A heavier rule and more air above mark a new section; the
+                heading itself is brighter and more widely spaced than the
+                control labels under it. */}
+            <div className="flex items-center justify-between gap-3 px-4 pt-6 pb-3 rule border-t border-[var(--faint)]">
+              <h2 className="rs-section">{group}</h2>
               {group === colourGroup && (
                 <Button
                   onClick={() => store.randomizeColours()}

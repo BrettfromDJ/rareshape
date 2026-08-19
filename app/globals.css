@@ -212,3 +212,42 @@ body {
   content-visibility: auto;
   contain-intrinsic-size: auto 320px;
 }
+
+/* ---------------------------------------------------------------------------
+   Rail hierarchy. Three levels, told apart by size, colour and letter-spacing
+   rather than by rules or weight: section, control, and the prose that
+   explains a control. Values stay mono because they are data.
+   --------------------------------------------------------------------------- */
+
+.rs-section {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.rs-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-meta);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.rs-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hints are prose, so they are set in the interface face, not the mono one. */
+.rs-hint {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--dim);
+  text-transform: none;
+  letter-spacing: 0;
+}

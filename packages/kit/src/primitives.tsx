@@ -19,17 +19,13 @@ export function Field({
   return (
     <div className="px-4 py-3 rule border-b">
       <div className="flex items-baseline justify-between gap-3 mb-2">
-        <label htmlFor={htmlFor} className="meta text-[var(--dim)]">
+        <label htmlFor={htmlFor} className="rs-label">
           {label}
         </label>
-        {value !== undefined && (
-          <span className="font-mono text-[var(--text-xs)] text-[var(--text)] tabular-nums">
-            {value}
-          </span>
-        )}
+        {value !== undefined && <span className="rs-value">{value}</span>}
       </div>
       {children}
-      {hint && <p className="meta normal-case tracking-normal mt-2 text-[var(--dim)]">{hint}</p>}
+      {hint && <p className="rs-hint mt-2 max-w-[34ch]">{hint}</p>}
     </div>
   )
 }

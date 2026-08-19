@@ -16,13 +16,14 @@ body { display: flex; flex-direction: column; }
 a { color: inherit; }
 .rs-head { display: flex; align-items: center; gap: 16px; height: 48px; padding: 0 16px; border-bottom: 1px solid var(--line); }
 .rs-title { font-size: 15px; }
+.rs-tagline { font-size: 13px; color: var(--dim); }
 .rs-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
 .rs-body { flex: 1; min-height: 0; display: flex; }
 .rs-rail { width: 304px; flex: none; overflow-y: auto; background: var(--surface); border-right: 1px solid var(--line); }
 .rs-stage { flex: 1; min-width: 0; display: grid; place-items: center; padding: 24px; }
 .rs-frame { position: relative; border: 1px solid var(--line); max-width: 100%; max-height: 100%; }
 .rs-frame > * { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.rs-group { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); padding: 16px 16px 8px; }
+.rs-group { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); padding: 20px 16px 10px; border-top: 1px solid var(--faint); }
 .rs-field { padding: 12px 16px; border-bottom: 1px solid var(--line); }
 .rs-label { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
 .rs-label span:first-child { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }

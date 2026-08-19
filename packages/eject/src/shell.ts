@@ -42,6 +42,7 @@ export function mount<S extends ParamSchema>(options: MountOptions<S>): void {
   root.innerHTML = `
     <header class="rs-head">
       <span class="rs-title">${escapeHtml(tool.meta.name)}</span>
+      <span class="rs-tagline">${escapeHtml(tool.meta.tagline)}</span>
       <span class="rs-meta">${escapeHtml(tool.meta.category)} — ${escapeHtml(tool.meta.engine)}</span>
       <span class="rs-meta" style="margin-left:auto">${
         options.source
