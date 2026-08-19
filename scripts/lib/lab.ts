@@ -28,6 +28,7 @@ export interface LabExportOptions {
   params?: Record<string, unknown>
   allowFallbackCodec?: boolean
   htmlImports?: Record<string, string>
+  htmlAspect?: string
   bitrate?: number
 }
 

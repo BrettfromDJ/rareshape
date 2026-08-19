@@ -179,6 +179,27 @@ async function main(): Promise<void> {
     await page.waitForTimeout(200)
     record('presets load from the keyboard', (await encoded(page)).length > 0)
 
+    // --- stage aspect ------------------------------------------------------
+    // Not a param, but part of what a link should carry.
+    await page.getByRole('button', { name: '9:16', exact: true }).click()
+    await page.waitForTimeout(300)
+    const withAspect = page.url()
+    record('changing the stage aspect writes to the URL', withAspect.includes('a=9%3A16'))
+
+    const shaped = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+    await shaped.goto(withAspect, { waitUntil: 'networkidle' })
+    await shaped.waitForTimeout(800)
+    const ratio = (await shaped.evaluate(`(() => {
+      const box = document.querySelector('[role="img"]').getBoundingClientRect()
+      return box.width / box.height
+    })()`)) as number
+    record(
+      'a shared link reopens at the same aspect',
+      Math.abs(ratio - 9 / 16) < 0.01,
+      ratio.toFixed(3),
+    )
+    await shaped.close()
+
     record('no page errors throughout', errors.length === 0, errors[0] ?? '')
   } finally {
     await browser.close()

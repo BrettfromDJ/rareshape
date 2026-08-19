@@ -23,6 +23,8 @@ export interface MountOptions<S extends ParamSchema> {
   /** The state the file was exported with. */
   params?: Partial<ParamsOf<S>>
   root?: HTMLElement
+  /** Stage shape the file was exported at. Defaults to the tool's own. */
+  aspect?: string
   /** Shown in the header, linking back to where the file came from. */
   source?: string
 }
@@ -65,7 +67,7 @@ export function mount<S extends ParamSchema>(options: MountOptions<S>): void {
 
   /* --- surface ----------------------------------------------------------- */
 
-  const aspect = parseAspect(tool.meta.aspect)
+  const aspect = parseAspect(options.aspect || tool.meta.aspect)
   let canvas: HTMLCanvasElement | null = null
   let svgHost: HTMLDivElement | null = null
   let gl: GlRenderer<ParamsOf<S>> | null = null

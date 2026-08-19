@@ -27,6 +27,7 @@ export interface LabExportRequest {
   allowFallbackCodec?: boolean
   /** Import map override for HTML export. */
   htmlImports?: Record<string, string>
+  htmlAspect?: string
   bitrate?: number
 }
 
@@ -141,6 +142,7 @@ export function Lab() {
           seed: seedOf(tool, params),
           allowFallbackCodec: request.allowFallbackCodec === true,
           htmlImports: request.htmlImports,
+          htmlAspect: request.htmlAspect,
           ...(request.bitrate ? { bitrate: request.bitrate } : {}),
         })
         return {

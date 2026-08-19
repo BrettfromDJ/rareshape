@@ -53,6 +53,7 @@ async function main(): Promise<void> {
         format: 'html',
         width: 800,
         height: 800,
+        htmlAspect: '3:2',
         ...(tool.engine === 'webgl'
           ? { htmlImports: { three: './three.module.js', 'three/': './three.module.js' } }
           : {}),
@@ -66,6 +67,10 @@ async function main(): Promise<void> {
         `${tool.slug} ejects`,
         text.startsWith('<!doctype html>') && text.includes('rs-params'),
         `${Math.round(result.size / 1024)} KB`,
+      )
+      record(
+        `${tool.slug} eject carries the stage shape it was exported at`,
+        text.includes('data-aspect="3:2"'),
       )
       record(
         `${tool.slug} eject is readable source`,

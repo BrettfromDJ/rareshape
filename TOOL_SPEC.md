@@ -184,7 +184,12 @@ is missing rather than shown broken.
 
 ## 7. Sizes and aspect
 
-Stage aspect comes from `meta.aspect` and can be overridden per export. Render
+`meta.aspect` is the tool's own shape and the one it opens at. The stage offers
+the common ratios on top of it, and the choice rides in the URL under `?a=`, is
+what the export sheet defaults to, and is baked into an exported HTML file — so
+a link, a file and a screen all agree. Aspect is never a param: a render
+function is handed a width and a height and should not care where they came
+from. Render
 functions receive logical `width`/`height` and must be resolution-independent:
 never hardcode a pixel size, and scale strokes and type from the smaller
 dimension. A 4× PNG is the same drawing, not a bigger one.
@@ -194,6 +199,8 @@ dimension. A 4× PNG is the same drawing, not a bigger one.
 ## 8. State
 
 - All params live in the URL, base64url-encoded under `?p=`, non-defaults only.
+- The stage aspect rides alongside them under `?a=`, omitted when it is the
+  tool's own.
 - Copying the URL and hard-reloading it reproduces the state exactly.
 - Undo/redo covers every param change, preset load, randomize and reset.
 - Presets are declared in `tool.ts`; user state is never persisted server-side.

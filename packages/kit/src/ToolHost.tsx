@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { ParamSchema, RenderModule, Tool, ParamsOf } from '@rareshape/schema'
 import { permalink } from '@rareshape/schema'
+import { AspectBar } from './AspectBar'
 import { ExportBar } from './ExportBar'
 import { Rail } from './Rail'
 import { Stage } from './Stage'
@@ -20,20 +21,25 @@ export function ToolHost<S extends ParamSchema>({
   tool,
   module: renderModule,
   initialEncoded,
+  initialAspect,
 }: {
   tool: Tool<S>
   module: RenderModule<ParamsOf<S>> | null
   initialEncoded: string | null
+  /** Stage shape from the URL, if the link carried one. */
+  initialAspect?: string | null
 }) {
   const { store, params } = useToolStore(tool, initialEncoded)
   const reduced = usePrefersReducedMotion()
   const [playing, setPlaying] = useState(tool.meta.animated && !reduced)
   const [copied, setCopied] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
+  const [aspect, setAspect] = useState(initialAspect || tool.meta.aspect)
   const { t, setT } = usePlayback(tool.meta.duration, playing && tool.meta.animated)
 
   const encoded = store.encoded()
-  useUrlSync(tool.meta.slug, encoded)
+  // The tool's own shape is the default, so it stays out of the URL.
+  useUrlSync(tool.meta.slug, encoded, { a: aspect === tool.meta.aspect ? '' : aspect })
 
   const seed = useMemo(() => {
     const entry = Object.entries(tool.params).find(([, def]) => def.type === 'seed')
@@ -95,15 +101,11 @@ export function ToolHost<S extends ParamSchema>({
       <Rail tool={tool} store={store} params={params} onCopyLink={copyLink} copied={copied} />
 
       <main className="flex-1 min-h-0 flex flex-col">
-        <Stage
-          module={renderModule}
-          params={params}
-          t={t}
-          seed={seed}
-          aspect={tool.meta.aspect}
-        />
+        <Stage module={renderModule} params={params} t={t} seed={seed} aspect={aspect} />
 
-        <div className="rule border-t flex items-center gap-3 px-4 h-11 shrink-0">
+        <div className="rule border-t flex items-center gap-3 px-4 h-11 shrink-0 overflow-x-auto">
+          <AspectBar value={aspect} fallback={tool.meta.aspect} onChange={setAspect} />
+
           {tool.meta.animated && (
             <>
               <Button onClick={() => setPlaying((value) => !value)} title="Play / pause (Space)">
@@ -133,6 +135,7 @@ export function ToolHost<S extends ParamSchema>({
               params={params}
               t={t}
               seed={seed}
+              aspect={aspect}
               open={exportOpen}
               onOpenChange={setExportOpen}
             />

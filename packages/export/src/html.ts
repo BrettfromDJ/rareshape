@@ -40,6 +40,9 @@ export async function exportHtml(request: ExportRequest): Promise<ExportResult> 
     bundle,
     source: request.htmlSource,
     imports: request.htmlImports,
+    // The shape on screen when Export was pressed, so the saved file opens
+    // looking like the thing that was exported.
+    aspect: request.htmlAspect,
   })
 
   request.onProgress?.(1)
@@ -60,8 +63,9 @@ export function buildHtmlDocument(options: {
   source?: string
   /** Overrides the import map, for self-hosting Three.js instead of the CDN. */
   imports?: Record<string, string>
+  aspect?: string
 }): string {
-  const { title, tagline, webgl, params, bundle, source, imports } = options
+  const { title, tagline, webgl, params, bundle, source, imports, aspect } = options
 
   // A `</script>` anywhere in the bundle or the params would end the block early.
   const safe = (value: string) => value.replace(/<\/script/gi, '<\\/script')
@@ -72,7 +76,9 @@ export function buildHtmlDocument(options: {
     : ''
 
   return `<!doctype html>
-<html lang="en"${source ? ` data-source="${escapeAttribute(source)}"` : ''}>
+<html lang="en"${source ? ` data-source="${escapeAttribute(source)}"` : ''}${
+    aspect ? ` data-aspect="${escapeAttribute(aspect)}"` : ''
+  }>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

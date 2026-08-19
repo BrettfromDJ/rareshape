@@ -22,15 +22,34 @@ export function useToolStore<S extends ParamSchema>(
   return { store, params }
 }
 
-/** Writes the current state into the URL without adding history entries. */
-export function useUrlSync(slug: string, encoded: string, enabled = true): void {
+/**
+ * Writes the current state into the URL without adding history entries.
+ * `extras` carries the state that is not a param — the stage aspect — so a
+ * copied link reproduces what the sender was actually looking at.
+ */
+export function useUrlSync(
+  slug: string,
+  encoded: string,
+  extras: Record<string, string> = {},
+): void {
+  const extrasKey = JSON.stringify(extras)
+
   useEffect(() => {
-    if (!enabled || typeof window === 'undefined') return
+    if (typeof window === 'undefined') return
     const url = new URL(window.location.href)
-    const current = url.searchParams.get('p') ?? ''
-    if (current === encoded) return
+    const entries = Object.entries(JSON.parse(extrasKey) as Record<string, string>)
+
+    const unchanged =
+      (url.searchParams.get('p') ?? '') === encoded &&
+      entries.every(([key, value]) => (url.searchParams.get(key) ?? '') === value)
+    if (unchanged) return
+
     if (encoded) url.searchParams.set('p', encoded)
     else url.searchParams.delete('p')
+    for (const [key, value] of entries) {
+      if (value) url.searchParams.set(key, value)
+      else url.searchParams.delete(key)
+    }
     window.history.replaceState(null, '', url.toString())
-  }, [slug, encoded, enabled])
+  }, [slug, encoded, extrasKey])
 }

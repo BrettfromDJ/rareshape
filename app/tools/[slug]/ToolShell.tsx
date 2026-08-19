@@ -9,6 +9,7 @@ interface Loaded {
   tool: Tool
   module: RenderModule
   encoded: string | null
+  aspect: string | null
 }
 
 /**
@@ -25,7 +26,9 @@ export function ToolShell({ tool: meta }: { tool: ToolMeta }) {
 
     // The URL is read before the host mounts, so the first painted frame is
     // already the shared state rather than the defaults.
-    const encoded = new URLSearchParams(window.location.search).get('p')
+    const search = new URLSearchParams(window.location.search)
+    const encoded = search.get('p')
+    const aspect = search.get('a')
 
     const load = async (): Promise<Loaded> => {
       const loader = loaders[meta.slug]
@@ -33,7 +36,7 @@ export function ToolShell({ tool: meta }: { tool: ToolMeta }) {
       const [toolModule, renderModule] = await Promise.all([loader.tool(), loader.render()])
       const resolved = (toolModule as { tool?: Tool }).tool
       if (!resolved) throw new Error(`tools/${meta.slug}/tool.ts must export \`tool\``)
-      return { tool: resolved, module: renderModule as RenderModule, encoded }
+      return { tool: resolved, module: renderModule as RenderModule, encoded, aspect }
     }
 
     load().then(
@@ -66,5 +69,12 @@ export function ToolShell({ tool: meta }: { tool: ToolMeta }) {
     )
   }
 
-  return <ToolHost tool={loaded.tool} module={loaded.module} initialEncoded={loaded.encoded} />
+  return (
+    <ToolHost
+      tool={loaded.tool}
+      module={loaded.module}
+      initialEncoded={loaded.encoded}
+      initialAspect={loaded.aspect}
+    />
+  )
 }

@@ -38,8 +38,9 @@ export async function buildEjectBundles(): Promise<string[]> {
           `// The params the file was exported with, written into the HTML.\n` +
           `const node = document.getElementById('rs-params')\n` +
           `const params = node ? JSON.parse(node.textContent || '{}') : {}\n` +
-          `const source = document.documentElement.dataset.source\n\n` +
-          `mount({ tool, module: render, params, source })\n`,
+          `const source = document.documentElement.dataset.source\n` +
+          `const aspect = document.documentElement.dataset.aspect\n\n` +
+          `mount({ tool, module: render, params, source, aspect })\n`,
         'utf8',
       )
 

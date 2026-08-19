@@ -31,6 +31,8 @@ export interface ExportRequest<S extends ParamSchema = ParamSchema> {
   htmlSource?: string
   /** Import map override for the exported HTML — used to self-host Three.js. */
   htmlImports?: Record<string, string>
+  /** Stage shape baked into an exported HTML file. */
+  htmlAspect?: string
   signal?: AbortSignal
   onProgress?: (fraction: number) => void
 }

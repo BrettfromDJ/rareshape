@@ -28,6 +28,7 @@ export function ExportBar<S extends ParamSchema>({
   params,
   t,
   seed,
+  aspect: stageAspect,
   open,
   onOpenChange,
 }: {
@@ -36,6 +37,8 @@ export function ExportBar<S extends ParamSchema>({
   params: ParamsOf<S>
   t: number
   seed: number
+  /** What the stage is currently showing; the export follows it by default. */
+  aspect: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -49,7 +52,9 @@ export function ExportBar<S extends ParamSchema>({
   )
   const [requestedFormat, setFormat] = useState<ExportFormat>('png')
   const [scale, setScale] = useState<number>(2)
-  const [aspect, setAspect] = useState<string>(tool.meta.aspect)
+  // Exporting a different shape from the one on screen is possible but never
+  // the default: what you see is what comes out unless you say otherwise.
+  const [aspectOverride, setAspect] = useState<string | null>(null)
   const [base, setBase] = useState(1200)
   const [duration, setDuration] = useState(tool.meta.duration)
   const [fps, setFps] = useState(tool.meta.fps)
@@ -65,6 +70,7 @@ export function ExportBar<S extends ParamSchema>({
     ? requestedFormat
     : (formats[0]?.format ?? 'png')
   const option = formats.find((entry) => entry.format === format) ?? formats[0]
+  const aspect = aspectOverride ?? stageAspect
   const ratio = parseAspect(aspect)
   const width = Math.round(ratio >= 1 ? base : base * ratio)
   const height = Math.round(ratio >= 1 ? base / ratio : base)
@@ -91,6 +97,7 @@ export function ExportBar<S extends ParamSchema>({
         seed,
         background: transparent ? null : undefined,
         htmlSource: typeof window === 'undefined' ? undefined : window.location.href,
+        htmlAspect: aspect,
         signal: controller.signal,
         onProgress: setProgress,
       })
@@ -104,7 +111,21 @@ export function ExportBar<S extends ParamSchema>({
       setProgress(null)
       abort.current = null
     }
-  }, [renderModule, tool, params, format, width, height, scale, duration, fps, t, seed, transparent])
+  }, [
+    renderModule,
+    tool,
+    params,
+    format,
+    width,
+    height,
+    scale,
+    duration,
+    fps,
+    t,
+    seed,
+    transparent,
+    aspect,
+  ])
 
   const running = progress !== null
 
@@ -141,8 +162,12 @@ export function ExportBar<S extends ParamSchema>({
             <>
               <Row label="Aspect">
                 <div className="flex flex-wrap gap-1">
-                  {ASPECTS.map((entry) => (
-                    <Button key={entry} active={entry === aspect} onClick={() => setAspect(entry)}>
+                  {[...new Set([stageAspect, ...ASPECTS])].map((entry) => (
+                    <Button
+                      key={entry}
+                      active={parseAspect(entry) === ratio}
+                      onClick={() => setAspect(entry)}
+                    >
                       {entry}
                     </Button>
                   ))}
