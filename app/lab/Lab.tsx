@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import type { ParamSchema, ParamsOf, RenderModule, Tool } from '@rareshape/schema'
-import { createFrameRenderer, isMp4Supported, runExport, type ExportFormat } from '@rareshape/export'
+import {
+  createFrameRenderer,
+  isMp4Supported,
+  optimizeSvg,
+  runExport,
+  type ExportFormat,
+} from '@rareshape/export'
 import { allTools } from '@/lib/registry'
 import { loaders } from '@/registry.generated'
 
@@ -30,6 +36,8 @@ export interface LabApi {
   export(request: LabExportRequest): Promise<{ filename: string; size: number; base64: string }>
   /** Whether this browser can actually encode the locked H.264 profile. */
   mp4Supported(): Promise<boolean>
+  /** Runs the SVG optimiser, so a silent fallback to raw markup is visible. */
+  optimize(markup: string): Promise<string>
   /** Cover-crops a PNG (base64) to a box. Used for OG images and thumbnails. */
   crop(request: {
     base64: string
@@ -143,6 +151,8 @@ export function Lab() {
       },
 
       mp4Supported: () => isMp4Supported(),
+
+      optimize: (markup: string) => optimizeSvg(markup),
 
       async crop(request) {
         const image = new Image()

@@ -36,6 +36,7 @@ export interface LabSession {
   page: Page
   origin: string
   export(options: LabExportOptions): Promise<{ filename: string; size: number; bytes: Buffer }>
+  optimize(markup: string): Promise<string>
   crop(options: {
     base64: string
     width: number
@@ -82,6 +83,9 @@ export async function openLab(root = 'out', port = 4310): Promise<LabSession> {
         bytes: Buffer.from(result.base64, 'base64'),
       }
     },
+
+    optimize: (markup) =>
+      page.evaluate((input) => window.rareshapeLab!.optimize(input), markup as never),
 
     async crop(options) {
       const base64 = await page.evaluate(

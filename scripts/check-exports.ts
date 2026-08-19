@@ -153,6 +153,48 @@ async function main(): Promise<void> {
     const animates = await animatesInImgTag(lab, markup)
     record('animated svg animates inside an <img>', animates.ok, animates.detail)
 
+    // --- SVGO is actually running ------------------------------------------
+    const wasteful =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">' +
+      '<!-- a comment --><g>   <rect x="0.000000" y="0.0" width="10.00000" height="10" ' +
+      'fill="#ffffff" opacity="1"/></g><g></g></svg>'
+    const optimised = await lab.optimize(wasteful)
+    record(
+      'svg output goes through SVGO',
+      optimised.length < wasteful.length && !optimised.includes('a comment'),
+      `${wasteful.length} -> ${optimised.length} bytes`,
+    )
+
+    // --- PNG transparency ---------------------------------------------------
+    const transparent = await lab.export({
+      slug: '_harness-svg',
+      format: 'png',
+      width: 120,
+      height: 120,
+      scale: 1,
+      background: null,
+      params: { background: '#00000000' },
+    })
+    writeFileSync(join(OUT_DIR, 'transparent.png'), transparent.bytes)
+    const alpha = await lab.page.evaluate(
+      (base64: string) =>
+        new Promise<number>((resolve, reject) => {
+          const image = new Image()
+          image.onload = () => {
+            const canvas = document.createElement('canvas')
+            canvas.width = image.width
+            canvas.height = image.height
+            const ctx = canvas.getContext('2d')!
+            ctx.drawImage(image, 0, 0)
+            resolve(ctx.getImageData(0, 0, 1, 1).data[3] as number)
+          }
+          image.onerror = () => reject(new Error('could not read the png'))
+          image.src = `data:image/png;base64,${base64}`
+        }),
+      transparent.bytes.toString('base64') as never,
+    )
+    record('png transparency is real alpha', alpha === 0, `corner alpha ${alpha}`)
+
     // --- MP4 hidden, not broken, without WebCodecs -------------------------
     const withoutCodecs = await lab.page.evaluate(() => {
       const original = window.VideoEncoder

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { clamp, parseAspect } from '@rareshape/core'
 import type { RenderModule } from '@rareshape/schema'
 import { Surface } from './Surface'
@@ -76,13 +76,22 @@ export function Stage<P>({
     onSize?.({ width, height })
   }, [width, height, onSize])
 
-  const onWheel = useCallback((event: React.WheelEvent) => {
-    if (!event.ctrlKey && !event.metaKey && Math.abs(event.deltaY) < 2) return
-    event.preventDefault()
-    setView((current) => ({
-      ...current,
-      zoom: clamp(current.zoom * Math.exp(-event.deltaY / 400), 0.25, 8),
-    }))
+  // Bound natively rather than through onWheel: React registers wheel handlers
+  // passively, and a passive handler cannot preventDefault — which means the
+  // page scrolls away underneath the zoom.
+  useEffect(() => {
+    const el = boxRef.current
+    if (!el) return
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey && Math.abs(event.deltaY) < 2) return
+      event.preventDefault()
+      setView((current) => ({
+        ...current,
+        zoom: clamp(current.zoom * Math.exp(-event.deltaY / 400), 0.25, 8),
+      }))
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
   }, [])
 
   const onPointerDown = (event: React.PointerEvent) => {
@@ -106,7 +115,6 @@ export function Stage<P>({
   return (
     <div
       ref={boxRef}
-      onWheel={onWheel}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endPan}
