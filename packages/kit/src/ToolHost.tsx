@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { ParamSchema, RenderModule, Tool, ParamsOf } from '@rareshape/schema'
 import { permalink } from '@rareshape/schema'
+import { ExportBar } from './ExportBar'
 import { Rail } from './Rail'
 import { Stage } from './Stage'
 import { Button } from './primitives'
@@ -19,18 +20,16 @@ export function ToolHost<S extends ParamSchema>({
   tool,
   module: renderModule,
   initialEncoded,
-  slot,
 }: {
   tool: Tool<S>
   module: RenderModule<ParamsOf<S>> | null
   initialEncoded: string | null
-  /** Bottom-bar extras — the export bar is injected here. */
-  slot?: (context: { params: ParamsOf<S>; t: number }) => React.ReactNode
 }) {
   const { store, params } = useToolStore(tool, initialEncoded)
   const reduced = usePrefersReducedMotion()
   const [playing, setPlaying] = useState(tool.meta.animated && !reduced)
   const [copied, setCopied] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
   const { t, setT } = usePlayback(tool.meta.duration, playing && tool.meta.animated)
 
   const encoded = store.encoded()
@@ -82,6 +81,7 @@ export function ToolHost<S extends ParamSchema>({
         '0': () => store.reset(),
         c: copyLink,
         space: () => setPlaying((value) => !value),
+        e: () => setExportOpen((value) => !value),
         '[': () => cyclePreset(-1),
         ']': () => cyclePreset(1),
       }),
@@ -125,8 +125,16 @@ export function ToolHost<S extends ParamSchema>({
             </>
           )}
 
-          <div className="ml-auto flex items-center gap-3">
-            {slot?.({ params, t })}
+          <div className="ml-auto flex items-center gap-3 relative">
+            <ExportBar
+              tool={tool}
+              module={renderModule}
+              params={params}
+              t={t}
+              seed={seed}
+              open={exportOpen}
+              onOpenChange={setExportOpen}
+            />
           </div>
         </div>
 

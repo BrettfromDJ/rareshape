@@ -8,13 +8,23 @@ export const registry: ToolMeta[] = [
 ] as ToolMeta[]
 
 export const harness: ToolMeta[] = [
+  {"slug":"_harness-canvas","name":"Harness Canvas","tagline":"Canvas2d, animated, for the export pipeline.","category":"Patterns","engine":"canvas2d","outputs":["PNG","GIF","MP4","HTML"],"added":"2026-08-19","animated":true,"duration":4,"fps":60,"aspect":"16:9","keywords":["harness","fixture","test"]},
   {"slug":"_harness-svg","name":"Harness SVG","tagline":"Every param type, once, in vector.","category":"Shapes","engine":"svg","outputs":["SVG","PNG","GIF","MP4","HTML"],"added":"2026-08-19","animated":true,"duration":4,"fps":60,"aspect":"1:1","keywords":["harness","fixture","test"]},
+  {"slug":"_harness-webgl","name":"Harness WebGL","tagline":"A Three.js scene, for the WebGL export path.","category":"Shaders","engine":"webgl","outputs":["PNG","GIF","MP4","HTML"],"added":"2026-08-19","animated":true,"duration":6,"fps":60,"aspect":"1:1","keywords":["harness","fixture","test","three"]},
 ] as ToolMeta[]
 
 /** Dynamic so that no renderer — and no Three.js — reaches the index bundle. */
 export const loaders: ToolModuleLoaders = {
+  "_harness-canvas": {
+    tool: () => import('@/tools/_harness-canvas/tool'),
+    render: () => import('@/tools/_harness-canvas/render'),
+  },
   "_harness-svg": {
     tool: () => import('@/tools/_harness-svg/tool'),
     render: () => import('@/tools/_harness-svg/render'),
+  },
+  "_harness-webgl": {
+    tool: () => import('@/tools/_harness-webgl/tool'),
+    render: () => import('@/tools/_harness-webgl/render'),
   },
 }
