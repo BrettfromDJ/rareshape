@@ -70,11 +70,17 @@ export const tool = defineTool({
       when: (params) => params.grid === true,
     }),
 
-    layers: p.int({ label: 'Bands', default: 4, min: 1, max: 8, group: 'Waves' }),
+    // Two is the floor: one band anchored to the top edge and one to the
+    // bottom is what guarantees colour reaches both.
+    layers: p.int({ label: 'Bands', default: 4, min: 2, max: 8, group: 'Waves' }),
     fill: p.select({
       label: 'Fill',
       default: 'edges',
       group: 'Waves',
+      // Ribbons float and stacks leave the top open — both are deliberate
+      // looks, so randomize leaves this alone rather than handing back a
+      // composition with paper strips across it.
+      randomize: false,
       options: [
         { value: 'edges', label: 'Edges' },
         { value: 'ribbons', label: 'Ribbons' },
@@ -89,6 +95,7 @@ export const tool = defineTool({
       step: 0.005,
       group: 'Waves',
       hint: 'Paper left showing at the top and bottom. Zero fills the frame.',
+      randomize: false,
       when: (params) => params.fill === 'edges',
     }),
     thickness: p.number({

@@ -43,6 +43,7 @@ export function render(frame: Frame<Params>): SvgFrame {
 
   const palette = params.palette.length ? params.palette : ['#151515']
   const bands = Math.max(1, params.layers)
+  const step = Math.max(1, params.step)
 
   // In edge mode each band is a mass anchored to the nearest edge, so the
   // deepest one has to be painted first — otherwise the shallower bands are
@@ -114,12 +115,33 @@ export function render(frame: Frame<Params>): SvgFrame {
 
       // Snapping to whole cells is the whole point; `step` snaps to blocks of
       // them, which is what gives the coarse, plotted-on-paper staircase.
-      const step = Math.max(1, params.step)
       const snap = (value: number) => clamp(Math.round(value / rowHeight / step) * step, 0, rows)
 
-      const topRow = snap(top)
+      let topRow = snap(top)
+      let bottomRow = Math.max(topRow, snap(bottom))
+
+      if (params.fill === 'edges') {
+        // The edge a band is anchored to is the canvas edge, not a grid line:
+        // snapping it would round to the nearest multiple of `step`, which
+        // lands short of the bottom whenever the row count is not a multiple
+        // of it — a sliver of bare paper along the edge.
+        //
+        // The inner edge is still snapped, and a big amplitude can push it off
+        // the canvas entirely, so each band keeps a single row against its own
+        // edge. One row, not one step: at a coarse step that minimum would be
+        // deep enough to bury the bands behind it and flatten the composition.
+        const fromTop = seat < 0.5 || bands === 1
+        if (fromTop) {
+          topRow = 0
+          bottomRow = Math.max(bottomRow, 1)
+        } else {
+          bottomRow = rows
+          topRow = Math.min(topRow, rows - 1)
+        }
+      }
+
       tops.push(topRow)
-      bottoms.push(Math.max(topRow, snap(bottom)))
+      bottoms.push(bottomRow)
     }
 
     const path = staircase(tops, bottoms, cell, rowHeight, width)

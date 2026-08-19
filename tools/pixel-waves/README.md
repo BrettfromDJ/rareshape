@@ -25,3 +25,11 @@ an ordinary area chart.
   behind the artwork.
 - `Fill` decides how a band relates to the canvas: floating **ribbons**, masses
   anchored to the nearest **edge**, or a **stacked** area chart.
+- In edge mode the anchored edge is the canvas edge, not a grid line. Snapping
+  it would round to the nearest multiple of `Step` and land short whenever the
+  row count is not a multiple of it — a sliver of bare paper along the edge.
+  The inner edge is still snapped, and every band keeps at least one row
+  against its own edge so a large `Amplitude` cannot push it off the canvas.
+- `Fill` and `Margin` are pinned against randomize: ribbons float and margins
+  are literally paper strips, so a re-roll would hand back a composition with
+  bars across it.
