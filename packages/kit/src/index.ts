@@ -1,5 +1,6 @@
 export * from './ToolHost'
 export * from './ExportBar'
+export * from './mp4-support'
 export * from './Rail'
 export * from './Stage'
 export * from './Surface'

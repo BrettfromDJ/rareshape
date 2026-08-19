@@ -187,8 +187,10 @@ export function Lab() {
     }
 
     window.rareshapeLab = api
-    setReady(true)
+    // Readiness is only a visual cue; drivers wait on window.rareshapeLab.
+    const id = window.setTimeout(() => setReady(true), 0)
     return () => {
+      window.clearTimeout(id)
       delete window.rareshapeLab
     }
   }, [])

@@ -1,17 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { parseAspect } from '@rareshape/core'
 import type { ParamSchema, ParamsOf, RenderModule, Tool } from '@rareshape/schema'
 import {
   availableFormats,
   download,
   formatBytes,
-  isMp4Supported,
   runExport,
   type ExportFormat,
   type ExportResult,
 } from '@rareshape/export'
+import { useMp4Support } from './mp4-support'
 import { Button } from './primitives'
 
 const SCALES = [1, 2, 4] as const
@@ -41,22 +41,13 @@ export function ExportBar<S extends ParamSchema>({
 }) {
   // Presence of VideoEncoder is not enough: some Chromium builds ship
   // WebCodecs with no H.264 encoder. MP4 appears only once the probe says yes.
-  const [mp4Ok, setMp4Ok] = useState(false)
-  useEffect(() => {
-    let live = true
-    void isMp4Supported().then((supported) => {
-      if (live) setMp4Ok(supported)
-    })
-    return () => {
-      live = false
-    }
-  }, [])
+  const mp4Ok = useMp4Support()
 
   const formats = useMemo(
     () => availableFormats(tool as unknown as Tool, mp4Ok),
     [tool, mp4Ok],
   )
-  const [format, setFormat] = useState<ExportFormat>('png')
+  const [requestedFormat, setFormat] = useState<ExportFormat>('png')
   const [scale, setScale] = useState<number>(2)
   const [aspect, setAspect] = useState<string>(tool.meta.aspect)
   const [base, setBase] = useState(1200)
@@ -68,16 +59,15 @@ export function ExportBar<S extends ParamSchema>({
   const [error, setError] = useState<string | null>(null)
   const abort = useRef<AbortController | null>(null)
 
+  // Derived, not stored: the format list changes when the MP4 probe lands, and
+  // a selection that is no longer offered should fall back on the spot.
+  const format = formats.some((entry) => entry.format === requestedFormat)
+    ? requestedFormat
+    : (formats[0]?.format ?? 'png')
   const option = formats.find((entry) => entry.format === format) ?? formats[0]
   const ratio = parseAspect(aspect)
   const width = Math.round(ratio >= 1 ? base : base * ratio)
   const height = Math.round(ratio >= 1 ? base / ratio : base)
-
-  useEffect(() => {
-    if (!formats.some((entry) => entry.format === format)) {
-      setFormat(formats[0]?.format ?? 'png')
-    }
-  }, [formats, format])
 
   const start = useCallback(async () => {
     if (!renderModule) return

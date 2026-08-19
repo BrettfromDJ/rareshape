@@ -1,8 +1,6 @@
-import { filenameFor, type ExportRequest, type ExportResult } from './types'
+import type { ExportRequest, ExportResult } from './types'
 
 /** Implemented in phase 4, alongside packages/eject. */
-export async function exportHtml(_request: ExportRequest): Promise<ExportResult> {
-  throw new Error('HTML export lands with packages/eject')
+export async function exportHtml(request: ExportRequest): Promise<ExportResult> {
+  throw new Error(`HTML export for ${request.tool.meta.slug} lands with packages/eject`)
 }
-
-export { filenameFor }

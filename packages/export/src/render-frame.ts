@@ -8,7 +8,7 @@
 import { makeRng, type Frame } from '@rareshape/core'
 import { isCanvas2d, isSvg, isWebgl, type RenderModule } from '@rareshape/schema'
 
-export interface FrameRenderer<P> {
+export interface FrameRenderer {
   /** Draws `t` into the canvas and resolves once the pixels are there. */
   draw(t: number): Promise<void>
   canvas: HTMLCanvasElement
@@ -69,7 +69,7 @@ async function drawSvgToCanvas(
   ctx.drawImage(image, 0, 0, width, height)
 }
 
-export function createFrameRenderer<P>(options: FrameRendererOptions<P>): FrameRenderer<P> {
+export function createFrameRenderer<P>(options: FrameRendererOptions<P>): FrameRenderer {
   const { module: renderModule, params, width, height, scale, seed, background } = options
   const pixelWidth = Math.max(1, Math.round(width * scale))
   const pixelHeight = Math.max(1, Math.round(height * scale))
