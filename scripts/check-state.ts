@@ -200,6 +200,34 @@ async function main(): Promise<void> {
     )
     await shaped.close()
 
+    // --- the export sheet, driven the way a person drives it ----------------
+    // Every other export check calls the pipeline directly, which is exactly
+    // how a sheet clipped out of sight by an overflow container went unnoticed.
+    await page.getByTitle('Export (E)').click()
+    await page.waitForTimeout(400)
+
+    const painted = await page.evaluate(`(() => {
+      const panel = [...document.querySelectorAll('div')].find((d) =>
+        String(d.className).includes('absolute bottom-11'),
+      )
+      if (!panel) return 'missing'
+      const box = panel.getBoundingClientRect()
+      if (box.width === 0 || box.height === 0) return 'collapsed'
+      // Whatever is painted at the panel's own coordinates must be the panel.
+      const hit = document.elementFromPoint(box.x + box.width / 2, box.y + 20)
+      return panel.contains(hit) ? 'visible' : 'clipped'
+    })()`)
+    record('the export sheet is visible when opened', painted === 'visible', String(painted))
+
+    const download = page.waitForEvent('download', { timeout: 60_000 }).catch(() => null)
+    await page.getByRole('button', { name: /Export PNG/i }).click()
+    const file = await download
+    record(
+      'the export button produces a file',
+      file !== null,
+      file ? file.suggestedFilename() : 'no download arrived',
+    )
+
     record('no page errors throughout', errors.length === 0, errors[0] ?? '')
   } finally {
     await browser.close()
