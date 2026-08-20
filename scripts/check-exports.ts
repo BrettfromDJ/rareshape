@@ -194,9 +194,11 @@ async function main(): Promise<void> {
       `${Math.round(vector.size / 1024)} KB`,
     )
     record(
-      'svg export keeps its grid pattern through SVGO',
-      /<pattern/.test(vectorText) && /url\(#/.test(vectorText),
-      `${(vectorText.match(/<pattern/g) ?? []).length} pattern(s)`,
+      'svg export uses geometry a design tool can read',
+      // Patterns are the first thing tools drop on import — Figma ignores them
+      // outright — so an exported vector has to be plain shapes and strokes.
+      !/<pattern/.test(vectorText) && /stroke="#/.test(vectorText),
+      `${(vectorText.match(/stroke="#/g) ?? []).length} stroked path(s), no patterns`,
     )
 
     // --- an opaque PNG has no holes in it -----------------------------------

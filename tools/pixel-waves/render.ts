@@ -33,29 +33,34 @@ export function render(frame: Frame<Params>): SvgFrame {
 
   /* --- graph paper -------------------------------------------------------- */
 
-  // One <pattern> per tint rather than thousands of lines: a 300-column grid
-  // stays a handful of nodes in the exported file.
-  const patterns = new Map<string, string>()
-  const patternFor = (over: string): string => {
+  // The grid is real line geometry, not a <pattern> fill. Patterns are the
+  // first thing design tools drop on import — Figma ignores them outright — and
+  // a grid that survives only in a browser is not much of an export. Plain
+  // lines cost a few KB and render everywhere.
+  const gridLines = (() => {
+    if (!params.grid) return ''
+    const d: string[] = []
+    for (let column = 1; column < columns; column++) {
+      d.push(`M${n(column * cell)} 0V${n(height)}`)
+    }
+    for (let row = 1; row < rows; row++) {
+      d.push(`M0 ${n(row * rowHeight)}H${n(width)}`)
+    }
+    return d.join('')
+  })()
+
+  const gridOver = (over: string, clip?: string): string => {
+    if (!gridLines) return ''
     const tint = blendColor(params.gridBlend as BlendMode, over, params.gridColor)
-    const existing = patterns.get(tint)
-    if (existing) return existing
-    const id = `pw-g${patterns.size}`
-    patterns.set(tint, id)
-    defs +=
-      `<pattern id="${id}" width="${n(cell)}" height="${n(rowHeight)}" patternUnits="userSpaceOnUse">` +
-      `<path d="M${n(cell)} 0H0V${n(rowHeight)}" fill="none" ` +
-      `stroke="${tint}" stroke-width="${n(params.gridWeight)}"/></pattern>`
-    return id
+    return (
+      `<path d="${gridLines}" fill="none" stroke="${tint}" ` +
+      `stroke-width="${n(params.gridWeight)}"${clip ? ` clip-path="url(#${clip})"` : ''}/>`
+    )
   }
 
   // Over the paper first, so bare paper is graph paper too. Bands paint over
   // it, and each one gets its own grid afterwards.
-  if (params.grid) {
-    parts.push(
-      `<rect width="${n(width)}" height="${n(height)}" fill="url(#${patternFor(params.background)})"/>`,
-    )
-  }
+  if (params.grid) parts.push(gridOver(params.background))
 
   /* --- bands -------------------------------------------------------------- */
 
@@ -168,13 +173,11 @@ export function render(frame: Frame<Params>): SvgFrame {
       if (params.grid) {
         // The grid over this band, in a colour already blended with it. Clipped
         // to the band, drawn in band order, so overlaps resolve the same way
-        // the bands themselves do.
+        // the bands themselves do. A renderer that ignored the clip would show
+        // an untinted grid rather than none — the right way to fail.
         const clip = `pw-c${band}`
         defs += `<clipPath id="${clip}"><path d="${path}"/></clipPath>`
-        overlays.push(
-          `<rect width="${n(width)}" height="${n(height)}" ` +
-            `fill="url(#${patternFor(colour)})" clip-path="url(#${clip})"/>`,
-        )
+        overlays.push(gridOver(colour, clip))
       }
     }
   }
