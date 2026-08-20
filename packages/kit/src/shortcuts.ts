@@ -45,5 +45,4 @@ export const SHORTCUT_HINTS: Array<[string, string]> = [
   ['E', 'Export'],
   ['C', 'Copy link'],
   ['0', 'Reset'],
-  ['[ ]', 'Presets'],
 ]

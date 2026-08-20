@@ -32,11 +32,6 @@ export const tool = defineTool({
 
     seed: p.seed({ label: 'Seed', default: 3, group: 'Ink' }),
   },
-
-  presets: [
-    { name: 'Sparse', params: { count: 60, size: 0.3, twist: 0.4 } },
-    { name: 'Wire', params: { wireframe: true, count: 120, size: 0.24 } },
-  ],
 })
 
 export type Params = ToolParams<typeof tool>

@@ -16,7 +16,7 @@ pnpm dev            # http://localhost:3000
 ## The bet
 
 **A tool is a param schema plus a deterministic render function.** Everything
-else — controls, URL state, presets, randomize, undo, export, permalinks, OG
+else — controls, URL state, randomize, undo, export, permalinks, OG
 images, index previews, the standalone HTML build — is generated from that
 schema by shared machinery.
 
@@ -54,7 +54,7 @@ The checks behind `pnpm check`, each runnable on its own:
 
 | Script | What it proves |
 |---|---|
-| `scripts/check-state.ts` | Every param type has a control, changes write to the URL, a copied URL hard-reloads identically, undo/redo/randomize/reset/presets work |
+| `scripts/check-state.ts` | Every param type has a control, changes write to the URL, a copied URL hard-reloads identically, undo/redo/randomize/reset work, and colors can be locked against a randomize |
 | `scripts/check-exports.ts` | PNG at 1×/2×/4×, byte-identical repeat exports, a 10s 60fps MP4 with 600 frames, no seam at the loop point, animated SVG that animates inside an `img` |
 | `scripts/check-eject.ts` | Every tool ejects, and each file opens over `file://` with the network off |
 | `scripts/check-a11y.ts` | axe-core clean on the index, info and tool pages, with visible focus |

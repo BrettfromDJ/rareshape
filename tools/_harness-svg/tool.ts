@@ -95,12 +95,6 @@ export const tool = defineTool({
     }),
     seed: p.seed({ label: 'Seed', default: 1, group: 'Label' }),
   },
-
-  presets: [
-    { name: 'Dense', params: { columns: 24, rows: 24, scale: [0.1, 0.7], amount: 0.6 } },
-    { name: 'Outline', params: { stroke: true, weight: 1, shape: 'square', scale: [0.5, 0.95] } },
-    { name: 'Still', params: { amount: 0, columns: 5, rows: 5, shape: 'triangle' } },
-  ],
 })
 
 export type Params = ToolParams<typeof tool>

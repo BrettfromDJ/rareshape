@@ -174,18 +174,6 @@ export function mount<S extends ParamSchema>(options: MountOptions<S>): void {
   action('Redo', () => store.redo())
   action('Reset', () => store.reset())
 
-  if (tool.presets.length) {
-    const presets = document.createElement('div')
-    presets.className = 'rs-actions'
-    for (const preset of tool.presets) {
-      const button = document.createElement('button')
-      button.type = 'button'
-      button.textContent = preset.name
-      button.onclick = () => store.loadPreset(preset.name)
-      presets.append(button)
-    }
-    rail.append(presets)
-  }
 
   for (const [name, def] of Object.entries(tool.params)) {
     const groupName = def.group ?? 'Parameters'

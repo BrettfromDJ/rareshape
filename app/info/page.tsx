@@ -36,7 +36,7 @@ export default function InfoPage() {
         <Section title="How a tool works">
           <p>
             A tool is a param schema and a deterministic render function. Everything else — the
-            controls, the URL state, presets, randomize, undo, export, permalinks, the preview on the
+            controls, the URL state, randomize, undo, export, permalinks, the preview on the
             index — is generated from that schema by shared machinery. Adding a tool means writing a
             render function and a param list.
           </p>
@@ -72,7 +72,6 @@ export default function InfoPage() {
               ['E', 'Export'],
               ['C', 'Copy link'],
               ['0', 'Reset'],
-              ['[ / ]', 'Previous / next preset'],
               ['⌘K', 'Search the index'],
             ]}
           />

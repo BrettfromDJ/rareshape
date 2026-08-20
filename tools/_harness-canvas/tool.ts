@@ -39,11 +39,6 @@ export const tool = defineTool({
 
     seed: p.seed({ label: 'Seed', default: 7, group: 'Ink' }),
   },
-
-  presets: [
-    { name: 'Fine', params: { lines: 120, weight: 0.5, amplitude: 0.1 } },
-    { name: 'Heavy', params: { lines: 14, weight: 6, amplitude: 0.3, frequency: 1.2 } },
-  ],
 })
 
 export type Params = ToolParams<typeof tool>

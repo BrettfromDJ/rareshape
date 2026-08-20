@@ -3,11 +3,6 @@ import type { ParamSchema, ParamsOf } from './params'
 import { cloneValue } from './params'
 import { urlKeys } from './url'
 
-export interface Preset<S extends ParamSchema = ParamSchema> {
-  name: string
-  params: Partial<ParamsOf<S>>
-}
-
 export interface ToolInput<S extends ParamSchema> {
   slug: string
   name: string
@@ -24,13 +19,11 @@ export interface ToolInput<S extends ParamSchema> {
   aspect?: string
   keywords?: readonly string[]
   params: S
-  presets?: Preset<S>[]
 }
 
 export interface Tool<S extends ParamSchema = ParamSchema> {
   meta: ToolMeta
   params: S
-  presets: Preset<S>[]
   defaults: ParamsOf<S>
   /** name -> compact URL key. */
   keys: Record<string, string>
@@ -60,7 +53,6 @@ export function defineTool<const S extends ParamSchema>(input: ToolInput<S>): To
   return {
     meta,
     params: input.params,
-    presets: input.presets ?? [],
     defaults,
     keys: urlKeys(input.params),
   }

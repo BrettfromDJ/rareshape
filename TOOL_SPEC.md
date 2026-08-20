@@ -4,7 +4,7 @@ The authority on how an individual tool is written. `BUILD_BRIEF.md` covers the
 platform around it.
 
 A tool is **a param schema plus a deterministic render function**. Everything
-else — controls, URL state, presets, randomize, undo, export, permalinks, OG
+else — controls, URL state, randomize, undo, export, permalinks, OG
 images, previews, the standalone HTML build — is generated from that schema by
 shared machinery. If you find yourself writing interface code inside a tool, the
 tool is wrong.
@@ -15,7 +15,7 @@ tool is wrong.
 
 ```
 /tools/<slug>/
-  tool.ts       Metadata + param schema + presets. Pure data. No DOM, no React.
+  tool.ts       Metadata + param schema. Pure data. No DOM, no React.
   render.ts     The render function. Pure. No DOM lookups, no React, no imports
                 from the kit.
   README.md     Optional. Notes on the maths.
@@ -114,13 +114,12 @@ export const tool = defineTool({
     columns: p.int({ label: 'Columns', default: 12, min: 1, max: 64 }),
     ink: p.color({ label: 'Ink', default: '#F0F0F0' }),
   },
-  presets: [{ name: 'Dense', params: { columns: 48 } }],
 })
 
 export type Params = ToolParams<typeof tool>
 ```
 
-`defineTool` returns `{ meta, params, presets, defaults }` and infers the params
+`defineTool` returns `{ meta, params, defaults }` and infers the params
 type. Nothing else in the repo constructs a tool.
 
 ---
@@ -223,8 +222,8 @@ dimension. A 4× PNG is the same drawing, not a bigger one.
 - The stage aspect rides alongside them under `?a=`, omitted when it is the
   tool's own.
 - Copying the URL and hard-reloading it reproduces the state exactly.
-- Undo/redo covers every param change, preset load, randomize and reset.
-- Presets are declared in `tool.ts`; user state is never persisted server-side.
+- Undo/redo covers every param change, randomize and reset.
+- User state is never persisted server-side; the URL is the only store.
   Recent state and stage preferences live in `localStorage`.
 
 Shortcuts, global to every tool:
@@ -238,7 +237,6 @@ Shortcuts, global to every tool:
 | `E` | Export sheet |
 | `C` | Copy link |
 | `0` | Reset to defaults |
-| `[` / `]` | Previous / next preset |
 | `⌘K` | Search (index) |
 
 ---

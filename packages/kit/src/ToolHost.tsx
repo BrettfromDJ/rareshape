@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ParamSchema, RenderModule, Tool, ParamsOf } from '@rareshape/schema'
 import { permalink } from '@rareshape/schema'
 import { ExportBar } from './ExportBar'
@@ -62,23 +62,6 @@ export function ToolHost<S extends ParamSchema>({
     )
   }, [encoded, tool.meta.slug])
 
-  // Which preset `[` and `]` last landed on, so the pair walks the list.
-  const lastPreset = useRef<string | null>(null)
-
-  const cyclePreset = useCallback(
-    (direction: 1 | -1) => {
-      const names = tool.presets.map((preset) => preset.name)
-      if (names.length === 0) return
-      const index = names.indexOf(lastPreset.current ?? '')
-      const next = (index + direction + names.length) % names.length
-      const name = names[next]
-      if (!name) return
-      lastPreset.current = name
-      store.loadPreset(name)
-    },
-    [store, tool.presets],
-  )
-
   useShortcuts(
     useMemo(
       () => ({
@@ -90,10 +73,8 @@ export function ToolHost<S extends ParamSchema>({
         c: copyLink,
         space: () => setPlaying((value) => !value),
         e: () => setExportOpen((value) => !value),
-        '[': () => cyclePreset(-1),
-        ']': () => cyclePreset(1),
       }),
-      [store, copyLink, cyclePreset, colorsLocked],
+      [store, copyLink, colorsLocked],
     ),
   )
 

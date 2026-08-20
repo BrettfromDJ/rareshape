@@ -2,7 +2,7 @@
  * The param store. Framework-free on purpose: the React kit and the vanilla
  * eject shell both drive this, which is what stops the two from drifting.
  *
- * Holds params, undo/redo history, presets, randomize and reset, and knows how
+ * Holds params, undo/redo history, randomize and reset, and knows how
  * to encode itself for the URL.
  */
 import {
@@ -16,7 +16,7 @@ import {
 } from '@rareshape/core'
 import type { ParamSchema, ParamsOf } from './params'
 import { cloneValue, coerce, randomValue, sameValue } from './params'
-import type { Preset, Tool } from './define'
+import type { Tool } from './define'
 import { decodeParams, encodeParams } from './url'
 
 export interface StoreOptions {
@@ -56,8 +56,6 @@ export interface Store<S extends ParamSchema = ParamSchema> {
   /** Re-rolls only the color and palette params, leaving the geometry alone. */
   randomizeColors(): void
   reset(): void
-  loadPreset(name: string): void
-  presets(): Preset<S>[]
   undo(): boolean
   redo(): boolean
   canUndo(): boolean
@@ -225,21 +223,6 @@ export function createStore<S extends ParamSchema>(
         null,
       )
     },
-
-    loadPreset(name) {
-      const preset = tool.presets.find((entry) => entry.name === name)
-      if (!preset) return
-      const next = {
-        ...(tool.defaults as Record<string, unknown>),
-      } as Record<string, unknown>
-      for (const [key, value] of Object.entries(preset.params)) {
-        const def = tool.params[key]
-        if (def) next[key] = coerce(def, value)
-      }
-      commit(next as ParamsOf<S>, true, null)
-    },
-
-    presets: () => tool.presets,
 
     undo() {
       const previous = past.pop()

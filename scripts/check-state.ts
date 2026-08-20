@@ -180,7 +180,7 @@ async function main(): Promise<void> {
       'encoded state matches',
     )
 
-    // --- randomize, reset, presets -----------------------------------------
+    // --- randomize, reset ---------------------------------------------------
     await page.keyboard.press('r')
     await page.waitForTimeout(200)
     const randomised = await encoded(page)
@@ -190,9 +190,9 @@ async function main(): Promise<void> {
     await page.waitForTimeout(200)
     record('reset returns to defaults', (await encoded(page)) === '')
 
-    await page.keyboard.press(']')
+    // Back on a non-default state, which the checks below want.
+    await page.keyboard.press('r')
     await page.waitForTimeout(200)
-    record('presets load from the keyboard', (await encoded(page)).length > 0)
 
     // --- stage aspect ------------------------------------------------------
     // Not a param, but part of what a link should carry.

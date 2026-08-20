@@ -191,54 +191,6 @@ export const tool = defineTool({
 
     seed: p.seed({ label: 'Seed', default: 4, group: 'Color' }),
   },
-
-  presets: [
-    {
-      name: 'Rough',
-      params: { columns: 120, layers: 4, thickness: 0.12, roughness: 0.6, amplitude: 0.13 },
-    },
-    {
-      name: 'Fine',
-      params: { columns: 240, layers: 6, thickness: 0.07, amplitude: 0.1, gridWeight: 0.25 },
-    },
-    {
-      name: 'Blocks',
-      params: {
-        columns: 32,
-        step: 1,
-        layers: 3,
-        thickness: 0.26,
-        amplitude: 0.2,
-        roughness: 0.1,
-        dither: 0,
-        grid: false,
-        fill: 'ribbons',
-      },
-    },
-    {
-      name: 'Fade',
-      params: {
-        columns: 140,
-        step: 1,
-        tread: 6,
-        layers: 4,
-        thickness: 0.14,
-        amplitude: 0.16,
-        roughness: 0.35,
-        dither: 10,
-        gridWeight: 0.25,
-      },
-    },
-    {
-      name: 'Mono',
-      params: {
-        background: '#ffffff',
-        palette: ['#111111', '#9a9a9a', '#dcdcdc'],
-        gridColor: '#e2e2e2',
-        layers: 5,
-      },
-    },
-  ],
 })
 
 export type Params = ToolParams<typeof tool>

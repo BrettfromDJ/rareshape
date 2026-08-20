@@ -105,19 +105,6 @@ export function Rail<S extends ParamSchema>({
         <AspectBar value={aspect} fallback={tool.meta.aspect} onChange={onAspectChange} />
       </div>
 
-      {tool.presets.length > 0 && (
-        <div className="px-4 py-3 rule border-b">
-          <div className="rs-label mb-2">Presets</div>
-          <div className="flex flex-wrap gap-1">
-            {tool.presets.map((preset) => (
-              <Button key={preset.name} onClick={() => store.loadPreset(preset.name)}>
-                {preset.name}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {groups.map(([group, names]) => {
         const visible = names.filter((name) => isVisible(tool.params[name]!, record))
         if (visible.length === 0) return null

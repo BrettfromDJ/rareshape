@@ -86,8 +86,6 @@ export const tool = defineTool({
     background: p.color({ label: 'Background', default: '#0a0a0a', group: 'Color' }),
     seed: p.seed({ label: 'Seed', default: 1, group: 'Color' }),
   },
-
-  presets: [{ name: 'Dense', params: { count: 48, scale: 0.35 } }],
 })
 
 export type Params = ToolParams<typeof tool>
