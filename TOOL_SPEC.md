@@ -69,6 +69,11 @@ Shared options on every param: `label`, `default`, `group`, `hint`, `key`
 (explicit short URL key), `randomize: false` to pin it, and
 `when: (params) => boolean` to hide it conditionally.
 
+`number` and `int` also take `randomRange: [min, max]` — the slice of the range
+a random roll stays inside. The full range remains the person's to use; this is
+only the tool saying which part of it produces results worth landing on. A
+slider whose extremes collapse the composition should have one.
+
 `seed` is special in one way: **randomize always changes it**, and every other
 param honours `randomize`.
 

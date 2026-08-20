@@ -25,6 +25,7 @@ export const tool = defineTool({
       default: 96,
       min: 8,
       max: 320,
+      randomRange: [28, 220],
       group: 'Grid',
       hint: 'Cells across. Rows follow, so cells stay square.',
     }),
@@ -33,6 +34,7 @@ export const tool = defineTool({
       default: 2,
       min: 1,
       max: 10,
+      randomRange: [1, 5],
       group: 'Grid',
       hint: 'Cells per vertical step. Higher is blockier.',
     }),
@@ -72,7 +74,14 @@ export const tool = defineTool({
 
     // Two is the floor: one band anchored to the top edge and one to the
     // bottom is what guarantees colour reaches both.
-    layers: p.int({ label: 'Bands', default: 4, min: 2, max: 8, group: 'Waves' }),
+    layers: p.int({
+      label: 'Bands',
+      default: 4,
+      min: 2,
+      max: 8,
+      randomRange: [3, 6],
+      group: 'Waves',
+    }),
     fill: p.select({
       label: 'Fill',
       default: 'edges',
@@ -93,6 +102,8 @@ export const tool = defineTool({
       min: 0.01,
       max: 0.6,
       step: 0.005,
+      // Past about a fifth of the height a single band swallows the frame.
+      randomRange: [0.05, 0.22],
       group: 'Waves',
     }),
     spread: p.number({
@@ -101,6 +112,8 @@ export const tool = defineTool({
       min: 0,
       max: 1,
       step: 0.01,
+      // Below this the bands pile up and hide each other.
+      randomRange: [0.4, 1],
       group: 'Waves',
       hint: 'How far the bands sit apart.',
     }),
@@ -110,6 +123,7 @@ export const tool = defineTool({
       min: 0,
       max: 0.5,
       step: 0.005,
+      randomRange: [0.05, 0.32],
       group: 'Waves',
     }),
     frequency: p.number({
@@ -118,6 +132,7 @@ export const tool = defineTool({
       min: 0.2,
       max: 8,
       step: 0.1,
+      randomRange: [0.6, 4.5],
       group: 'Waves',
     }),
     roughness: p.number({
@@ -134,6 +149,7 @@ export const tool = defineTool({
       default: 1,
       min: -3,
       max: 3,
+      randomRange: [-2, 2],
       group: 'Waves',
       hint: 'Whole turns per loop, so the animation closes.',
     }),

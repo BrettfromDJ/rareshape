@@ -304,3 +304,82 @@ export function blendColor(mode: BlendMode, base: string, blend: string): string
     false,
   )
 }
+
+/**
+ * How far apart two colours look, 0..1. Redmean-weighted RGB: cheap, and much
+ * closer to the eye than plain RGB distance, which rates greens and blues as
+ * far more different than they read.
+ */
+export function colorDistance(a: string, b: string): number {
+  const x = parseColor(a)
+  const y = parseColor(b)
+  const rMean = (x.r + y.r) / 2
+  const dr = x.r - y.r
+  const dg = x.g - y.g
+  const db = x.b - y.b
+  const weighted =
+    (2 + rMean / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rMean) / 256) * db * db
+  return Math.min(1, Math.sqrt(weighted) / 765)
+}
+
+/** Below this, two colours read as the same colour in flat artwork. */
+export const SAME_COLOUR = 0.22
+
+/**
+ * A palette whose members are all visibly different from each other, and from
+ * anything in `avoid` — the page colour, usually.
+ *
+ * A harmony alone does not guarantee this: a scheme can legitimately produce
+ * two neighbouring values, and flat bands in those two colours read as one
+ * block. Colours that land too close are pushed apart in value first, then in
+ * hue, rather than redrawn, so the scheme survives.
+ */
+export function distinctPalette(
+  rng: Rng,
+  count: number,
+  avoid: readonly string[] = [],
+  harmony?: Harmony,
+): string[] {
+  // Distance alone is not enough: two pale colours, or two dark ones, can sit
+  // far apart in hue and still read as one field in flat artwork. What carries
+  // flat shapes is a tonal ladder, so the palette is spread across lightness
+  // and only then separated further where members still clash.
+  const groundLuminance = avoid.length ? luminance(avoid[0] as string) : 0.5
+  const [floor, ceiling] = groundLuminance > 0.5 ? [0.1, 0.72] : [0.3, 0.95]
+
+  const accepted: string[] = []
+  const clashes = (colour: string) =>
+    [...avoid, ...accepted].some((other) => colorDistance(colour, other) < SAME_COLOUR)
+
+  const ladder = harmonyPalette(rng, count, harmony)
+    .map((colour, i) => {
+      if (count === 1) return colour
+      // Even rungs, lightly jittered, then shuffled so the ladder does not
+      // always run dark to light in band order.
+      const target = floor + (i / (count - 1)) * (ceiling - floor) + rng.float(-0.05, 0.05)
+      const hsv = rgbToHsv(parseColor(colour))
+      return toHex(hsvToRgb({ ...hsv, v: clamp(target, 0.04, 1) }), false)
+    })
+
+  for (const candidate of rng.shuffle(ladder)) {
+    let colour = candidate
+    for (let attempt = 0; attempt < 14 && clashes(colour); attempt++) {
+      const hsv = rgbToHsv(parseColor(colour))
+      const push = 0.16 + attempt * 0.05
+      colour = toHex(
+        hsvToRgb({
+          h: hsv.h + (attempt >= 6 ? (attempt - 5) * 37 : 0),
+          s: clamp(hsv.s + (attempt % 3 === 2 ? 0.15 : 0), 0, 1),
+          // Alternate light and dark so a run of clashes fans out rather than
+          // marching in one direction and pinning at black or white.
+          v: clamp(hsv.v + (attempt % 2 === 0 ? push : -push), 0.05, 1),
+          a: 1,
+        }),
+        false,
+      )
+    }
+    accepted.push(colour)
+  }
+
+  return accepted
+}

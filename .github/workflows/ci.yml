@@ -58,6 +58,9 @@ jobs:
       - name: Tool state — URL round-trip, undo, presets
         run: pnpm exec tsx scripts/check-state.ts
 
+      - name: Randomize quality
+        run: pnpm exec tsx scripts/check-randomize.ts
+
       - name: Export pipeline
         run: pnpm exec tsx scripts/check-exports.ts
 

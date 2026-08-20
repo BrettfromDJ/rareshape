@@ -47,6 +47,8 @@ export interface NumberDef extends Common<number> {
   max: number
   step?: number
   unit?: string
+  /** Where a random roll stays. The full range is still the person's to use. */
+  randomRange?: [number, number]
 }
 export interface IntDef extends Common<number> {
   type: 'int'
@@ -54,6 +56,7 @@ export interface IntDef extends Common<number> {
   max: number
   step?: number
   unit?: string
+  randomRange?: [number, number]
 }
 export interface RangeDef extends Common<Span> {
   type: 'range'
@@ -236,10 +239,14 @@ export function coerce(def: ParamDef, value: unknown): unknown {
 
 export function randomValue(def: ParamDef, rng: Rng): unknown {
   switch (def.type) {
-    case 'number':
-      return coerce(def, rng.float(def.min, def.max))
-    case 'int':
-      return coerce(def, rng.int(def.min, def.max))
+    case 'number': {
+      const [lo, hi] = def.randomRange ?? [def.min, def.max]
+      return coerce(def, rng.float(lo, hi))
+    }
+    case 'int': {
+      const [lo, hi] = def.randomRange ?? [def.min, def.max]
+      return coerce(def, rng.int(Math.ceil(lo), Math.floor(hi)))
+    }
     case 'angle':
       return coerce(def, rng.float(0, 360))
     case 'seed':

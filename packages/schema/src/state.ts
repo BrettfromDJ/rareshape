@@ -5,7 +5,15 @@
  * Holds params, undo/redo history, presets, randomize and reset, and knows how
  * to encode itself for the URL.
  */
-import { groundColor, harmonyPalette, lineColor, makeRng, rgbToHsv, parseColor } from '@rareshape/core'
+import {
+  distinctPalette,
+  groundColor,
+  lineColor,
+  makeRng,
+  parseColor,
+  rgbToHsv,
+  type Rng,
+} from '@rareshape/core'
 import type { ParamSchema, ParamsOf } from './params'
 import { cloneValue, coerce, randomValue, sameValue } from './params'
 import type { Preset, Tool } from './define'
@@ -57,6 +65,59 @@ export interface Store<S extends ParamSchema = ParamSchema> {
   encoded(): string
   isDefault(): boolean
   subscribe(listener: (params: ParamsOf<S>) => void): Unsubscribe
+}
+
+/**
+ * Rolls every colour in a schema as one scheme: a ground, a palette whose
+ * members are all visibly different from each other and from that ground, and
+ * hairlines that stay quiet against it.
+ *
+ * Both randomize buttons go through here. Rolling each colour independently —
+ * which is what the main button used to do — regularly produced two bands a
+ * few percent apart, and flat artwork in two such colours reads as one block.
+ */
+function rollColours(
+  schema: ParamSchema,
+  params: Record<string, unknown>,
+  rng: Rng,
+): Record<string, unknown> {
+  const colourParams = Object.entries(schema).filter(
+    ([, def]) => (def.type === 'color' || def.type === 'palette') && def.randomize !== false,
+  )
+  if (colourParams.length === 0) return {}
+
+  const next: Record<string, unknown> = {}
+
+  // The ground first: everything else has to stay clear of it.
+  const seedHue = rng.float(0, 360)
+  let ground: string | null = null
+  for (const [name, def] of colourParams) {
+    if (def.type === 'color' && def.role === 'ground') {
+      ground = groundColor(rng, seedHue)
+      next[name] = ground
+    }
+  }
+
+  const avoid = ground ? [ground] : []
+  // One scheme for the whole tool, so separate colour params relate to each
+  // other instead of each being its own accident.
+  const scheme = distinctPalette(rng, 6, avoid)
+  const hue = rgbToHsv(parseColor(scheme[0] as string)).h
+
+  let inkIndex = 0
+  for (const [name, def] of colourParams) {
+    if (def.type === 'palette') {
+      const current = (params[name] as string[] | undefined)?.length
+      const count = Math.max(def.min ?? 2, Math.min(def.max ?? 5, current ?? 4))
+      next[name] = distinctPalette(rng, count, avoid)
+    } else if (def.type === 'color' && def.role === 'line') {
+      next[name] = lineColor(rng, hue, ground ?? '#ffffff')
+    } else if (def.type === 'color' && def.role !== 'ground') {
+      next[name] = scheme[inkIndex++ % scheme.length] as string
+    }
+  }
+
+  return next
 }
 
 export function createStore<S extends ParamSchema>(
@@ -138,45 +199,18 @@ export function createStore<S extends ParamSchema>(
       for (const [name, def] of Object.entries(tool.params)) {
         // `seed` always moves; everything else honours `randomize: false`.
         if (def.type !== 'seed' && def.randomize === false) continue
+        // Colours are rolled together below, as one scheme.
+        if (def.type === 'color' || def.type === 'palette') continue
         next[name] = randomValue(def, rng)
       }
+      Object.assign(next, rollColours(tool.params, next, rng))
       commit(next as ParamsOf<S>, true, null)
     },
 
     randomizeColours() {
-      const colourNames = Object.entries(tool.params).filter(
-        ([, def]) => (def.type === 'color' || def.type === 'palette') && def.randomize !== false,
-      )
-      if (colourNames.length === 0) return
-
-      const rng = makeRng(entropy())
-
-      const scheme = harmonyPalette(rng, 6)
-      const hue = rgbToHsv(parseColor(scheme[0] as string)).h
-      const next = { ...params } as Record<string, unknown>
-
-      // Grounds first: a line colour is only quiet relative to its ground.
-      let ground: string | null = null
-      for (const [name, def] of colourNames) {
-        if (def.type === 'color' && def.role === 'ground') {
-          ground = groundColor(rng, hue)
-          next[name] = ground
-        }
-      }
-
-      let inkIndex = 0
-      for (const [name, def] of colourNames) {
-        if (def.type === 'palette') {
-          const length = (params as Record<string, string[]>)[name]?.length ?? 3
-          next[name] = harmonyPalette(rng, Math.max(1, length))
-        } else if (def.type === 'color' && def.role === 'line') {
-          next[name] = lineColor(rng, hue, ground ?? '#ffffff')
-        } else if (def.type === 'color' && def.role !== 'ground') {
-          next[name] = scheme[inkIndex++ % scheme.length] as string
-        }
-      }
-
-      commit(next as ParamsOf<S>, true, null)
+      const scheme = rollColours(tool.params, params as Record<string, unknown>, makeRng(entropy()))
+      if (Object.keys(scheme).length === 0) return
+      commit({ ...params, ...scheme } as ParamsOf<S>, true, null)
     },
 
     reset() {
