@@ -72,6 +72,12 @@ Shared options on every param: `label`, `default`, `group`, `hint`, `key`
 `seed` is special in one way: **randomize always changes it**, and every other
 param honours `randomize`.
 
+Randomize itself draws from real entropy, not from the current state. Rendering
+is what has to be deterministic; the button that picks the params does not, and
+deriving the roll from the state on screen made every session replay the same
+chain of results. The state it lands on is still captured in the URL, so any
+result remains reproducible and shareable.
+
 `color` takes a `role` — `ink` (default), `ground` or `line`. Randomize-colours
 (⇧R) generates one harmonious scheme and places it by role, so grounds stay
 near-neutral and hairlines stay quiet against their ground. A tool that skips

@@ -5,7 +5,7 @@
  * Holds params, undo/redo history, presets, randomize and reset, and knows how
  * to encode itself for the URL.
  */
-import { groundColor, harmonyPalette, hashString, lineColor, makeRng, rgbToHsv, parseColor } from '@rareshape/core'
+import { groundColor, harmonyPalette, lineColor, makeRng, rgbToHsv, parseColor } from '@rareshape/core'
 import type { ParamSchema, ParamsOf } from './params'
 import { cloneValue, coerce, randomValue, sameValue } from './params'
 import type { Preset, Tool } from './define'
@@ -21,6 +21,22 @@ export interface StoreOptions {
 }
 
 export type Unsubscribe = () => void
+
+/**
+ * A fresh, unpredictable number for each press of randomize.
+ *
+ * Determinism belongs to *rendering* — the same params must always produce the
+ * same pixels — not to the button that picks the params. Deriving the roll from
+ * the current state made every session replay the identical chain of results.
+ * The state that comes out is still captured in the URL, so any result stays
+ * reproducible and shareable.
+ */
+function entropy(): number {
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    return crypto.getRandomValues(new Uint32Array(1))[0] as number
+  }
+  return Math.floor(Math.random() * 0xffffffff)
+}
 
 export interface Store<S extends ParamSchema = ParamSchema> {
   get(): ParamsOf<S>
@@ -117,11 +133,7 @@ export function createStore<S extends ParamSchema>(
     },
 
     randomize() {
-      // Seed the randomiser from the current seed param so a randomize is
-      // itself reproducible, then let it walk forward.
-      const seedName = Object.keys(tool.params).find((k) => tool.params[k]?.type === 'seed')
-      const currentSeed = seedName ? Number((params as Record<string, unknown>)[seedName]) : 0
-      const rng = makeRng((currentSeed || 1) * 2654435761)
+      const rng = makeRng(entropy())
       const next = { ...params } as Record<string, unknown>
       for (const [name, def] of Object.entries(tool.params)) {
         // `seed` always moves; everything else honours `randomize: false`.
@@ -137,11 +149,7 @@ export function createStore<S extends ParamSchema>(
       )
       if (colourNames.length === 0) return
 
-      // Seeded from the colours currently on screen, so pressing the button
-      // again always moves somewhere new while the state stays reproducible
-      // from the URL alone.
-      const current = colourNames.map(([name]) => JSON.stringify((params as Record<string, unknown>)[name])).join('|')
-      const rng = makeRng(hashString(current) ^ 0x9e37)
+      const rng = makeRng(entropy())
 
       const scheme = harmonyPalette(rng, 6)
       const hue = rgbToHsv(parseColor(scheme[0] as string)).h

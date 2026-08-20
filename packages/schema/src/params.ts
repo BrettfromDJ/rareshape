@@ -256,7 +256,9 @@ export function randomValue(def: ParamDef, rng: Rng): unknown {
     case 'color':
       return randomHex(rng, def.alpha === true)
     case 'palette': {
-      const count = def.default.length || rng.int(def.min ?? 2, def.max ?? 5)
+      // Vary the count as well as the colours: a palette that is always the
+      // same size is half a randomize.
+      const count = rng.int(def.min ?? 2, Math.min(def.max ?? 5, 6))
       return Array.from({ length: count }, () => randomHex(rng, false))
     }
     case 'point':
