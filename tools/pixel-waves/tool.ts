@@ -172,7 +172,7 @@ export const tool = defineTool({
 
   presets: [
     {
-      name: 'Volatility',
+      name: 'Rough',
       params: { columns: 120, layers: 4, thickness: 0.12, roughness: 0.6, amplitude: 0.13 },
     },
     {
