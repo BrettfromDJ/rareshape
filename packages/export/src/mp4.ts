@@ -102,7 +102,7 @@ export async function exportMp4(request: ExportRequest): Promise<ExportResult> {
     scale,
     seed,
     // Video has no alpha channel; painting the ground avoids black fringing.
-    background: request.background ?? '#0a0a0a',
+    background: request.background === null ? '#0a0a0a' : request.background,
   })
 
   const chosen = await pickConfig(

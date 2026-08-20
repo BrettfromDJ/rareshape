@@ -18,7 +18,12 @@ export interface ExportRequest<S extends ParamSchema = ParamSchema> {
   fps?: number
   /** Static formats sample here. Animated formats step from 0. */
   t?: number
-  /** Paint this behind the frame. Omit for true transparency. */
+  /**
+   * What sits behind the frame:
+   *   undefined — the tool's own background, which is what "opaque" means
+   *   null      — nothing: a real alpha channel
+   *   a colour  — that colour, whatever the tool wanted
+   */
   background?: string | null
   seed: number
   /** Overrides the computed bitrate. Used by the preview builder's budget. */

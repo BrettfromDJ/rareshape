@@ -50,7 +50,8 @@ export async function buildPreviews(only?: string[]): Promise<void> {
         height: POSTER.height,
         scale: 1,
         t: 0,
-        background: '#0a0a0a',
+        // No background override: the poster shows the tool's own ground,
+        // the same as an export a person would take.
       })
       writeFileSync(join(dir, 'poster.png'), poster.bytes)
 
@@ -109,7 +110,6 @@ async function encodeWithinBudget(
       duration: PREVIEW.duration,
       fps: PREVIEW.fps,
       bitrate,
-      background: '#0a0a0a',
       allowFallbackCodec,
     })
     last = result.bytes

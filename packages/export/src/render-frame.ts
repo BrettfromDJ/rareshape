@@ -22,6 +22,7 @@ export interface FrameRendererOptions<P> {
   height: number
   scale: number
   seed: number
+  /** undefined: the tool's own. null: transparent. A colour: that colour. */
   background?: string | null
 }
 
@@ -124,14 +125,19 @@ export function createFrameRenderer<P>(options: FrameRendererOptions<P>): FrameR
       canvas,
       async draw(t) {
         const out = renderModule.render(frameFor(t))
+        // An explicit null means transparent. Anything else falls back to the
+        // background the tool itself asked for — dropping that was turning
+        // "opaque" exports into transparent ones with the paper missing.
+        const ground = background === null ? null : (background ?? out.background ?? null)
+
         ctx.setTransform(1, 0, 0, 1, 0, 0)
         ctx.clearRect(0, 0, pixelWidth, pixelHeight)
-        if (background) {
-          ctx.fillStyle = background
+        if (ground) {
+          ctx.fillStyle = ground
           ctx.fillRect(0, 0, pixelWidth, pixelHeight)
         }
         await drawSvgToCanvas(
-          svgMarkup(out.body, out.defs, width, height, background === null ? null : out.background),
+          svgMarkup(out.body, out.defs, width, height, ground),
           ctx,
           pixelWidth,
           pixelHeight,

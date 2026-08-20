@@ -25,7 +25,7 @@ export async function exportSvg(request: ExportRequest): Promise<ExportResult> {
     out.defs,
     width,
     height,
-    request.background === null ? null : (request.background ?? out.background),
+    request.background === null ? null : (request.background ?? out.background ?? null),
   )
   request.onProgress?.(0.6)
 

@@ -177,6 +177,38 @@ async function main(): Promise<void> {
       `${wasteful.length} -> ${optimised.length} bytes`,
     )
 
+    // --- an opaque PNG has no holes in it -----------------------------------
+    // The default export dropped the tool's own background, so "opaque" came
+    // out transparent with the paper missing.
+    const opaque = await lab.export({
+      slug: '_harness-svg',
+      format: 'png',
+      width: 200,
+      height: 200,
+      scale: 1,
+    })
+    const holes = await lab.page.evaluate(
+      (base64: string) =>
+        new Promise<number>((resolve, reject) => {
+          const image = new Image()
+          image.onload = () => {
+            const canvas = document.createElement('canvas')
+            canvas.width = image.width
+            canvas.height = image.height
+            const ctx = canvas.getContext('2d')!
+            ctx.drawImage(image, 0, 0)
+            const { data } = ctx.getImageData(0, 0, image.width, image.height)
+            let count = 0
+            for (let i = 3; i < data.length; i += 4) if ((data[i] as number) < 250) count++
+            resolve(count)
+          }
+          image.onerror = () => reject(new Error('could not read the png'))
+          image.src = `data:image/png;base64,${base64}`
+        }),
+      opaque.bytes.toString('base64') as never,
+    )
+    record('an opaque png is opaque everywhere', holes === 0, `${holes} see-through pixels`)
+
     // --- PNG transparency ---------------------------------------------------
     const transparent = await lab.export({
       slug: '_harness-svg',

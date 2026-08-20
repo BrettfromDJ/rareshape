@@ -22,8 +22,10 @@ export async function exportGif(request: ExportRequest): Promise<ExportResult> {
     height,
     scale,
     seed,
-    // GIF alpha is one bit; a flat ground beats a hard fringe.
-    background: request.background ?? '#0a0a0a',
+    // GIF alpha is one bit; a flat ground beats a hard fringe. The tool's own
+    // background is used when there is one, and only a request for real
+    // transparency falls back to the flat ground.
+    background: request.background === null ? '#0a0a0a' : request.background,
   })
 
   const ctx = renderer.canvas.getContext('2d', { willReadFrequently: true })

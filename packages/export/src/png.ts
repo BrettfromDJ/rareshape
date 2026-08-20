@@ -16,7 +16,8 @@ export async function exportPng(request: ExportRequest): Promise<ExportResult> {
     height,
     scale,
     seed,
-    background: request.background ?? null,
+    // Passed through as-is: undefined means the tool's own background.
+    background: request.background,
   })
 
   try {
