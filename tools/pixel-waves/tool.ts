@@ -87,17 +87,6 @@ export const tool = defineTool({
         { value: 'stacked', label: 'Stacked' },
       ],
     }),
-    inset: p.number({
-      label: 'Margin',
-      default: 0,
-      min: 0,
-      max: 0.35,
-      step: 0.005,
-      group: 'Waves',
-      hint: 'Paper left showing at the top and bottom. Zero fills the frame.',
-      randomize: false,
-      when: (params) => params.fill === 'edges',
-    }),
     thickness: p.number({
       label: 'Thickness',
       default: 0.1,

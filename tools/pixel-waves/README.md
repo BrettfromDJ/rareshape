@@ -35,6 +35,5 @@ an ordinary area chart.
   row count is not a multiple of it — a sliver of bare paper along the edge.
   The inner edge is still snapped, and every band keeps at least one row
   against its own edge so a large `Amplitude` cannot push it off the canvas.
-- `Fill` and `Margin` are pinned against randomize: ribbons float and margins
-  are literally paper strips, so a re-roll would hand back a composition with
-  bars across it.
+- `Fill` is pinned against randomize: ribbons float and stacks leave the top
+  open, so a re-roll would hand back a composition with paper strips across it.

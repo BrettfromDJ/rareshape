@@ -128,12 +128,11 @@ export function render(frame: Frame<Params>): SvgFrame {
         bottom = (floor + offset) * height
       } else {
         // Edges: the top half hangs from the top, the bottom half rises from
-        // the bottom, which is how plotted data usually reads. The margin keeps
-        // paper showing at the outer edge instead of bleeding off it.
+        // the bottom, which is how plotted data usually reads. Colour always
+        // runs to the canvas edge — see the snapping note below.
         const fromTop = seat < 0.5 || bands === 1
-        const margin = params.inset * height
-        top = fromTop ? margin : (centre + offset - half) * height
-        bottom = fromTop ? (centre + offset + half) * height : height - margin
+        top = fromTop ? 0 : (centre + offset - half) * height
+        bottom = fromTop ? (centre + offset + half) * height : height
       }
 
       // Snapping to whole cells is the whole point; `step` snaps to blocks of
