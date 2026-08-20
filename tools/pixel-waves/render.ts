@@ -1,8 +1,10 @@
 import {
   TAU,
+  blendColor,
   clamp,
   makeNoise,
   n,
+  type BlendMode,
   type Frame,
   type SvgFrame,
 } from '@rareshape/core'
@@ -26,17 +28,33 @@ export function render(frame: Frame<Params>): SvgFrame {
   const rowHeight = height / rows
 
   const parts: string[] = []
+  const overlays: string[] = []
   let defs = ''
 
   /* --- graph paper -------------------------------------------------------- */
 
-  if (params.grid) {
-    // One <pattern> rather than thousands of lines: a 300-column grid stays a
-    // handful of nodes in the exported SVG. It is painted last, over the bands.
+  // One <pattern> per tint rather than thousands of lines: a 300-column grid
+  // stays a handful of nodes in the exported file.
+  const patterns = new Map<string, string>()
+  const patternFor = (over: string): string => {
+    const tint = blendColor(params.gridBlend as BlendMode, over, params.gridColor)
+    const existing = patterns.get(tint)
+    if (existing) return existing
+    const id = `pw-g${patterns.size}`
+    patterns.set(tint, id)
     defs +=
-      `<pattern id="pw-grid" width="${n(cell)}" height="${n(rowHeight)}" patternUnits="userSpaceOnUse">` +
+      `<pattern id="${id}" width="${n(cell)}" height="${n(rowHeight)}" patternUnits="userSpaceOnUse">` +
       `<path d="M${n(cell)} 0H0V${n(rowHeight)}" fill="none" ` +
-      `stroke="${params.gridColor}" stroke-width="${n(params.gridWeight)}"/></pattern>`
+      `stroke="${tint}" stroke-width="${n(params.gridWeight)}"/></pattern>`
+    return id
+  }
+
+  // Over the paper first, so bare paper is graph paper too. Bands paint over
+  // it, and each one gets its own grid afterwards.
+  if (params.grid) {
+    parts.push(
+      `<rect width="${n(width)}" height="${n(height)}" fill="url(#${patternFor(params.background)})"/>`,
+    )
   }
 
   /* --- bands -------------------------------------------------------------- */
@@ -145,27 +163,29 @@ export function render(frame: Frame<Params>): SvgFrame {
     }
 
     const path = staircase(tops, bottoms, cell, rowHeight, width)
-    if (path) parts.push(`<path d="${path}" fill="${colour}"/>`)
+    if (path) {
+      parts.push(`<path d="${path}" fill="${colour}"/>`)
+      if (params.grid) {
+        // The grid over this band, in a colour already blended with it. Clipped
+        // to the band, drawn in band order, so overlaps resolve the same way
+        // the bands themselves do.
+        const clip = `pw-c${band}`
+        defs += `<clipPath id="${clip}"><path d="${path}"/></clipPath>`
+        overlays.push(
+          `<rect width="${n(width)}" height="${n(height)}" ` +
+            `fill="url(#${patternFor(colour)})" clip-path="url(#${clip})"/>`,
+        )
+      }
+    }
   }
 
-  // The grid is the last thing painted, over everything else.
-  parts.push(gridOverlay(params, width, height))
+  parts.push(...overlays)
 
   return {
     background: params.background,
     defs: defs || undefined,
-    // Isolated so the blend mixes with the artwork, never with whatever sits
-    // behind the SVG on the page.
-    body: `<g style="isolation:isolate">${parts.join('')}</g>`,
+    body: parts.join(''),
   }
-}
-
-/** The graph paper, painted over the bands and tinted by what is underneath. */
-function gridOverlay(params: Params, width: number, height: number): string {
-  if (!params.grid) return ''
-  const blend =
-    params.gridBlend === 'normal' ? '' : ` style="mix-blend-mode:${params.gridBlend}"`
-  return `<rect width="${n(width)}" height="${n(height)}" fill="url(#pw-grid)"${blend}/>`
 }
 
 /**

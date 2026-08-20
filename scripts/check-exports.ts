@@ -177,6 +177,28 @@ async function main(): Promise<void> {
       `${wasteful.length} -> ${optimised.length} bytes`,
     )
 
+    // --- exported vectors do not depend on CSS the viewer may not have ------
+    // Browsers honour mix-blend-mode inside SVG; most design tools and print
+    // pipelines ignore it, so a blended export looks right on screen and wrong
+    // wherever it is opened. Tints belong baked into the colours.
+    const vector = await lab.export({
+      slug: 'pixel-waves',
+      format: 'svg',
+      width: 400,
+      height: 240,
+    })
+    const vectorText = vector.bytes.toString('utf8')
+    record(
+      'svg export carries no CSS blend modes',
+      !/mix-blend-mode|isolation\s*:/.test(vectorText),
+      `${Math.round(vector.size / 1024)} KB`,
+    )
+    record(
+      'svg export keeps its grid pattern through SVGO',
+      /<pattern/.test(vectorText) && /url\(#/.test(vectorText),
+      `${(vectorText.match(/<pattern/g) ?? []).length} pattern(s)`,
+    )
+
     // --- an opaque PNG has no holes in it -----------------------------------
     // The default export dropped the tool's own background, so "opaque" came
     // out transparent with the paper missing.

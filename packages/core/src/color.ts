@@ -253,3 +253,54 @@ export function lineColor(rng: Rng, hue: number, ground: string): string {
     false,
   )
 }
+
+/* -------------------------------------------------------------------------- */
+/* Blending, computed rather than delegated to CSS                             */
+/* -------------------------------------------------------------------------- */
+
+export type BlendMode = 'auto' | 'multiply' | 'screen' | 'overlay' | 'soft-light' | 'none'
+
+const channel = (mode: Exclude<BlendMode, 'auto' | 'none'>, b: number, s: number): number => {
+  switch (mode) {
+    case 'multiply':
+      return b * s
+    case 'screen':
+      return 1 - (1 - b) * (1 - s)
+    case 'overlay':
+      return b <= 0.5 ? 2 * b * s : 1 - 2 * (1 - b) * (1 - s)
+    case 'soft-light':
+      return s <= 0.5
+        ? b - (1 - 2 * s) * b * (1 - b)
+        : b + (2 * s - 1) * ((b <= 0.25 ? ((16 * b - 12) * b + 4) * b : Math.sqrt(b)) - b)
+  }
+}
+
+/**
+ * The result of blending `blend` over `base`, as a flat colour.
+ *
+ * Computing it beats `mix-blend-mode` in an exported file: CSS blending is
+ * honoured by browsers and ignored by most design tools and print pipelines,
+ * so a blended SVG looks right on screen and wrong everywhere it is opened.
+ * A baked colour looks the same in all of them.
+ *
+ * `auto` keeps the mark visible whatever it sits on: darkening on light
+ * grounds, lightening on dark ones.
+ */
+export function blendColor(mode: BlendMode, base: string, blend: string): string {
+  if (mode === 'none') return blend
+
+  const b = parseColor(base)
+  const s = parseColor(blend)
+  const resolved: Exclude<BlendMode, 'auto' | 'none'> =
+    mode === 'auto' ? (luminance(base) > 0.45 ? 'multiply' : 'screen') : mode
+
+  return toHex(
+    {
+      r: channel(resolved, b.r / 255, s.r / 255) * 255,
+      g: channel(resolved, b.g / 255, s.g / 255) * 255,
+      b: channel(resolved, b.b / 255, s.b / 255) * 255,
+      a: 1,
+    },
+    false,
+  )
+}
