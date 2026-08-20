@@ -35,8 +35,10 @@ an ordinary area chart.
   (the tint is computed instead) and `<pattern>` fills (the grid is real line
   geometry). At 320 columns that is a few dozen KB of straight lines and still
   60fps on screen.
-- `Grid weight` is pinned against randomize and starts at 1px. A heavier rule
-  is a deliberate choice; rolling it just produced results veiled in grid color.
+- `Grid weight` and `Grid blend` are both pinned against randomize. A heavier
+  rule and a chosen blend mode are deliberate decisions: rolling the weight
+  produced results veiled in grid color, and rolling the blend landed on
+  `none`, which paints one flat grid color across the whole frame.
 - The grid rule is capped at a fraction of its own cell. A stroke that is wide
   relative to the cell stops being a rule and becomes a veil — at 200 columns a
   2px line covers a third of every cell in both directions, and the grid color

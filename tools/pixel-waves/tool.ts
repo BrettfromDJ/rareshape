@@ -66,6 +66,11 @@ export const tool = defineTool({
       default: 'auto',
       group: 'Grid',
       hint: 'How the grid takes its tint from the color beneath it. Auto stays visible on light and dark alike.',
+      // Pinned against randomize, alongside the weight. Auto is the mode that
+      // works against any ground; the others are choices you make on purpose,
+      // and rolling into `none` in particular flattens the grid to one flat
+      // color over the whole frame.
+      randomize: false,
       options: [
         { value: 'auto', label: 'Auto' },
         { value: 'multiply', label: 'Multiply' },
