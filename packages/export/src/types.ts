@@ -22,7 +22,7 @@ export interface ExportRequest<S extends ParamSchema = ParamSchema> {
    * What sits behind the frame:
    *   undefined — the tool's own background, which is what "opaque" means
    *   null      — nothing: a real alpha channel
-   *   a colour  — that colour, whatever the tool wanted
+   *   a color  — that color, whatever the tool wanted
    */
   background?: string | null
   seed: number

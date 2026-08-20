@@ -61,7 +61,7 @@ export function create(canvas: HTMLCanvasElement | OffscreenCanvas): GlRenderer<
       material.wireframe = params.wireframe
       const ink = parseColor(params.ink)
       const ground = parseColor(params.background)
-      // Colours arrive as sRGB hex; say so, or three treats them as linear and
+      // Colors arrive as sRGB hex; say so, or three treats them as linear and
       // the exported background comes back several stops too light.
       clearColor.setRGB(ground.r / 255, ground.g / 255, ground.b / 255, THREE.SRGBColorSpace)
       renderer.setClearColor(clearColor, ground.a)

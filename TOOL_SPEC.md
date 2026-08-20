@@ -83,10 +83,10 @@ deriving the roll from the state on screen made every session replay the same
 chain of results. The state it lands on is still captured in the URL, so any
 result remains reproducible and shareable.
 
-`color` takes a `role` — `ink` (default), `ground` or `line`. Randomize-colours
+`color` takes a `role` — `ink` (default), `ground` or `line`. Randomize-colors
 (⇧R) generates one harmonious scheme and places it by role, so grounds stay
 near-neutral and hairlines stay quiet against their ground. A tool that skips
-the roles still works; its randomised colours are just less considered.
+the roles still works; its randomised colors are just less considered.
 
 ---
 
@@ -182,20 +182,27 @@ Handled entirely by `@rareshape/export`; a tool implements nothing.
 | Format | How | Notes |
 |---|---|---|
 | PNG | canvas at 1× / 2× / 4× | true alpha when the tool draws none |
-| MP4 | WebCodecs `VideoEncoder` (`avc1.4D402A`, prefer-hardware, keyframe every 2s) into `mp4-muxer` | frames stepped as `t = i / frameCount`, encoder flushed before muxing. Never `MediaRecorder`, never realtime capture |
+| MP4 | WebCodecs `VideoEncoder` (H.264, prefer-hardware, keyframe every 2s) into `mp4-muxer` | frames stepped as `t = i / frameCount`, encoder flushed before muxing. Never `MediaRecorder`, never realtime capture |
 | GIF | `gifenc`, quantised per run | the universal fallback |
 | SVG | `render()` output, run through SVGO | vector tools only |
 | SVG (animated) | frames sampled and driven by CSS keyframes in an embedded `<style>` | animates inside an `<img>` |
 | HTML | `render.ts` + `tool.ts` + the vanilla shell + current params, one file | opens offline from the filesystem |
 
-MP4 is feature-detected at mount (`window.VideoEncoder`) and **hidden** where it
-is missing rather than shown broken.
+MP4 is feature-detected at mount — the encoder is asked to validate a real
+config, since some Chromium builds ship WebCodecs with no H.264 encoder at all —
+and **hidden** where it is missing rather than shown broken.
+
+The codec string carries an H.264 level, and the level is a hard cap on the
+frame size the encoder will accept: 4.2 stops around 1920×1088. It is chosen
+from the frame being exported, smallest level that fits first, then offered to
+`isConfigSupported` in order. A fixed level is why a 2400×1350 export reported
+"this browser cannot encode H.264 video" on browsers that encode H.264 fine.
 
 ---
 
 ## 7. Sizes and aspect
 
-`meta.aspect` is the tool's own shape and the one it opens at. The stage offers
+`meta.aspect` is the tool's own shape and the one it opens at. The rail offers
 the common ratios on top of it, and the choice rides in the URL under `?a=`, is
 what the export sheet defaults to, and is baked into an exported HTML file — so
 a link, a file and a screen all agree. Aspect is never a param: a render
@@ -222,7 +229,7 @@ Shortcuts, global to every tool:
 | Key | Action |
 |---|---|
 | `R` | Randomize |
-| `⇧R` | Randomize colours only |
+| `⇧R` | Randomize colors only |
 | `Z` / `⇧Z` | Undo / redo |
 | `Space` | Play / pause |
 | `E` | Export sheet |

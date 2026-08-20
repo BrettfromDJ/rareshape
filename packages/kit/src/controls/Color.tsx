@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { ColorDef, PaletteDef } from '@rareshape/schema'
 import { Field } from '../primitives'
-import { ColorPicker, Swatch, useEscape } from './ColorPicker'
+import { ColorPicker, Swatch, useDismiss, useEscape } from './ColorPicker'
 
 export function ColorControl({
   name,
@@ -18,10 +18,11 @@ export function ColorControl({
 }) {
   const [open, setOpen] = useState(false)
   useEscape(open, () => setOpen(false))
+  const ref = useDismiss(open, () => setOpen(false))
 
   return (
     <Field label={def.label} hint={def.hint} value={value.toUpperCase()}>
-      <div id={`p-${name}`}>
+      <div id={`p-${name}`} ref={ref}>
         <Swatch
           value={value}
           open={open}
@@ -57,13 +58,14 @@ export function PaletteControl({
   const max = def.max ?? 8
   const [editing, setEditing] = useState<number | null>(null)
   useEscape(editing !== null, () => setEditing(null))
+  const ref = useDismiss(editing !== null, () => setEditing(null))
 
   const setAt = (index: number, color: string) =>
     onChange(value.map((entry, i) => (i === index ? color : entry)))
 
   return (
     <Field label={def.label} hint={def.hint} value={`${value.length}`}>
-      <div id={`p-${name}`}>
+      <div id={`p-${name}`} ref={ref}>
         <div className="flex flex-wrap gap-1">
           {value.map((color, index) => (
             <span key={`${index}-${color}`} className="relative group">

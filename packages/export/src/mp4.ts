@@ -14,15 +14,48 @@ export function canExportMp4(): boolean {
   return typeof window !== 'undefined' && typeof window.VideoEncoder === 'function'
 }
 
-/** H.264 High profile, level 4.2 — the locked codec string. */
-const CODEC = 'avc1.4D402A'
+/**
+ * H.264 High profile. The level is part of the codec string and is a hard
+ * declaration of the frame size the encoder must accept: level 4.2 tops out
+ * around 1920x1088, so asking it for a 2400x1350 export is rejected outright —
+ * which surfaced as "this browser cannot encode H.264 video" on browsers that
+ * encode H.264 perfectly well.
+ *
+ * The level is chosen from the frame instead, smallest that fits first.
+ */
+const H264_LEVELS: Array<{ code: string; maxMacroblocks: number; maxMacroblocksPerSecond: number }> = [
+  { code: '28', maxMacroblocks: 8192, maxMacroblocksPerSecond: 245_760 }, // 4.0
+  { code: '2A', maxMacroblocks: 8704, maxMacroblocksPerSecond: 522_240 }, // 4.2
+  { code: '32', maxMacroblocks: 22_080, maxMacroblocksPerSecond: 589_824 }, // 5.0
+  { code: '33', maxMacroblocks: 36_864, maxMacroblocksPerSecond: 983_040 }, // 5.1
+  { code: '34', maxMacroblocks: 36_864, maxMacroblocksPerSecond: 2_073_600 }, // 5.2
+]
+
+/** Every H.264 string worth trying for a given frame, in preference order. */
+export function h264Candidates(width: number, height: number, fps: number): string[] {
+  const macroblocks = Math.ceil(width / 16) * Math.ceil(height / 16)
+  const perSecond = macroblocks * fps
+  const levels = H264_LEVELS.filter(
+    (level) =>
+      level.maxMacroblocks >= macroblocks && level.maxMacroblocksPerSecond >= perSecond,
+  )
+  // If nothing fits on paper, still offer the highest — some encoders accept it.
+  const usable = levels.length ? levels : [H264_LEVELS[H264_LEVELS.length - 1] as (typeof H264_LEVELS)[number]]
+  return [
+    // High profile first, then Main and Baseline, which older hardware paths
+    // and some Safari versions prefer.
+    ...usable.map((level) => `avc1.4D40${level.code}`),
+    ...usable.map((level) => `avc1.4D00${level.code}`),
+    ...usable.map((level) => `avc1.42E0${level.code}`),
+  ]
+}
 
 /**
  * Some Chromium builds ship WebCodecs without an H.264 encoder, so the
  * constructor being present is not enough. This is the check the export sheet
  * runs at mount: if it comes back false, MP4 is not offered at all.
  */
-export async function isMp4Supported(width = 1280, height = 720): Promise<boolean> {
+export async function isMp4Supported(width = 1920, height = 1080): Promise<boolean> {
   if (!canExportMp4()) return false
   try {
     await pickConfig(even(width), even(height), 30, false)
@@ -38,8 +71,8 @@ export async function isMp4Supported(width = 1280, height = 720): Promise<boolea
  * codec in the same MP4 container. The export sheet never does this — for users
  * MP4 means H.264, and GIF is the fallback.
  */
-const FALLBACK_CODECS: Array<{ codec: string; muxer: 'avc' | 'vp9' | 'av1' }> = [
-  { codec: CODEC, muxer: 'avc' },
+/** Only reached when H.264 is absent altogether — see the note above. */
+const OPEN_CODECS: Array<{ codec: string; muxer: 'vp9' | 'av1' }> = [
   { codec: 'vp09.00.10.08', muxer: 'vp9' },
   { codec: 'av01.0.04M.08', muxer: 'av1' },
 ]
@@ -56,7 +89,10 @@ async function pickConfig(
   allowFallback: boolean,
   requestedBitrate?: number,
 ): Promise<{ config: VideoEncoderConfig; muxer: 'avc' | 'vp9' | 'av1' }> {
-  const candidates = allowFallback ? FALLBACK_CODECS : FALLBACK_CODECS.slice(0, 1)
+  const candidates: Array<{ codec: string; muxer: 'avc' | 'vp9' | 'av1' }> = [
+    ...h264Candidates(width, height, fps).map((codec) => ({ codec, muxer: 'avc' as const })),
+    ...(allowFallback ? OPEN_CODECS : []),
+  ]
   const bitrate = requestedBitrate ?? bitrateFor(width, height, fps)
 
   for (const candidate of candidates) {
@@ -79,7 +115,10 @@ async function pickConfig(
     }
   }
 
-  throw new Error('This browser cannot encode H.264 video')
+  throw new Error(
+    `This browser cannot encode H.264 video at ${width}x${height}. ` +
+      'Try a smaller size, or export a GIF.',
+  )
 }
 
 export async function exportMp4(request: ExportRequest): Promise<ExportResult> {

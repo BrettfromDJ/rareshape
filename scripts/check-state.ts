@@ -85,7 +85,7 @@ async function main(): Promise<void> {
     touched.push('seed')
     await fill('#p-caption', 'hello')
     touched.push('text')
-    // Colour controls open a picker panel; the hex field inside it is the
+    // Color controls open a picker panel; the hex field inside it is the
     // deterministic way to set a value.
     await page.locator('#p-background button').first().click()
     await fill('#p-background input[type="text"]', '#223344')
@@ -199,6 +199,34 @@ async function main(): Promise<void> {
       ratio.toFixed(3),
     )
     await shaped.close()
+
+    // --- the color picker dismisses ----------------------------------------
+    // The picker expands inline, so closing it collapses the rail. Dismissing
+    // on pointerdown moved every control below it out from under the pointer
+    // before the button it was aimed at could be clicked — the second check
+    // here is that trap.
+    const field = (control: string) => page.locator(`${control} [role="application"]`).count()
+
+    await page.locator('#p-background button').first().click()
+    await page.waitForTimeout(150)
+    const wasOpen = await field('#p-background')
+    await page.locator('h1').first().click()
+    await page.waitForTimeout(150)
+    record(
+      'clicking outside closes the color picker',
+      wasOpen === 1 && (await field('#p-background')) === 0,
+    )
+
+    await page.locator('#p-background button').first().click()
+    await page.waitForTimeout(150)
+    await page.locator('#p-palette button').first().click()
+    await page.waitForTimeout(150)
+    record(
+      'a swatch clicked while another picker is open opens its own',
+      (await field('#p-background')) === 0 && (await field('#p-palette')) === 1,
+    )
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(150)
 
     // --- the export sheet, driven the way a person drives it ----------------
     // Every other export check calls the pipeline directly, which is exactly

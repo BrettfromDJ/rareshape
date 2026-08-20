@@ -15,12 +15,15 @@ import { useMp4Support } from './mp4-support'
 import { Button } from './primitives'
 
 const SCALES = [1, 2, 4] as const
-const ASPECTS = ['1:1', '4:3', '3:2', '16:9', '9:16', '4:5'] as const
 
 /**
- * The export sheet: format, size, aspect, duration, fps, progress, cancel.
- * It never captures the stage — every format re-renders offscreen, which is
- * what makes two runs of the same export produce identical files.
+ * The export sheet: format, size, duration, fps, progress, cancel. It never
+ * captures the stage — every format re-renders offscreen, which is what makes
+ * two runs of the same export produce identical files.
+ *
+ * Shape is not in here. It is chosen once, in the rail, and the export follows
+ * it: a second set of ratio chips down here meant the stage could say 16:9
+ * while the sheet quietly exported 4:5.
  */
 export function ExportBar<S extends ParamSchema>({
   tool,
@@ -28,7 +31,7 @@ export function ExportBar<S extends ParamSchema>({
   params,
   t,
   seed,
-  aspect: stageAspect,
+  aspect,
   open,
   onOpenChange,
 }: {
@@ -37,7 +40,7 @@ export function ExportBar<S extends ParamSchema>({
   params: ParamsOf<S>
   t: number
   seed: number
-  /** What the stage is currently showing; the export follows it by default. */
+  /** What the stage is showing. The export is that shape, at export size. */
   aspect: string
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -52,9 +55,6 @@ export function ExportBar<S extends ParamSchema>({
   )
   const [requestedFormat, setFormat] = useState<ExportFormat>('png')
   const [scale, setScale] = useState<number>(2)
-  // Exporting a different shape from the one on screen is possible but never
-  // the default: what you see is what comes out unless you say otherwise.
-  const [aspectOverride, setAspect] = useState<string | null>(null)
   const [base, setBase] = useState(1200)
   const [duration, setDuration] = useState(tool.meta.duration)
   const [fps, setFps] = useState(tool.meta.fps)
@@ -70,7 +70,6 @@ export function ExportBar<S extends ParamSchema>({
     ? requestedFormat
     : (formats[0]?.format ?? 'png')
   const option = formats.find((entry) => entry.format === format) ?? formats[0]
-  const aspect = aspectOverride ?? stageAspect
   const ratio = parseAspect(aspect)
   const width = Math.round(ratio >= 1 ? base : base * ratio)
   const height = Math.round(ratio >= 1 ? base / ratio : base)
@@ -131,16 +130,23 @@ export function ExportBar<S extends ParamSchema>({
 
   return (
     <>
+      {/* Reads "Close" while the sheet is open: two buttons labelled Export,
+          one of them inert, is a trap. */}
       <Button onClick={() => onOpenChange(!open)} active={open} title="Export (E)">
-        Export
+        {open ? 'Close' : 'Export'}
       </Button>
 
       {open && (
         <div className="absolute bottom-11 right-0 w-[min(28rem,100vw)] bg-[var(--surface)] rule border z-30">
           <div className="rule border-b px-4 py-2 flex items-center justify-between">
-            <span className="meta text-[var(--text)]">Export</span>
-            <button type="button" onClick={() => onOpenChange(false)} className="meta hover:text-[var(--text)]">
-              Close
+            <span className="rs-section">Export</span>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              aria-label="Close the export sheet"
+              className="meta hover:text-[var(--text)]"
+            >
+              ✕
             </button>
           </div>
 
@@ -159,45 +165,34 @@ export function ExportBar<S extends ParamSchema>({
           </Row>
 
           {format !== 'html' && (
-            <>
-              <Row label="Aspect">
-                <div className="flex flex-wrap gap-1">
-                  {[...new Set([stageAspect, ...ASPECTS])].map((entry) => (
-                    <Button
-                      key={entry}
-                      active={parseAspect(entry) === ratio}
-                      onClick={() => setAspect(entry)}
-                    >
-                      {entry}
-                    </Button>
-                  ))}
-                </div>
-              </Row>
-
-              <Row label="Size" value={`${width * (format.startsWith('svg') ? 1 : scale)} × ${height * (format.startsWith('svg') ? 1 : scale)}`}>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    aria-label="Base size"
-                    className="rs-range flex-1"
-                    min={400}
-                    max={2400}
-                    step={100}
-                    value={base}
-                    onChange={(event) => setBase(Number(event.target.value))}
-                  />
-                  {!format.startsWith('svg') && (
-                    <div className="flex gap-1">
-                      {SCALES.map((entry) => (
-                        <Button key={entry} active={entry === scale} onClick={() => setScale(entry)}>
-                          {entry}×
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Row>
-            </>
+            <Row
+              label="Size"
+              value={`${width * (format.startsWith('svg') ? 1 : scale)} × ${
+                height * (format.startsWith('svg') ? 1 : scale)
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  aria-label="Base size"
+                  className="rs-range flex-1"
+                  min={400}
+                  max={2400}
+                  step={100}
+                  value={base}
+                  onChange={(event) => setBase(Number(event.target.value))}
+                />
+                {!format.startsWith('svg') && (
+                  <div className="flex gap-1">
+                    {SCALES.map((entry) => (
+                      <Button key={entry} active={entry === scale} onClick={() => setScale(entry)}>
+                        {entry}×
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Row>
           )}
 
           {option?.animated && (

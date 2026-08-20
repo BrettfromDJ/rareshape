@@ -19,12 +19,17 @@ an ordinary area chart.
   leave hairline seams where their antialiased edges meet, and the polygon is a
   fraction of the nodes.
 - The grid is drawn per region — once over the paper, then once per band,
-  clipped to it — each in a colour already blended with what it sits on.
+  clipped to it — each in a color already blended with what it sits on.
 - Two things it deliberately does not use, because both look right in a browser
   and vanish in the tools people actually open exports in: `mix-blend-mode`
   (the tint is computed instead) and `<pattern>` fills (the grid is real line
   geometry). At 320 columns that is a few dozen KB of straight lines and still
   60fps on screen.
+- The grid rule is capped at a fraction of its own cell. A stroke that is wide
+  relative to the cell stops being a rule and becomes a veil — at 200 columns a
+  2px line covers a third of every cell in both directions, and the grid color
+  takes the frame over from the bands. `Grid weight` keeps its full range
+  wherever the cells are big enough to carry a heavy rule.
 - `Auto` darkens the grid on light grounds and lightens it on dark ones, so it
   stays visible on white and black alike. The other modes are the standard
   blend equations, computed rather than delegated.

@@ -50,7 +50,7 @@ export const tool = defineTool({
       label: 'Grid blend',
       default: 'auto',
       group: 'Grid',
-      hint: 'How the grid takes its tint from the colour beneath it. Auto stays visible on light and dark alike.',
+      hint: 'How the grid takes its tint from the color beneath it. Auto stays visible on light and dark alike.',
       options: [
         { value: 'auto', label: 'Auto' },
         { value: 'multiply', label: 'Multiply' },
@@ -73,7 +73,7 @@ export const tool = defineTool({
     }),
 
     // Two is the floor: one band anchored to the top edge and one to the
-    // bottom is what guarantees colour reaches both.
+    // bottom is what guarantees color reaches both.
     layers: p.int({
       label: 'Bands',
       default: 4,
@@ -154,16 +154,16 @@ export const tool = defineTool({
       hint: 'Whole turns per loop, so the animation closes.',
     }),
 
-    background: p.color({ label: 'Paper', default: '#f4f2ed', role: 'ground', group: 'Colour' }),
+    background: p.color({ label: 'Paper', default: '#f4f2ed', role: 'ground', group: 'Color' }),
     palette: p.palette({
       label: 'Bands',
       default: ['#e04a26', '#8ea3b8', '#151515', '#ffffff'],
       min: 1,
       max: 8,
-      group: 'Colour',
+      group: 'Color',
     }),
 
-    seed: p.seed({ label: 'Seed', default: 4, group: 'Colour' }),
+    seed: p.seed({ label: 'Seed', default: 4, group: 'Color' }),
   },
 
   presets: [

@@ -47,7 +47,7 @@ export function SelectControl({
             onClick={() => onChange(option.value)}
             className={
               'flex-1 px-2 py-1 meta transition-colors ' +
-              // The `.meta` class sets a colour of its own; the selected chip
+              // The `.meta` class sets a color of its own; the selected chip
               // has to win it, or the label sits at 3:1 on a light ground.
               (option.value === value
                 ? 'bg-[var(--text)] text-[var(--bg)]!'

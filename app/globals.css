@@ -222,7 +222,7 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   Rail hierarchy. Three levels, told apart by size, colour and letter-spacing
+   Rail hierarchy. Three levels, told apart by size, color and letter-spacing
    rather than by rules or weight: section, control, and the prose that
    explains a control. Values stay mono because they are data.
    --------------------------------------------------------------------------- */

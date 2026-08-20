@@ -52,8 +52,8 @@ export interface Store<S extends ParamSchema = ParamSchema> {
   patch(values: Partial<ParamsOf<S>>, options?: { history?: boolean }): void
   replace(values: ParamsOf<S>, options?: { history?: boolean }): void
   randomize(): void
-  /** Re-rolls only the colour and palette params, leaving the geometry alone. */
-  randomizeColours(): void
+  /** Re-rolls only the color and palette params, leaving the geometry alone. */
+  randomizeColors(): void
   reset(): void
   loadPreset(name: string): void
   presets(): Preset<S>[]
@@ -68,30 +68,30 @@ export interface Store<S extends ParamSchema = ParamSchema> {
 }
 
 /**
- * Rolls every colour in a schema as one scheme: a ground, a palette whose
+ * Rolls every color in a schema as one scheme: a ground, a palette whose
  * members are all visibly different from each other and from that ground, and
  * hairlines that stay quiet against it.
  *
- * Both randomize buttons go through here. Rolling each colour independently —
+ * Both randomize buttons go through here. Rolling each color independently —
  * which is what the main button used to do — regularly produced two bands a
- * few percent apart, and flat artwork in two such colours reads as one block.
+ * few percent apart, and flat artwork in two such colors reads as one block.
  */
-function rollColours(
+function rollColors(
   schema: ParamSchema,
   params: Record<string, unknown>,
   rng: Rng,
 ): Record<string, unknown> {
-  const colourParams = Object.entries(schema).filter(
+  const colorParams = Object.entries(schema).filter(
     ([, def]) => (def.type === 'color' || def.type === 'palette') && def.randomize !== false,
   )
-  if (colourParams.length === 0) return {}
+  if (colorParams.length === 0) return {}
 
   const next: Record<string, unknown> = {}
 
   // The ground first: everything else has to stay clear of it.
   const seedHue = rng.float(0, 360)
   let ground: string | null = null
-  for (const [name, def] of colourParams) {
+  for (const [name, def] of colorParams) {
     if (def.type === 'color' && def.role === 'ground') {
       ground = groundColor(rng, seedHue)
       next[name] = ground
@@ -99,13 +99,13 @@ function rollColours(
   }
 
   const avoid = ground ? [ground] : []
-  // One scheme for the whole tool, so separate colour params relate to each
+  // One scheme for the whole tool, so separate color params relate to each
   // other instead of each being its own accident.
   const scheme = distinctPalette(rng, 6, avoid)
   const hue = rgbToHsv(parseColor(scheme[0] as string)).h
 
   let inkIndex = 0
-  for (const [name, def] of colourParams) {
+  for (const [name, def] of colorParams) {
     if (def.type === 'palette') {
       const current = (params[name] as string[] | undefined)?.length
       const count = Math.max(def.min ?? 2, Math.min(def.max ?? 5, current ?? 4))
@@ -199,16 +199,16 @@ export function createStore<S extends ParamSchema>(
       for (const [name, def] of Object.entries(tool.params)) {
         // `seed` always moves; everything else honours `randomize: false`.
         if (def.type !== 'seed' && def.randomize === false) continue
-        // Colours are rolled together below, as one scheme.
+        // Colors are rolled together below, as one scheme.
         if (def.type === 'color' || def.type === 'palette') continue
         next[name] = randomValue(def, rng)
       }
-      Object.assign(next, rollColours(tool.params, next, rng))
+      Object.assign(next, rollColors(tool.params, next, rng))
       commit(next as ParamsOf<S>, true, null)
     },
 
-    randomizeColours() {
-      const scheme = rollColours(tool.params, params as Record<string, unknown>, makeRng(entropy()))
+    randomizeColors() {
+      const scheme = rollColors(tool.params, params as Record<string, unknown>, makeRng(entropy()))
       if (Object.keys(scheme).length === 0) return
       commit({ ...params, ...scheme } as ParamsOf<S>, true, null)
     },

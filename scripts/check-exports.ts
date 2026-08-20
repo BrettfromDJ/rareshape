@@ -180,7 +180,7 @@ async function main(): Promise<void> {
     // --- exported vectors do not depend on CSS the viewer may not have ------
     // Browsers honour mix-blend-mode inside SVG; most design tools and print
     // pipelines ignore it, so a blended export looks right on screen and wrong
-    // wherever it is opened. Tints belong baked into the colours.
+    // wherever it is opened. Tints belong baked into the colors.
     const vector = await lab.export({
       slug: 'pixel-waves',
       format: 'svg',
@@ -280,6 +280,37 @@ async function main(): Promise<void> {
         (await window.rareshapeLab!.mp4Supported()) === true,
     )
     record('export sheet offers mp4 only where H.264 encodes', probe === h264, `probe ${probe}, browser ${h264}`)
+
+    // The codec string carries an H.264 level, and the level is a hard cap on
+    // the frame size the encoder will accept. A fixed one is how a 2400x1350
+    // export came back as "this browser cannot encode H.264 video" on a
+    // browser that encodes H.264 perfectly well.
+    // Evaluated as source rather than as a function: the script runner rewrites
+    // nested arrows with a helper that does not exist in the page.
+    const levels = (await lab.page.evaluate(`
+      (() => {
+        // Macroblocks per level, from the H.264 spec table: 4.2 tops out at
+        // 8704, 5.0 at 22080, 5.1 and 5.2 at 36864.
+        const caps = { '28': 8192, '2A': 8704, '32': 22080, '33': 36864, '34': 36864 }
+        const fits = (w, h, fps) => {
+          const macroblocks = Math.ceil(w / 16) * Math.ceil(h / 16)
+          const codecs = window.rareshapeLab.h264Candidates(w, h, fps)
+          return {
+            size: w + 'x' + h + '@' + fps,
+            codecs: codecs.length,
+            shaped: codecs.every((codec) => /^avc1\\.(4D40|4D00|42E0)[0-9A-F]{2}$/.test(codec)),
+            big: codecs.every((codec) => (caps[codec.slice(-2)] || 0) >= macroblocks),
+          }
+        }
+        return [fits(1200, 676, 30), fits(2400, 1350, 60), fits(3840, 2160, 30)]
+      })()
+    `)) as Array<{ size: string; codecs: number; shaped: boolean; big: boolean }>
+
+    record(
+      'every h.264 codec string offered fits the frame it was asked for',
+      levels.every((level) => level.codecs > 0 && level.shaped && level.big),
+      levels.map((level) => `${level.size}: ${level.codecs}`).join(', '),
+    )
 
     const svgOnly = await lab
       .export({ slug: '_harness-canvas', format: 'svg', width: 100, height: 100 })

@@ -38,7 +38,7 @@ export function useShortcuts(map: ShortcutMap, enabled = true): void {
 /** The list shown in the tool page's shortcut hint. Mirrors TOOL_SPEC.md §8. */
 export const SHORTCUT_HINTS: Array<[string, string]> = [
   ['R', 'Randomize'],
-  ['⇧R', 'Colours'],
+  ['⇧R', 'Colors'],
   ['Z', 'Undo'],
   ['⇧Z', 'Redo'],
   ['Space', 'Play / pause'],

@@ -81,7 +81,7 @@ export interface ColorDef extends Common<string> {
   /** Allow an alpha channel in the picker and in the value. */
   alpha?: boolean
   /**
-   * What the colour is for. Randomize-colours uses this to keep a generated
+   * What the color is for. Randomize-colors uses this to keep a generated
    * scheme usable: grounds stay near-neutral, lines stay quiet against the
    * ground, ink carries the hue.
    */
@@ -263,7 +263,7 @@ export function randomValue(def: ParamDef, rng: Rng): unknown {
     case 'color':
       return randomHex(rng, def.alpha === true)
     case 'palette': {
-      // Vary the count as well as the colours: a palette that is always the
+      // Vary the count as well as the colors: a palette that is always the
       // same size is half a randomize.
       const count = rng.int(def.min ?? 2, Math.min(def.max ?? 5, 6))
       return Array.from({ length: count }, () => randomHex(rng, false))

@@ -10,6 +10,9 @@ export const ASPECT_PRESETS = ['1:1', '4:5', '3:2', '16:9', '9:16'] as const
  * Stage shape. It is not a tool param — no render function should know or care
  * what it is drawing into — but it is part of the state a link carries, so it
  * round-trips through the URL alongside the params.
+ *
+ * The chips wrap: this sits in the rail, where the row is narrower than the
+ * list of shapes, and a second line is better than a hidden one.
  */
 export function AspectBar({
   value,
@@ -26,8 +29,7 @@ export function AspectBar({
     : [fallback, ...ASPECT_PRESETS]
 
   return (
-    <div className="flex items-center gap-1" role="group" aria-label="Stage aspect">
-      <span className="rs-label mr-1 hidden sm:inline">Aspect</span>
+    <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Stage aspect">
       {options.map((option) => (
         <Button
           key={option}

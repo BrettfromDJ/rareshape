@@ -135,7 +135,7 @@ export function luminance(color: string): number {
 }
 
 /* -------------------------------------------------------------------------- */
-/* HSV — what a colour picker's saturation/value square is built on.           */
+/* HSV — what a color picker's saturation/value square is built on.           */
 /* -------------------------------------------------------------------------- */
 
 export interface Hsv {
@@ -226,7 +226,7 @@ export function harmonyPalette(rng: Rng, count: number, harmony?: Harmony): stri
   })
 }
 
-/** A page colour: nearly neutral, tinted towards the palette, light or dark. */
+/** A page color: nearly neutral, tinted towards the palette, light or dark. */
 export function groundColor(rng: Rng, hue: number): string {
   const dark = rng.bool(0.25)
   return toHex(
@@ -240,7 +240,7 @@ export function groundColor(rng: Rng, hue: number): string {
   )
 }
 
-/** A hairline colour that sits quietly on a given ground. */
+/** A hairline color that sits quietly on a given ground. */
 export function lineColor(rng: Rng, hue: number, ground: string): string {
   const light = luminance(ground) > 0.4
   return toHex(
@@ -276,12 +276,12 @@ const channel = (mode: Exclude<BlendMode, 'auto' | 'none'>, b: number, s: number
 }
 
 /**
- * The result of blending `blend` over `base`, as a flat colour.
+ * The result of blending `blend` over `base`, as a flat color.
  *
  * Computing it beats `mix-blend-mode` in an exported file: CSS blending is
  * honoured by browsers and ignored by most design tools and print pipelines,
  * so a blended SVG looks right on screen and wrong everywhere it is opened.
- * A baked colour looks the same in all of them.
+ * A baked color looks the same in all of them.
  *
  * `auto` keeps the mark visible whatever it sits on: darkening on light
  * grounds, lightening on dark ones.
@@ -306,7 +306,7 @@ export function blendColor(mode: BlendMode, base: string, blend: string): string
 }
 
 /**
- * How far apart two colours look, 0..1. Redmean-weighted RGB: cheap, and much
+ * How far apart two colors look, 0..1. Redmean-weighted RGB: cheap, and much
  * closer to the eye than plain RGB distance, which rates greens and blues as
  * far more different than they read.
  */
@@ -322,16 +322,16 @@ export function colorDistance(a: string, b: string): number {
   return Math.min(1, Math.sqrt(weighted) / 765)
 }
 
-/** Below this, two colours read as the same colour in flat artwork. */
-export const SAME_COLOUR = 0.22
+/** Below this, two colors read as the same color in flat artwork. */
+export const SAME_COLOR = 0.22
 
 /**
  * A palette whose members are all visibly different from each other, and from
- * anything in `avoid` — the page colour, usually.
+ * anything in `avoid` — the page color, usually.
  *
  * A harmony alone does not guarantee this: a scheme can legitimately produce
- * two neighbouring values, and flat bands in those two colours read as one
- * block. Colours that land too close are pushed apart in value first, then in
+ * two neighbouring values, and flat bands in those two colors read as one
+ * block. Colors that land too close are pushed apart in value first, then in
  * hue, rather than redrawn, so the scheme survives.
  */
 export function distinctPalette(
@@ -340,7 +340,7 @@ export function distinctPalette(
   avoid: readonly string[] = [],
   harmony?: Harmony,
 ): string[] {
-  // Distance alone is not enough: two pale colours, or two dark ones, can sit
+  // Distance alone is not enough: two pale colors, or two dark ones, can sit
   // far apart in hue and still read as one field in flat artwork. What carries
   // flat shapes is a tonal ladder, so the palette is spread across lightness
   // and only then separated further where members still clash.
@@ -348,25 +348,25 @@ export function distinctPalette(
   const [floor, ceiling] = groundLuminance > 0.5 ? [0.1, 0.72] : [0.3, 0.95]
 
   const accepted: string[] = []
-  const clashes = (colour: string) =>
-    [...avoid, ...accepted].some((other) => colorDistance(colour, other) < SAME_COLOUR)
+  const clashes = (color: string) =>
+    [...avoid, ...accepted].some((other) => colorDistance(color, other) < SAME_COLOR)
 
   const ladder = harmonyPalette(rng, count, harmony)
-    .map((colour, i) => {
-      if (count === 1) return colour
+    .map((color, i) => {
+      if (count === 1) return color
       // Even rungs, lightly jittered, then shuffled so the ladder does not
       // always run dark to light in band order.
       const target = floor + (i / (count - 1)) * (ceiling - floor) + rng.float(-0.05, 0.05)
-      const hsv = rgbToHsv(parseColor(colour))
+      const hsv = rgbToHsv(parseColor(color))
       return toHex(hsvToRgb({ ...hsv, v: clamp(target, 0.04, 1) }), false)
     })
 
   for (const candidate of rng.shuffle(ladder)) {
-    let colour = candidate
-    for (let attempt = 0; attempt < 14 && clashes(colour); attempt++) {
-      const hsv = rgbToHsv(parseColor(colour))
+    let color = candidate
+    for (let attempt = 0; attempt < 14 && clashes(color); attempt++) {
+      const hsv = rgbToHsv(parseColor(color))
       const push = 0.16 + attempt * 0.05
-      colour = toHex(
+      color = toHex(
         hsvToRgb({
           h: hsv.h + (attempt >= 6 ? (attempt - 5) * 37 : 0),
           s: clamp(hsv.s + (attempt % 3 === 2 ? 0.15 : 0), 0, 1),
@@ -378,7 +378,7 @@ export function distinctPalette(
         false,
       )
     }
-    accepted.push(colour)
+    accepted.push(color)
   }
 
   return accepted

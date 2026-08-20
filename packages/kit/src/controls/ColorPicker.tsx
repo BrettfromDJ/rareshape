@@ -5,9 +5,9 @@ import { clamp, hsvToRgb, parseColor, rgbToHsv, toHex } from '@rareshape/core'
 import { TextInput, useDrag } from '../primitives'
 
 /**
- * The colour picker: a saturation/value field you drag through, a hue strip and
- * an optional alpha strip. It replaces the browser's native colour dialog,
- * which opens an OS window over the artwork and hides the thing being coloured.
+ * The color picker: a saturation/value field you drag through, a hue strip and
+ * an optional alpha strip. It replaces the browser's native color dialog,
+ * which opens an OS window over the artwork and hides the thing being colored.
  *
  * It expands inside the rail rather than floating, because the rail scrolls and
  * a floating panel would be clipped by it.
@@ -190,6 +190,40 @@ export function Swatch({
       <span className="absolute inset-0" style={{ background: value }} />
     </button>
   )
+}
+
+/**
+ * Closes the picker on a click anywhere outside it. Paired with Escape, this
+ * is what people expect of a popover; without it the only way out is hitting
+ * the swatch again, which is easy to miss.
+ */
+export function useDismiss(
+  active: boolean,
+  onDismiss: () => void,
+): React.RefObject<HTMLDivElement | null> {
+  const ref = useRef<HTMLDivElement>(null)
+  const handler = useRef(onDismiss)
+
+  useEffect(() => {
+    handler.current = onDismiss
+  }, [onDismiss])
+
+  useEffect(() => {
+    if (!active) return
+    const onClick = (event: MouseEvent) => {
+      const root = ref.current
+      if (root && !root.contains(event.target as Node)) handler.current()
+    }
+    // On click, not pointerdown. The picker expands inline, so closing it
+    // collapses the rail — do that on the way down and everything below moves
+    // out from under the pointer before the button it was aimed at gets its
+    // click. Capture, so a control that stops propagation cannot trap the
+    // picker open, and so the close lands before whatever the click opens.
+    document.addEventListener('click', onClick, true)
+    return () => document.removeEventListener('click', onClick, true)
+  }, [active])
+
+  return ref
 }
 
 /** Closes the picker on Escape, wherever focus happens to be. */

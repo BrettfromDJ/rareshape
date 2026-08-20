@@ -28,7 +28,7 @@ one.
 
 ```
 app/            Index, /tools/[slug] host, /info, and /lab (headless driver)
-packages/core   Seeded RNG, math, easing, colour, noise, geometry. Pure, no deps
+packages/core   Seeded RNG, math, easing, color, noise, geometry. Pure, no deps
 packages/schema Param types, defineTool, URL codec, the framework-free store
 packages/kit    React: controls, Stage, export sheet, shortcuts
 packages/export  png · gif · mp4 · svg · animated svg · standalone html

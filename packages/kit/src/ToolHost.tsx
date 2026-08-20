@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { ParamSchema, RenderModule, Tool, ParamsOf } from '@rareshape/schema'
 import { permalink } from '@rareshape/schema'
-import { AspectBar } from './AspectBar'
 import { ExportBar } from './ExportBar'
 import { Rail } from './Rail'
 import { Stage } from './Stage'
@@ -82,7 +81,7 @@ export function ToolHost<S extends ParamSchema>({
     useMemo(
       () => ({
         r: () => store.randomize(),
-        'shift+r': () => store.randomizeColours(),
+        'shift+r': () => store.randomizeColors(),
         z: () => store.undo(),
         'shift+z': () => store.redo(),
         '0': () => store.reset(),
@@ -98,19 +97,22 @@ export function ToolHost<S extends ParamSchema>({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
-      <Rail tool={tool} store={store} params={params} onCopyLink={copyLink} copied={copied} />
+      <Rail
+        tool={tool}
+        store={store}
+        params={params}
+        onCopyLink={copyLink}
+        copied={copied}
+        aspect={aspect}
+        onAspectChange={setAspect}
+      />
 
       <main className="flex-1 min-h-0 flex flex-col">
         <Stage module={renderModule} params={params} t={t} seed={seed} aspect={aspect} />
 
-        {/* The bar must not scroll: the export sheet is anchored inside it, and
-            an overflow container clips it out of sight. Only the aspect chips
-            scroll, in their own box. */}
+        {/* The bar must not scroll: the export sheet is anchored inside it,
+            and an overflow container clips it out of sight. */}
         <div className="rule border-t flex items-center gap-3 px-4 h-11 shrink-0">
-          <div className="min-w-0 overflow-x-auto">
-            <AspectBar value={aspect} fallback={tool.meta.aspect} onChange={setAspect} />
-          </div>
-
           {tool.meta.animated && (
             <>
               <Button onClick={() => setPlaying((value) => !value)} title="Play / pause (Space)">

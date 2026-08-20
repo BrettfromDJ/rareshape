@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import type { ParamSchema, ParamsOf, Store, Tool } from '@rareshape/schema'
 import { isVisible } from '@rareshape/schema'
+import { AspectBar } from './AspectBar'
 import { Control } from './controls'
 import { Button } from './primitives'
 
@@ -16,12 +17,17 @@ export function Rail<S extends ParamSchema>({
   params,
   onCopyLink,
   copied,
+  aspect,
+  onAspectChange,
 }: {
   tool: Tool<S>
   store: Store<S>
   params: ParamsOf<S>
   onCopyLink: () => void
   copied: boolean
+  /** Stage shape. Not a param, but it belongs with the settings, not the output. */
+  aspect: string
+  onAspectChange: (aspect: string) => void
 }) {
   const groups = useMemo(() => {
     const out = new Map<string, string[]>()
@@ -36,14 +42,14 @@ export function Rail<S extends ParamSchema>({
 
   const record = params as Record<string, unknown>
 
-  // Re-rolling colours belongs beside the colours themselves, not in the row
+  // Re-rolling colors belongs beside the colors themselves, not in the row
   // of global actions. It lands on the group holding the palette, or failing
-  // that the first group with a colour in it.
-  const colourGroup = (() => {
+  // that the first group with a color in it.
+  const colorGroup = (() => {
     const entries = Object.values(tool.params).filter((def) => def.randomize !== false)
     const palette = entries.find((def) => def.type === 'palette')
-    const colour = palette ?? entries.find((def) => def.type === 'color')
-    return colour ? (colour.group ?? 'Parameters') : null
+    const color = palette ?? entries.find((def) => def.type === 'color')
+    return color ? (color.group ?? 'Parameters') : null
   })()
 
   return (
@@ -74,6 +80,14 @@ export function Rail<S extends ParamSchema>({
         </Button>
       </div>
 
+      {/* Shape comes before anything you would draw into it, and it is a
+          setting rather than a property of the output — so it sits here with
+          the other settings, not down beside the export button. */}
+      <div className="px-4 py-3 rule border-b">
+        <div className="rs-label mb-2">Aspect</div>
+        <AspectBar value={aspect} fallback={tool.meta.aspect} onChange={onAspectChange} />
+      </div>
+
       {tool.presets.length > 0 && (
         <div className="px-4 py-3 rule border-b">
           <div className="rs-label mb-2">Presets</div>
@@ -99,10 +113,10 @@ export function Rail<S extends ParamSchema>({
                 hairline instead of sitting beside it as a double line. */}
             <div className="flex items-center justify-between gap-3 px-4 pt-6 pb-3 -mt-px rule border-t border-[var(--faint)]">
               <h2 className="rs-section">{group}</h2>
-              {group === colourGroup && (
+              {group === colorGroup && (
                 <Button
-                  onClick={() => store.randomizeColours()}
-                  title="Randomize colours (⇧R)"
+                  onClick={() => store.randomizeColors()}
+                  title="Randomize colors (⇧R)"
                   className="py-0.5"
                 >
                   Randomize

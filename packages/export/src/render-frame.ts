@@ -22,7 +22,7 @@ export interface FrameRendererOptions<P> {
   height: number
   scale: number
   seed: number
-  /** undefined: the tool's own. null: transparent. A colour: that colour. */
+  /** undefined: the tool's own. null: transparent. A color: that color. */
   background?: string | null
 }
 

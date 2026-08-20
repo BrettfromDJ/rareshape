@@ -39,7 +39,7 @@ export function render(ctx: CanvasRenderingContext2D, frame: Frame<Params>): voi
     }
 
     const edge = params.fade ? Math.sin(v * Math.PI) : 1
-    // A full cycle over t, so the colour walk lands back where it started.
+    // A full cycle over t, so the color walk lands back where it started.
     ctx.strokeStyle = samplePalette(params.palette, v + t)
     ctx.globalAlpha = 0.25 + 0.75 * edge
     ctx.stroke()

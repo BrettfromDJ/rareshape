@@ -8,7 +8,7 @@ import type { ExportFormat, ExportRequest, ExportResult } from './types'
 
 export * from './types'
 export { createFrameRenderer, svgMarkup } from './render-frame'
-export { canExportMp4, isMp4Supported } from './mp4'
+export { canExportMp4, h264Candidates, isMp4Supported } from './mp4'
 export { optimizeSvg } from './svgo'
 export { buildHtmlDocument, THREE_CDN } from './html'
 

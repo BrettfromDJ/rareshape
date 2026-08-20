@@ -49,12 +49,20 @@ export function render(frame: Frame<Params>): SvgFrame {
     return d.join('')
   })()
 
+  // A rule that is wide relative to its own cell stops being a rule and becomes
+  // a veil: at two hundred columns a 2px line covers a third of every cell in
+  // both directions, so two thirds of the frame is grid color and the bands
+  // underneath barely register. The slider keeps its full range wherever the
+  // cells are big enough to carry a heavy rule; it is only fine grids that are
+  // held to a hairline.
+  const gridWeight = Math.min(params.gridWeight, cell * 0.12)
+
   const gridOver = (over: string, clip?: string): string => {
     if (!gridLines) return ''
     const tint = blendColor(params.gridBlend as BlendMode, over, params.gridColor)
     return (
       `<path d="${gridLines}" fill="none" stroke="${tint}" ` +
-      `stroke-width="${n(params.gridWeight)}"${clip ? ` clip-path="url(#${clip})"` : ''}/>`
+      `stroke-width="${n(gridWeight)}"${clip ? ` clip-path="url(#${clip})"` : ''}/>`
     )
   }
 
@@ -88,7 +96,7 @@ export function render(frame: Frame<Params>): SvgFrame {
     const seat = bands === 1 ? 0.5 : band / (bands - 1)
     const centre = 0.5 + (seat - 0.5) * params.spread
     const phase = band * 0.37
-    const colour = palette[band % palette.length] as string
+    const color = palette[band % palette.length] as string
 
     // Both edges of the band are sampled per column, then emitted as ONE
     // staircase polygon rather than a rect per column. Abutting rects leave a
@@ -126,7 +134,7 @@ export function render(frame: Frame<Params>): SvgFrame {
         bottom = (floor + offset) * height
       } else {
         // Edges: the top half hangs from the top, the bottom half rises from
-        // the bottom, which is how plotted data usually reads. Colour always
+        // the bottom, which is how plotted data usually reads. Color always
         // runs to the canvas edge — see the snapping note below.
         const fromTop = seat < 0.5 || bands === 1
         top = fromTop ? 0 : (centre + offset - half) * height
@@ -166,15 +174,15 @@ export function render(frame: Frame<Params>): SvgFrame {
 
     const path = staircase(tops, bottoms, cell, rowHeight, width)
     if (path) {
-      parts.push(`<path d="${path}" fill="${colour}"/>`)
+      parts.push(`<path d="${path}" fill="${color}"/>`)
       if (params.grid) {
-        // The grid over this band, in a colour already blended with it. Clipped
+        // The grid over this band, in a color already blended with it. Clipped
         // to the band, drawn in band order, so overlaps resolve the same way
         // the bands themselves do. A renderer that ignored the clip would show
         // an untinted grid rather than none — the right way to fail.
         const clip = `pw-c${band}`
         defs += `<clipPath id="${clip}"><path d="${path}"/></clipPath>`
-        overlays.push(gridOver(colour, clip))
+        overlays.push(gridOver(color, clip))
       }
     }
   }
