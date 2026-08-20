@@ -75,6 +75,7 @@ export function render(frame: Frame<Params>): SvgFrame {
   const palette = params.palette.length ? params.palette : ['#151515']
   const bands = Math.max(1, params.layers)
   const step = Math.max(1, params.step)
+  const tread = Math.max(1, params.tread)
 
   // In edge mode each band is a mass anchored to the nearest edge, so the
   // deepest one has to be painted first — otherwise the shallower bands are
@@ -106,7 +107,10 @@ export function render(frame: Frame<Params>): SvgFrame {
     const bottoms: number[] = []
 
     for (let column = 0; column < columns; column++) {
-      const u = columns === 1 ? 0.5 : column / (columns - 1)
+      // The wave is sampled once per tread and held across it, so how wide a
+      // stair is no longer depends on how fine the grid is.
+      const sample = Math.floor(column / tread) * tread
+      const u = columns === 1 ? 0.5 : sample / (columns - 1)
 
       // Travelling sine: adding whole turns of t keeps the loop seamless.
       const wave = Math.sin((u * params.frequency + t * params.drift + phase) * TAU)
@@ -172,7 +176,13 @@ export function render(frame: Frame<Params>): SvgFrame {
       bottoms.push(bottomRow)
     }
 
-    const path = staircase(tops, bottoms, cell, rowHeight, width)
+    // The dithered fade is part of the band, not a layer over it: same path,
+    // same fill, same clip. One shape per band is also what a design tool
+    // wants to be handed.
+    const path =
+      staircase(tops, bottoms, cell, rowHeight, width) +
+      dither(tops, bottoms, params.dither, rows, cell, rowHeight)
+
     if (path) {
       parts.push(`<path d="${path}" fill="${color}"/>`)
       if (params.grid) {
@@ -194,6 +204,79 @@ export function render(frame: Frame<Params>): SvgFrame {
     defs: defs || undefined,
     body: parts.join(''),
   }
+}
+
+/**
+ * Ordered 4×4 Bayer thresholds. Ordered rather than random because the pattern
+ * has to be fixed in space: the band edge sweeps through a stationary screen
+ * instead of dragging a cloud of noise along with it, which is the difference
+ * between a dither and a fizz.
+ */
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+
+const threshold = (column: number, row: number): number =>
+  ((BAYER[(((row % 4) + 4) % 4) * 4 + (((column % 4) + 4) % 4)] as number) + 0.5) / 16
+
+/**
+ * Cells scattered outward from each edge of a band, thinning with distance —
+ * the transition this kind of plotted-data image lives on. An edge sitting on
+ * the canvas boundary is left alone: there is nothing behind it to fade into.
+ *
+ * Collected row by row so a run of neighbouring cells becomes one rectangle
+ * rather than one each. At the depths worth using the pattern is dense enough
+ * that it roughly halves the geometry.
+ */
+function dither(
+  tops: readonly number[],
+  bottoms: readonly number[],
+  depth: number,
+  rows: number,
+  cell: number,
+  rowHeight: number,
+): string {
+  if (depth <= 0) return ''
+
+  const perRow = new Map<number, number[]>()
+  const add = (row: number, column: number) => {
+    const list = perRow.get(row)
+    if (list) list.push(column)
+    else perRow.set(row, [column])
+  }
+
+  for (let column = 0; column < tops.length; column++) {
+    const top = tops[column] as number
+    const bottom = bottoms[column] as number
+    if (bottom <= top) continue
+
+    for (let i = 1; i <= depth; i++) {
+      // Dense against the band, sparse at the far end.
+      const density = 1 - i / (depth + 1)
+      if (top > 0) {
+        const row = top - i
+        if (row >= 0 && threshold(column, row) < density) add(row, column)
+      }
+      if (bottom < rows) {
+        const row = bottom + i - 1
+        if (row < rows && threshold(column, row) < density) add(row, column)
+      }
+    }
+  }
+
+  const d: string[] = []
+  for (const [row, list] of perRow) {
+    const y = row * rowHeight
+    // Columns arrive in order, so a run is just a walk.
+    for (let start = 0; start < list.length; ) {
+      let end = start
+      while (end + 1 < list.length && list[end + 1] === (list[end] as number) + 1) end++
+      const x = (list[start] as number) * cell
+      const run = ((list[end] as number) - (list[start] as number) + 1) * cell
+      d.push(`M${n(x)} ${n(y)}h${n(run)}v${n(rowHeight)}h${n(-run)}z`)
+      start = end + 1
+    }
+  }
+
+  return d.join('')
 }
 
 /**

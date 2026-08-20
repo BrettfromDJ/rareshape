@@ -29,14 +29,29 @@ export const tool = defineTool({
       group: 'Grid',
       hint: 'Cells across. Rows follow, so cells stay square.',
     }),
+    // Rise and run. Kept as two controls because tying the tread to the cell
+    // size meant the only way to get chunky stairs was a coarse grid — the two
+    // were one slider fighting itself.
     step: p.int({
-      label: 'Step',
+      label: 'Step height',
       default: 2,
       min: 1,
       max: 10,
       randomRange: [1, 5],
       group: 'Grid',
-      hint: 'Cells per vertical step. Higher is blockier.',
+      hint: 'Cells each vertical step jumps by.',
+    }),
+    tread: p.int({
+      label: 'Step width',
+      default: 1,
+      min: 1,
+      max: 24,
+      randomRange: [1, 8],
+      // Frozen: an inferred key would take `t` from Thickness and break every
+      // link anyone has already shared.
+      key: 'tw',
+      group: 'Grid',
+      hint: 'Columns each step holds for. Wider treads without a coarser grid.',
     }),
     grid: p.boolean({ label: 'Grid lines', default: true, group: 'Grid' }),
     gridColor: p.color({
@@ -144,6 +159,17 @@ export const tool = defineTool({
       group: 'Waves',
       hint: 'Noise mixed into the wave.',
     }),
+    dither: p.int({
+      label: 'Dither',
+      default: 3,
+      min: 0,
+      max: 12,
+      randomRange: [0, 8],
+      // Frozen: `d` is Drift's.
+      key: 'dt',
+      group: 'Waves',
+      hint: 'Rows of scattered cells where a band meets what is behind it. 0 is a hard edge.',
+    }),
     drift: p.int({
       label: 'Drift',
       default: 1,
@@ -184,8 +210,23 @@ export const tool = defineTool({
         thickness: 0.26,
         amplitude: 0.2,
         roughness: 0.1,
+        dither: 0,
         grid: false,
         fill: 'ribbons',
+      },
+    },
+    {
+      name: 'Fade',
+      params: {
+        columns: 140,
+        step: 1,
+        tread: 6,
+        layers: 4,
+        thickness: 0.14,
+        amplitude: 0.16,
+        roughness: 0.35,
+        dither: 10,
+        gridWeight: 0.25,
       },
     },
     {

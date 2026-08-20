@@ -51,7 +51,8 @@ export interface Store<S extends ParamSchema = ParamSchema> {
   set<K extends keyof S & string>(name: K, value: ParamsOf<S>[K], options?: { history?: boolean }): void
   patch(values: Partial<ParamsOf<S>>, options?: { history?: boolean }): void
   replace(values: ParamsOf<S>, options?: { history?: boolean }): void
-  randomize(): void
+  /** `keepColors` pins the scheme so only the geometry moves. */
+  randomize(options?: { keepColors?: boolean }): void
   /** Re-rolls only the color and palette params, leaving the geometry alone. */
   randomizeColors(): void
   reset(): void
@@ -193,7 +194,7 @@ export function createStore<S extends ParamSchema>(
       commit({ ...values }, opts?.history ?? true, null)
     },
 
-    randomize() {
+    randomize(options) {
       const rng = makeRng(entropy())
       const next = { ...params } as Record<string, unknown>
       for (const [name, def] of Object.entries(tool.params)) {
@@ -203,7 +204,9 @@ export function createStore<S extends ParamSchema>(
         if (def.type === 'color' || def.type === 'palette') continue
         next[name] = randomValue(def, rng)
       }
-      Object.assign(next, rollColors(tool.params, next, rng))
+      // A scheme somebody has settled on is worth more than a new one, so it
+      // can be pinned and only the geometry re-rolled.
+      if (!options?.keepColors) Object.assign(next, rollColors(tool.params, next, rng))
       commit(next as ParamsOf<S>, true, null)
     },
 

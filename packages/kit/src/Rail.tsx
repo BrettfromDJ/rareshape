@@ -19,6 +19,8 @@ export function Rail<S extends ParamSchema>({
   copied,
   aspect,
   onAspectChange,
+  colorsLocked,
+  onColorsLockedChange,
 }: {
   tool: Tool<S>
   store: Store<S>
@@ -28,6 +30,9 @@ export function Rail<S extends ParamSchema>({
   /** Stage shape. Not a param, but it belongs with the settings, not the output. */
   aspect: string
   onAspectChange: (aspect: string) => void
+  /** Whether Randomize leaves the color scheme where it is. */
+  colorsLocked: boolean
+  onColorsLockedChange: (locked: boolean) => void
 }) {
   const groups = useMemo(() => {
     const out = new Map<string, string[]>()
@@ -63,8 +68,20 @@ export function Rail<S extends ParamSchema>({
       </div>
 
       <div className="px-4 py-3 rule border-b flex flex-wrap gap-1">
-        <Button onClick={() => store.randomize()} title="Randomize (R)">
+        <Button
+          onClick={() => store.randomize({ keepColors: colorsLocked })}
+          title="Randomize (R)"
+        >
           Randomize
+        </Button>
+        {/* Next to the button it modifies, which is where someone who has just
+            landed on a scheme they like goes looking for it. */}
+        <Button
+          active={colorsLocked}
+          onClick={() => onColorsLockedChange(!colorsLocked)}
+          title="Keep the current colors when you randomize everything else"
+        >
+          Lock colors
         </Button>
         <Button onClick={() => store.undo()} disabled={!store.canUndo()} title="Undo (Z)">
           Undo

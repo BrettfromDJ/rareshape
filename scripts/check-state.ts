@@ -43,6 +43,21 @@ const snapshot = (page: Page) =>
 const encoded = (page: Page) =>
   page.evaluate(`new URLSearchParams(location.search).get('p') ?? ''`) as Promise<string>
 
+const decode = (value: string): Record<string, unknown> =>
+  value ? (JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as Record<string, unknown>) : {}
+
+// The codec drops the leading # from colors, so this matches with or without.
+const isColor = (value: unknown): boolean =>
+  typeof value === 'string' && /^#?(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)
+
+/** Every color-shaped value in a decoded state, without knowing the schema. */
+const colorsOf = (params: Record<string, unknown>): string =>
+  JSON.stringify(
+    Object.entries(params)
+      .filter(([, v]) => isColor(v) || (Array.isArray(v) && v.length > 0 && v.every(isColor)))
+      .sort(([a], [b]) => a.localeCompare(b)),
+  )
+
 async function main(): Promise<void> {
   const server = await serveStatic('out', 4313)
   const browser = await launchBrowser()
@@ -227,6 +242,37 @@ async function main(): Promise<void> {
     )
     await page.keyboard.press('Escape')
     await page.waitForTimeout(150)
+
+    // --- locking the color scheme -------------------------------------------
+    // Landing on colors you like and then wanting new geometry under them is
+    // the whole point, so Randomize has to be able to leave them alone — and
+    // has to go back to rolling them when the lock comes off.
+    await page.locator('#p-background button').first().click()
+    await fill('#p-background input[type="text"]', '#7a2f9e')
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(120)
+
+    const roll = async (): Promise<Record<string, unknown>> => {
+      await page.evaluate(`document.activeElement?.blur()`)
+      await page.keyboard.press('r')
+      await page.waitForTimeout(200)
+      return decode(await encoded(page))
+    }
+
+    await page.getByRole('button', { name: 'Lock colors' }).click()
+    const beforeLocked = decode(await encoded(page))
+    const afterLocked = await roll()
+    record(
+      'locked colors survive a randomize',
+      colorsOf(afterLocked) !== '[]' &&
+        colorsOf(beforeLocked) === colorsOf(afterLocked) &&
+        JSON.stringify(beforeLocked) !== JSON.stringify(afterLocked),
+      colorsOf(afterLocked).slice(0, 70),
+    )
+
+    await page.getByRole('button', { name: 'Lock colors' }).click()
+    const afterUnlocked = await roll()
+    record('unlocking lets randomize roll them again', colorsOf(afterLocked) !== colorsOf(afterUnlocked))
 
     // --- the export sheet, driven the way a person drives it ----------------
     // Every other export check calls the pipeline directly, which is exactly

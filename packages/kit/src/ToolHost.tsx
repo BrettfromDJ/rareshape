@@ -34,6 +34,8 @@ export function ToolHost<S extends ParamSchema>({
   const [copied, setCopied] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [aspect, setAspect] = useState(initialAspect || tool.meta.aspect)
+  // A session preference, not part of the artwork, so it stays out of the URL.
+  const [colorsLocked, setColorsLocked] = useState(false)
   const { t, setT } = usePlayback(tool.meta.duration, playing && tool.meta.animated)
 
   const encoded = store.encoded()
@@ -80,7 +82,7 @@ export function ToolHost<S extends ParamSchema>({
   useShortcuts(
     useMemo(
       () => ({
-        r: () => store.randomize(),
+        r: () => store.randomize({ keepColors: colorsLocked }),
         'shift+r': () => store.randomizeColors(),
         z: () => store.undo(),
         'shift+z': () => store.redo(),
@@ -91,7 +93,7 @@ export function ToolHost<S extends ParamSchema>({
         '[': () => cyclePreset(-1),
         ']': () => cyclePreset(1),
       }),
-      [store, copyLink, cyclePreset],
+      [store, copyLink, cyclePreset, colorsLocked],
     ),
   )
 
@@ -105,6 +107,8 @@ export function ToolHost<S extends ParamSchema>({
         copied={copied}
         aspect={aspect}
         onAspectChange={setAspect}
+        colorsLocked={colorsLocked}
+        onColorsLockedChange={setColorsLocked}
       />
 
       <main className="flex-1 min-h-0 flex flex-col">

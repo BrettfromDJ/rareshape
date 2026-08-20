@@ -83,6 +83,9 @@ deriving the roll from the state on screen made every session replay the same
 chain of results. The state it lands on is still captured in the URL, so any
 result remains reproducible and shareable.
 
+Colors can be pinned against it (`Lock colors`, `store.randomize({ keepColors })`)
+so a scheme somebody has settled on survives while the geometry keeps rolling.
+
 `color` takes a `role` — `ink` (default), `ground` or `line`. Randomize-colors
 (⇧R) generates one harmonious scheme and places it by role, so grounds stay
 near-neutral and hairlines stay quiet against their ground. A tool that skips
@@ -185,7 +188,7 @@ Handled entirely by `@rareshape/export`; a tool implements nothing.
 | MP4 | WebCodecs `VideoEncoder` (H.264, prefer-hardware, keyframe every 2s) into `mp4-muxer` | frames stepped as `t = i / frameCount`, encoder flushed before muxing. Never `MediaRecorder`, never realtime capture |
 | GIF | `gifenc`, quantised per run | the universal fallback |
 | SVG | `render()` output, run through SVGO | vector tools only |
-| SVG (animated) | frames sampled and driven by CSS keyframes in an embedded `<style>` | animates inside an `<img>` |
+| SVG (animated) | frames sampled and driven by CSS keyframes in an embedded `<style>` | animates inside an `<img>`. Every frame's geometry sits in the document at once, so the frame count is measured against a byte budget and dropped to fit; ids are scoped per frame, or all of them resolve to frame 0's |
 | HTML | `render.ts` + `tool.ts` + the vanilla shell + current params, one file | opens offline from the filesystem |
 
 MP4 is feature-detected at mount — the encoder is asked to validate a real

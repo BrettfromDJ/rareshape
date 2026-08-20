@@ -165,6 +165,41 @@ async function main(): Promise<void> {
     const animates = await animatesInImgTag(lab, markup)
     record('animated svg animates inside an <img>', animates.ok, animates.detail)
 
+    // Every frame's geometry lives in one document, so ids have to be unique
+    // across frames. Sharing them means every frame resolves to frame 0's
+    // clip path, which reads as the whole loop flashing.
+    const declared = [...markup.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1] as string)
+    const references = [...markup.matchAll(/url\(#([^)]+)\)/g)].map((match) => match[1] as string)
+    const unique = new Set(declared).size === declared.length
+    const resolved = references.every((id) => declared.includes(id))
+    record(
+      'animated svg gives every frame its own ids',
+      declared.length > 1 && unique && resolved,
+      `${declared.length} id(s), ${references.length} reference(s)`,
+    )
+
+    // The ground is the tool's own unless the request overrides it — the same
+    // contract every other format follows. Asked for with a color the exporter
+    // could not have invented, since the harness default and the hardcoded
+    // ground this used to paint are both near-black.
+    const grounded = await lab.export({
+      slug: '_harness-svg',
+      format: 'svg-animated',
+      width: 400,
+      height: 400,
+      duration: 1,
+      fps: 12,
+      params: { background: '#3c1a5b' },
+    })
+    const ownGround = /<rect width="400" height="400" fill="([^"]+)"/.exec(
+      grounded.bytes.toString('utf8'),
+    )?.[1]
+    record(
+      "animated svg paints the tool's own paper",
+      ownGround?.toLowerCase() === '#3c1a5b',
+      ownGround ?? 'none',
+    )
+
     // --- SVGO is actually running ------------------------------------------
     const wasteful =
       '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">' +

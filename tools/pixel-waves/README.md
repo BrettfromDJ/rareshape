@@ -10,6 +10,16 @@ an ordinary area chart.
 
 ## Notes
 
+- `Step height` and `Step width` are the rise and the run. The tread used to be
+  the cell width, so the only way to get chunky stairs was a coarse grid — one
+  slider fighting itself. The wave is now sampled once per tread and held
+  across it, which leaves the grid free to stay fine.
+- `Dither` scatters cells outward from each band edge, thinning with distance,
+  using an ordered 4×4 Bayer screen. Ordered rather than random so the pattern
+  stays fixed in space and the edge sweeps through it — a random screen drags a
+  cloud of fizz along with the band. An edge sitting on the canvas boundary is
+  left alone: there is nothing behind it to fade into.
+
 - The wave is a travelling sine mixed with 3D noise. `Roughness` crossfades
   between them: 0 is a clean sine, 1 is pure noise.
 - The animation loops because both terms are periodic over `t`: the sine moves

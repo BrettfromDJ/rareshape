@@ -72,9 +72,19 @@ export function render(frame: Frame<Params>): SvgFrame {
     )
   }
 
+  // A defs entry that changes with `t`, on purpose. No harness tool used defs
+  // before, so nothing exercised what the exporters do with them — and the
+  // animated SVG, which stacks every frame into one document, was giving all
+  // of them the same ids and clipping the lot to frame 0.
+  const breathe = Math.min(box.width, box.height) * 0.04 * (0.5 + 0.5 * loopSin(t, 0.25))
+  const defs =
+    `<clipPath id="hs-frame"><rect x="${n(box.x - breathe)}" y="${n(box.y - breathe)}" ` +
+    `width="${n(box.width + breathe * 2)}" height="${n(box.height + breathe * 2)}"/></clipPath>`
+
   return {
     background: params.background,
-    body: parts.join(''),
+    defs,
+    body: `<g clip-path="url(#hs-frame)">${parts.join('')}</g>`,
   }
 }
 
