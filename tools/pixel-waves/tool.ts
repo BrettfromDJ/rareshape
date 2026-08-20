@@ -78,11 +78,15 @@ export const tool = defineTool({
     }),
     gridWeight: p.number({
       label: 'Grid weight',
-      default: 0.75,
+      default: 1,
       min: 0.25,
       max: 3,
       step: 0.25,
       unit: 'px',
+      // Pinned against randomize. A heavier rule is a deliberate choice, and
+      // rolling it meant a third of the results came back veiled in grid color
+      // instead of showing the bands.
+      randomize: false,
       group: 'Grid',
       when: (params) => params.grid === true,
     }),
