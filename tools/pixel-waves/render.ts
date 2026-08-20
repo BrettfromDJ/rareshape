@@ -110,9 +110,7 @@ export function render(frame: Frame<Params>): SvgFrame {
       )
 
       const offset = (wave * (1 - params.roughness) + grain * params.roughness) * params.amplitude
-      // Bands thin out towards the left and right edges when tapered.
-      const edge = 1 - params.taper * Math.pow(Math.abs(u - 0.5) * 2, 2)
-      const half = (params.thickness * Math.max(0, edge)) / 2
+      const half = params.thickness / 2
 
       // Where the band sits depends on the fill mode: a floating ribbon, a
       // mass anchored to the nearest edge, or one layer of a stack.

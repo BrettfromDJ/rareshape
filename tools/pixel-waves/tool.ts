@@ -129,15 +129,6 @@ export const tool = defineTool({
       group: 'Waves',
       hint: 'Noise mixed into the wave.',
     }),
-    taper: p.number({
-      label: 'Taper',
-      default: 0.35,
-      min: 0,
-      max: 1,
-      step: 0.01,
-      group: 'Waves',
-      hint: 'Thins the bands towards the edges.',
-    }),
     drift: p.int({
       label: 'Drift',
       default: 1,
