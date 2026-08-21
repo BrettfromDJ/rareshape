@@ -216,11 +216,15 @@ async function main(): Promise<void> {
     // Browsers honour mix-blend-mode inside SVG; most design tools and print
     // pipelines ignore it, so a blended export looks right on screen and wrong
     // wherever it is opened. Tints belong baked into the colors.
+    // Driven through the harness rather than through whatever tool happens to
+    // exist: these two are guarantees about the exporter, and they should not
+    // come and go with the catalogue.
     const vector = await lab.export({
-      slug: 'pixel-waves',
+      slug: '_harness-svg',
       format: 'svg',
       width: 400,
       height: 240,
+      params: { stroke: true },
     })
     const vectorText = vector.bytes.toString('utf8')
     record(
