@@ -29,7 +29,7 @@ const field = (label: string, body: Node, valueText?: () => string) => {
 
 /**
  * One control per param type, built with plain DOM. Deliberately the same
- * twelve types as the React kit — the two read the same schema, so an ejected
+ * thirteen types as the React kit — the two read the same schema, so an ejected
  * file and the site cannot drift apart.
  */
 export function buildControl(
@@ -127,6 +127,29 @@ export function buildControl(
           const swatch = el('input', { type: 'color', value: color.slice(0, 7) })
           swatch.oninput = () => onChange(colors.map((c, i) => (i === index ? swatch.value : c)))
           row.append(swatch)
+        })
+      })
+      return f
+    }
+
+    case 'numbers': {
+      const row = el('div', { class: 'rs-row', id, style: 'flex-wrap:wrap' })
+      const f = field(def.label, row, () => String((get() as number[]).length))
+      f.sync = withSync(f.sync, () => {
+        row.replaceChildren()
+        const entries = get() as number[]
+        entries.forEach((entry, index) => {
+          const input = el('input', {
+            type: 'number',
+            min: def.min,
+            max: def.max,
+            step: def.step ?? 0.05,
+            value: entry,
+            style: 'width:64px',
+          })
+          input.oninput = () =>
+            onChange(entries.map((v, i) => (i === index ? Number(input.value) : v)))
+          row.append(input)
         })
       })
       return f

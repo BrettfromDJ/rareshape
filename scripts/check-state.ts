@@ -109,6 +109,10 @@ async function main(): Promise<void> {
     await page.locator('#p-palette button').first().click()
     await fill('#p-palette input[type="text"]', '#ff0055')
     touched.push('palette')
+    // A list of numbers: drive the first entry from the keyboard, the same way
+    // the sliders are driven.
+    await nudge('#p-steps input[type="range"]')
+    touched.push('numbers')
     await page.getByRole('radio', { name: 'Square' }).click()
     touched.push('select')
     await page.getByRole('switch', { name: 'Outline' }).click()
@@ -136,7 +140,7 @@ async function main(): Promise<void> {
     }
 
     await page.waitForTimeout(300)
-    record('every param type has a working control', touched.length === 12, touched.join(', '))
+    record('every param type has a working control', touched.length === 13, touched.join(', '))
 
     const url = page.url()
     const state = await encoded(page)

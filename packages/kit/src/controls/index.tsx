@@ -6,6 +6,7 @@ import { RangeControl } from './Range'
 import { SwitchControl } from './Switch'
 import { SelectControl } from './Select'
 import { ColorControl, PaletteControl } from './Color'
+import { NumbersControl } from './Numbers'
 import { AngleControl } from './Angle'
 import { PointControl } from './PointPad'
 import { TextControl } from './Text'
@@ -41,6 +42,8 @@ export function Control({
       return <ColorControl name={name} def={def} value={value as string} onChange={onChange} />
     case 'palette':
       return <PaletteControl name={name} def={def} value={value as string[]} onChange={onChange} />
+    case 'numbers':
+      return <NumbersControl name={name} def={def} value={value as number[]} onChange={onChange} />
     case 'angle':
       return <AngleControl name={name} def={def} value={value as number} onChange={onChange} />
     case 'point':
@@ -54,4 +57,17 @@ export function Control({
   }
 }
 
-export { SliderControl, RangeControl, SwitchControl, SelectControl, ColorControl, PaletteControl, AngleControl, PointControl, TextControl, SeedControl, CurveControl }
+export {
+  SliderControl,
+  RangeControl,
+  SwitchControl,
+  SelectControl,
+  ColorControl,
+  PaletteControl,
+  NumbersControl,
+  AngleControl,
+  PointControl,
+  TextControl,
+  SeedControl,
+  CurveControl,
+}

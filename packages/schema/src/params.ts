@@ -14,6 +14,7 @@ export type ParamType =
   | 'select'
   | 'color'
   | 'palette'
+  | 'numbers'
   | 'angle'
   | 'point'
   | 'text'
@@ -92,6 +93,23 @@ export interface PaletteDef extends Common<string[]> {
   min?: number
   max?: number
 }
+/**
+ * A list of numbers, added to and removed from like a palette. For the case
+ * where a tool draws a run of the same thing and each one wants its own value —
+ * the list cycles when there are more of them than there are entries, so three
+ * lengths across nine slabs repeats every three.
+ */
+export interface NumbersDef extends Common<number[]> {
+  type: 'numbers'
+  min: number
+  max: number
+  step?: number
+  unit?: string
+  /** How many entries the list may hold. */
+  minCount?: number
+  maxCount?: number
+  randomRange?: [number, number]
+}
 export interface AngleDef extends Common<number> {
   type: 'angle'
   step?: number
@@ -119,6 +137,7 @@ export type ParamDef =
   | SelectDef<string>
   | ColorDef
   | PaletteDef
+  | NumbersDef
   | AngleDef
   | PointDef
   | TextDef
@@ -146,6 +165,7 @@ export const p = {
   ): SelectDef<V> => ({ type: 'select', ...o }),
   color: (o: Omit<ColorDef, 'type'>): ColorDef => ({ type: 'color', ...o }),
   palette: (o: Omit<PaletteDef, 'type'>): PaletteDef => ({ type: 'palette', ...o }),
+  numbers: (o: Omit<NumbersDef, 'type'>): NumbersDef => ({ type: 'numbers', ...o }),
   angle: (o: Omit<AngleDef, 'type'>): AngleDef => ({ type: 'angle', ...o }),
   point: (o: Omit<PointDef, 'type'>): PointDef => ({ type: 'point', ...o }),
   text: (o: Omit<TextDef, 'type'>): TextDef => ({ type: 'text', ...o }),
@@ -211,6 +231,15 @@ export function coerce(def: ParamDef, value: unknown): unknown {
         .slice(0, def.max ?? 16)
       return colors.length >= (def.min ?? 1) ? colors : def.default
     }
+    case 'numbers': {
+      if (!Array.isArray(value)) return def.default
+      const entries = value
+        .map(Number)
+        .filter((v) => Number.isFinite(v))
+        .map((v) => clean(clamp(def.step ? round(v, def.step) : v, def.min, def.max)))
+        .slice(0, def.maxCount ?? 12)
+      return entries.length >= (def.minCount ?? 1) ? entries : def.default
+    }
     case 'point': {
       const arr = Array.isArray(value) ? value : null
       const obj = !arr && typeof value === 'object' && value ? (value as Point) : null
@@ -267,6 +296,15 @@ export function randomValue(def: ParamDef, rng: Rng): unknown {
       // same size is half a randomize.
       const count = rng.int(def.min ?? 2, Math.min(def.max ?? 5, 6))
       return Array.from({ length: count }, () => randomHex(rng, false))
+    }
+    case 'numbers': {
+      // The count varies as well as the values, for the same reason a palette's
+      // does: a list that is always the same length is half a randomize.
+      const [lo, hi] = def.randomRange ?? [def.min, def.max]
+      const count = rng.int(def.minCount ?? 1, Math.min(def.maxCount ?? 5, 5))
+      return Array.from({ length: count }, () =>
+        clean(clamp(def.step ? round(rng.float(lo, hi), def.step) : rng.float(lo, hi), def.min, def.max)),
+      )
     }
     case 'point':
       return { x: clean(rng()), y: clean(rng()) }

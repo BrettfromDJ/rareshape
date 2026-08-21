@@ -59,6 +59,7 @@ one interpolation rule. Adding a type means adding all four.
 | `select` | `string` | segmented control, or dropdown past 4 options | `options: {value,label}[]` |
 | `color` | `string` (`#rrggbb` / `#rrggbbaa`) | swatch opening a drag picker + hex field | `alpha`, `role` |
 | `palette` | `string[]` | swatch list, add / remove / shuffle | `min`, `max` |
+| `numbers` | `number[]` | slider list, add / remove | `min`, `max`, `step`, `unit`, `minCount`, `maxCount`, `randomRange` |
 | `angle` | `number` (degrees) | dial + numeric field | `step` |
 | `point` | `{x,y}` (0..1) | 2D pad | — |
 | `text` | `string` | text field | `maxLength`, `placeholder` |

@@ -66,6 +66,20 @@ export const tool = defineTool({
       when: (params) => params.stroke === true,
     }),
     rotation: p.angle({ label: 'Rotation', default: 0, step: 1, group: 'Form' }),
+    // Here so a harness tool exercises `numbers` at all. Every param type has
+    // to have one control, one URL encoding, one randomiser and one coercion
+    // rule, and the way that gets proven is by driving it through this page.
+    steps: p.numbers({
+      label: 'Steps',
+      default: [1],
+      min: 0.2,
+      max: 3,
+      step: 0.05,
+      minCount: 1,
+      maxCount: 5,
+      group: 'Form',
+      hint: 'Scales cells in turn, so a list of them repeats across the grid.',
+    }),
 
     background: p.color({ label: 'Background', default: '#0a0a0a', alpha: true, group: 'Color' }),
     palette: p.palette({

@@ -1,8 +1,8 @@
 # Flat Solids
 
-Flat shapes extruded into solids.
+Slabs extruded into solids.
 
-There is no camera here and no z-axis. A solid is one flat face, plus the faces
+There is no camera here and no z-axis. A solid is one slab face, plus the faces
 its edges sweep out when the whole thing is dragged in a single screen
 direction. `Pitch` squashes the face vertically, which is all it takes to read
 as a plane tipping away from you. Everything else is flat polygons and three
@@ -40,6 +40,17 @@ rather than a mesh.
 - Painter's order is per arrangement rather than one global rule, because which
   end of the pile is nearest genuinely differs: a **Stack** is seen from above
   so its top solid covers the rest, while a **Row** just overlaps one way.
+- Slabs and nothing else. Discs and hexes and wedges all worked, and all of
+  them pulled the tool toward being a shape library rather than a way of
+  building one kind of composition well.
+- `Lengths` is a list the slabs take in turn, the way the faces take turns
+  through the palette: one entry and they all match, three entries across nine
+  slabs and the rhythm repeats every three. `Breadth` is shared and pinned
+  against randomize — the lengths are what vary, and without a constant to read
+  them against there is no rhythm to see.
+- `Zoom` and `Position` are the frame. The composition is fitted first and
+  framed second, so pushing Zoom past 1 and dragging Position is a crop of a
+  composition that is bigger than the frame it sits in.
 - `Pitch` and `Turn` together are the projection, and a projection is a
   decision about the whole picture rather than something to re-roll — so
   randomize leaves both alone. Rolling them landed on angles between the clean

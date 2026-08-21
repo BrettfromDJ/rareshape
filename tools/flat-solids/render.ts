@@ -11,7 +11,7 @@ import {
 import type { Params } from './tool'
 
 /**
- * A solid here is one flat face plus the faces its edges sweep out when the
+ * A solid here is one slab face plus the faces its edges sweep out when the
  * whole thing is dragged in a single screen direction. There is no camera and
  * no z-axis: `pitch` squashes the face vertically, which is all it takes to
  * read as a plane tipping away, and the body is a straight translation.
@@ -33,7 +33,7 @@ export function render(frame: Frame<Params>): SvgFrame {
   // by multiplying four reasonable-looking ranges together.
   const radius = minSide * 0.2
 
-  const face = facePolygon(params.shape, params.ratio)
+  const lengths = params.lengths.length ? params.lengths : [1.6]
   const pitched = Math.cos((params.pitch * TAU) / 360)
   const turned = (params.turn * TAU) / 360
 
@@ -73,6 +73,10 @@ export function render(frame: Frame<Params>): SvgFrame {
   const parts: string[] = []
 
   const drawn = items.map((item) => {
+    // Each slab takes the next length in the list and they all share one
+    // breadth, so a set reads as a set however much the lengths vary.
+    const face = slabFace(lengths[item.index % lengths.length] as number, params.breadth)
+
     // Face into place: sized, spun in its own plane, tipped away, then turned
     // and moved as a whole.
     const points = face.map((point) => {
@@ -113,9 +117,14 @@ export function render(frame: Frame<Params>): SvgFrame {
   // arrangement is free to overflow — which is usually the better crop anyway.
   const fitted = Math.sqrt((params.size * width * height) / Math.max(1e-6, ink))
   const anchor: Vec2 = { x: (low.x + high.x) / 2, y: (low.y + high.y) / 2 }
+
+  // The frame. Zoom decides how much of it gets painted and Position decides
+  // where — which together are the crop, once the composition is bigger than
+  // the frame it sits in.
+  const pan: Vec2 = { x: (params.pan.x - 0.5) * width, y: (params.pan.y - 0.5) * height }
   const fit = (point: Vec2): Vec2 => ({
-    x: middle.x + (point.x - anchor.x) * fitted,
-    y: middle.y + (point.y - anchor.y) * fitted,
+    x: middle.x + (point.x - anchor.x) * fitted + pan.x,
+    y: middle.y + (point.y - anchor.y) * fitted + pan.y,
   })
   const reach: Vec2 = { x: body.x * fitted, y: body.y * fitted }
 
@@ -378,49 +387,18 @@ function place(
   return out
 }
 
-/** The face, as a polygon of bounding radius 1 before it is sized. */
-function facePolygon(shape: Params['shape'], ratio: number): Vec2[] {
-  // `ratio` stretches the face horizontally; dividing through by the longer
-  // axis keeps `size` meaning the same thing whatever the proportion.
-  const wide = Math.max(1, ratio)
-  const w = ratio / wide
-  const h = 1 / wide
-
-  if (shape === 'rect') {
-    return [
-      { x: -w, y: -h },
-      { x: w, y: -h },
-      { x: w, y: h },
-      { x: -w, y: h },
-    ]
-  }
-
-  if (shape === 'triangle') {
-    return [
-      { x: 0, y: -h },
-      { x: w, y: h },
-      { x: -w, y: h },
-    ]
-  }
-
-  if (shape === 'chevron') {
-    // The one shape here that is not convex. Its edges still sweep correctly —
-    // the normals are found per edge — but the faces can overlap each other,
-    // which reads as a fold rather than as an error.
-    const notch = h * 0.45
-    return [
-      { x: -w, y: -h },
-      { x: 0, y: -h + notch },
-      { x: w, y: -h },
-      { x: w, y: h - notch },
-      { x: 0, y: h },
-      { x: -w, y: h - notch },
-    ]
-  }
-
-  const sides = shape === 'hexagon' ? 6 : 48
-  return Array.from({ length: sides }, (_, i) => {
-    const at = (i / sides) * TAU - Math.PI / 2
-    return { x: Math.cos(at) * w, y: Math.sin(at) * h }
-  })
+/**
+ * The slab face: long side across, short side down, before anything tips it.
+ * Sized in nominal units — the composition is measured and fitted to the frame
+ * afterwards, so only the proportions here matter.
+ */
+function slabFace(length: number, breadth: number): Vec2[] {
+  const x = Math.max(0.01, length) / 2
+  const y = Math.max(0.01, breadth) / 2
+  return [
+    { x: -x, y: -y },
+    { x, y: -y },
+    { x, y },
+    { x: -x, y },
+  ]
 }

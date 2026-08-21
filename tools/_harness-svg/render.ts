@@ -44,7 +44,10 @@ export function render(frame: Frame<Params>): SvgFrame {
     const phase = rng()
     const wobble = params.amount * loopSin(t, phase - falloff * 0.5)
 
-    const scale = clamp(minScale + (maxScale - minScale) * (1 - falloff) + wobble * 0.2, 0, 1.4)
+    const steps = params.steps.length ? params.steps : [1]
+    const scale =
+      clamp(minScale + (maxScale - minScale) * (1 - falloff) + wobble * 0.2, 0, 1.4) *
+      (steps[index % steps.length] as number)
     const size = (unit * scale) / 2
     if (size <= 0.01) return
 
