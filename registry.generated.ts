@@ -4,6 +4,7 @@ import type { ToolMeta } from '@rareshape/schema'
 import type { ToolModuleLoaders } from '@rareshape/schema'
 
 export const registry: ToolMeta[] = [
+  {"slug":"flat-solids","name":"Flat Solids","tagline":"Flat shapes extruded into solids.","category":"Shapes","engine":"svg","outputs":["SVG","PNG","GIF","MP4","HTML"],"added":"2026-08-21","animated":true,"duration":10,"fps":60,"aspect":"4:5","keywords":["isometric","axonometric","extrude","blocks","slab","poster","geometric"]},
   {"slug":"pixel-waves","name":"Pixel Waves","tagline":"Wave bands quantised to a pixel grid.","category":"Patterns","engine":"svg","outputs":["SVG","PNG","GIF","MP4","HTML"],"added":"2026-08-19","animated":true,"duration":8,"fps":60,"aspect":"16:9","keywords":["grid","graph paper","waveform","bitmap","chart","halftone"]},
 ] as ToolMeta[]
 
@@ -26,6 +27,10 @@ export const loaders: ToolModuleLoaders = {
   "_harness-webgl": {
     tool: () => import('@/tools/_harness-webgl/tool'),
     render: () => import('@/tools/_harness-webgl/render'),
+  },
+  "flat-solids": {
+    tool: () => import('@/tools/flat-solids/tool'),
+    render: () => import('@/tools/flat-solids/render'),
   },
   "pixel-waves": {
     tool: () => import('@/tools/pixel-waves/tool'),
