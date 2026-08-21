@@ -40,6 +40,15 @@ rather than a mesh.
 - Painter's order is per arrangement rather than one global rule, because which
   end of the pile is nearest genuinely differs: a **Stack** is seen from above
   so its top solid covers the rest, while a **Row** just overlaps one way.
+- `Pitch` and `Turn` together are the projection, and a projection is a
+  decision about the whole picture rather than something to re-roll — so
+  randomize leaves both alone. Rolling them landed on angles between the clean
+  ones, where a solid reads as a shape that has been knocked over rather than
+  one seen from a consistent point of view. 60° with a 45° turn squashes a
+  square to twice as wide as it is tall: the isometric everyone draws.
+- `Scatter` nudges position and nothing else. Giving each solid its own
+  rotation as well meant a composition where everything sat at a different
+  angle, and the shared projection is the whole illusion.
 - Still, on purpose. The solidity is three flat colors holding an illusion, and
   the illusion does not survive being moved: rotate a fake solid and the eye
   reads the shear for what it is. `Seed` moves `Scatter` around instead.

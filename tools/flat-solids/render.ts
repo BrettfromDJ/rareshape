@@ -46,10 +46,12 @@ export function render(frame: Frame<Params>): SvgFrame {
     y: Math.sin(lean) * params.depth * minSide,
   }
 
+  // Position only. Scatter used to give each solid its own rotation too, and
+  // a composition where every solid sits at a different angle stops reading as
+  // one scene — the shared projection is the whole illusion.
   const noise = Array.from({ length: count }, () => ({
     x: rng.float(-1, 1),
     y: rng.float(-1, 1),
-    turn: rng.float(-1, 1),
   }))
 
   const items = place(params, count, radius, minSide, middle, pitched, noise)
@@ -291,7 +293,7 @@ function place(
   minSide: number,
   middle: Vec2,
   pitched: number,
-  noise: readonly { x: number; y: number; turn: number }[],
+  noise: readonly { x: number; y: number }[],
 ): Placed[] {
   const out: Placed[] = []
   const centred = (i: number) => i - (count - 1) / 2
@@ -300,7 +302,7 @@ function place(
   const scatter = params.scatter * minSide * 0.25
 
   for (let i = 0; i < count; i++) {
-    const grain = noise[i] as { x: number; y: number; turn: number }
+    const grain = noise[i] as { x: number; y: number }
     const scale = 1 + params.taper * (span === 0 ? 0 : (centred(i) / (span / 2)))
     const rise = params.drop * minSide * 0.25 * centred(i)
 
@@ -365,7 +367,7 @@ function place(
         x: center.x + grain.x * scatter,
         y: center.y + grain.y * scatter + rise,
       },
-      turn: turn + grain.turn * params.scatter * Math.PI * 0.35,
+      turn,
       scale: Math.max(0.02, scale),
       inPlane,
       index: i,

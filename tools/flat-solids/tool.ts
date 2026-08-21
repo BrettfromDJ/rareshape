@@ -70,25 +70,34 @@ export const tool = defineTool({
       group: 'Solid',
       hint: 'Wide slab or narrow blade.',
     }),
-    // A slider rather than a dial: this one only ever travels a quarter turn,
-    // and a dial reading 55 of a possible 360 misrepresents that.
+    // Pitch and Turn together are the projection, and a projection is a
+    // decision about the whole picture rather than something to re-roll. Left
+    // to randomize they landed on angles between the clean ones, where a solid
+    // reads as a shape that has been knocked over rather than one seen from a
+    // consistent point of view.
+    //
+    // A slider rather than a dial for Pitch: it only ever travels a quarter
+    // turn, and a dial reading 60 of a possible 360 misrepresents that.
     pitch: p.number({
       label: 'Pitch',
-      default: 55,
+      // 60° squashes a turned square to twice as wide as it is tall, which is
+      // the isometric everyone draws.
+      default: 60,
       min: 0,
       max: 80,
       step: 1,
       unit: '°',
-      randomRange: [0, 70],
+      randomize: false,
       group: 'Solid',
-      hint: 'How far the face tips away. 0 faces you flat on; 55 is close to isometric.',
+      hint: 'How far the face tips away. 0 faces you flat on, 60 is isometric.',
     }),
     turn: p.angle({
       label: 'Turn',
       default: 45,
       step: 1,
+      randomize: false,
       group: 'Solid',
-      hint: 'The face spun in its own plane, before it tips.',
+      hint: 'The face spun in its own plane, before it tips. 0 for blades, 45 for boxes.',
     }),
 
     /* --- the extrusion --------------------------------------------------- */
@@ -180,9 +189,9 @@ export const tool = defineTool({
       min: 0,
       max: 1,
       step: 0.01,
-      randomRange: [0, 0.3],
+      randomRange: [0, 0.25],
       group: 'Arrangement',
-      hint: 'Knocks each one out of line. Seeded, so it holds still.',
+      hint: 'Nudges each one off its mark. Position only — they stay square to each other.',
     }),
 
     /* --- color ----------------------------------------------------------- */
