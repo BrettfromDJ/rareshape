@@ -40,7 +40,6 @@ rather than a mesh.
 - Painter's order is per arrangement rather than one global rule, because which
   end of the pile is nearest genuinely differs: a **Stack** is seen from above
   so its top solid covers the rest, while a **Row** just overlaps one way.
-- `Scatter` is drawn from the seeded RNG once, before `t` moves, so a knocked
-  arrangement holds still while it animates.
-- `Spin` is whole turns per loop and `Sway` is a sine over it, so both close
-  exactly at t=1.
+- Still, on purpose. The solidity is three flat colors holding an illusion, and
+  the illusion does not survive being moved: rotate a fake solid and the eye
+  reads the shear for what it is. `Seed` moves `Scatter` around instead.

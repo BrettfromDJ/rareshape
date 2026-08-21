@@ -135,7 +135,11 @@ export function ToolHost<S extends ParamSchema>({
         </div>
 
         <div className="rule border-t hidden md:flex items-center gap-4 px-4 h-8 shrink-0 overflow-x-auto">
-          {SHORTCUT_HINTS.map(([key, label]) => (
+          {/* A key listed but inert is the same trap as a button that does
+              nothing: a still tool has nothing to play. */}
+          {SHORTCUT_HINTS.filter(
+            ([key]) => tool.meta.animated || key !== 'Space',
+          ).map(([key, label]) => (
             <span key={key} className="meta whitespace-nowrap">
               <span className="text-[var(--text)]">{key}</span> {label}
             </span>

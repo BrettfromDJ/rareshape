@@ -15,11 +15,11 @@ export const tool = defineTool({
   tagline: 'Flat shapes extruded into solids.',
   category: 'Shapes',
   engine: 'svg',
-  outputs: ['SVG', 'PNG', 'GIF', 'MP4', 'HTML'],
+  outputs: ['SVG', 'PNG', 'HTML'],
   added: '2026-08-21',
-  animated: true,
-  duration: 10,
-  fps: 60,
+  // Still. The solidity here comes from three flat colors holding an illusion,
+  // and anything that moves gives the illusion away.
+  animated: false,
   aspect: '4:5',
   keywords: ['isometric', 'axonometric', 'extrude', 'blocks', 'slab', 'poster', 'geometric'],
 
@@ -183,24 +183,6 @@ export const tool = defineTool({
       randomRange: [0, 0.3],
       group: 'Arrangement',
       hint: 'Knocks each one out of line. Seeded, so it holds still.',
-    }),
-    spin: p.int({
-      label: 'Spin',
-      default: 0,
-      min: -3,
-      max: 3,
-      randomRange: [-1, 1],
-      group: 'Arrangement',
-      hint: 'Whole turns per loop, so the animation closes.',
-    }),
-    sway: p.number({
-      label: 'Sway',
-      default: 0.35,
-      min: 0,
-      max: 1,
-      step: 0.01,
-      group: 'Arrangement',
-      hint: 'How much the arrangement breathes over a loop.',
     }),
 
     /* --- color ----------------------------------------------------------- */

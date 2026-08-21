@@ -1,6 +1,5 @@
 import {
   TAU,
-  loopSin,
   luminance,
   n,
   pathFrom,
@@ -21,7 +20,7 @@ import type { Params } from './tool'
  * of it is periodic over one loop, so t=1 lands exactly on t=0.
  */
 export function render(frame: Frame<Params>): SvgFrame {
-  const { params, t, width, height, rng } = frame
+  const { params, width, height, rng } = frame
   const minSide = Math.min(width, height)
   const middle: Vec2 = { x: width / 2, y: height / 2 }
 
@@ -33,11 +32,6 @@ export function render(frame: Frame<Params>): SvgFrame {
   // the middle of an empty frame — a composition nobody would keep, arrived at
   // by multiplying four reasonable-looking ranges together.
   const radius = minSide * 0.2
-
-  // One breath over the loop, shared by the whole arrangement. Every use of it
-  // is a multiplier, so sway=0 leaves the composition exactly where it is.
-  const breath = 1 + params.sway * 0.22 * loopSin(t)
-  const turning = params.spin * t * TAU
 
   const face = facePolygon(params.shape, params.ratio)
   const pitched = Math.cos((params.pitch * TAU) / 360)
@@ -52,14 +46,13 @@ export function render(frame: Frame<Params>): SvgFrame {
     y: Math.sin(lean) * params.depth * minSide,
   }
 
-  // Per-item scatter is drawn once, up front, so it stays put while `t` moves.
   const noise = Array.from({ length: count }, () => ({
     x: rng.float(-1, 1),
     y: rng.float(-1, 1),
     turn: rng.float(-1, 1),
   }))
 
-  const items = place(params, count, radius, minSide, middle, breath, pitched, noise)
+  const items = place(params, count, radius, minSide, middle, pitched, noise)
 
   // Painter's order. Which end of the pile is nearest depends on how the
   // solids are laid out, so each arrangement says so rather than being sorted
@@ -86,10 +79,10 @@ export function render(frame: Frame<Params>): SvgFrame {
       // one — a ring on the ground. Turned after, it stands up and faces you,
       // pivoting on the picture surface — a fan of blades. Neither is more
       // correct; they are different scenes, so the arrangement picks.
-      const inPlane = item.inPlane ? item.turn + turning : 0
+      const inPlane = item.inPlane ? item.turn : 0
       const spun = rotate(point, turned + inPlane)
       const flat: Vec2 = { x: spun.x * item.scale * radius, y: spun.y * pitched * item.scale * radius }
-      const placed = item.inPlane ? flat : rotate(flat, item.turn + turning)
+      const placed = item.inPlane ? flat : rotate(flat, item.turn)
       return { x: placed.x + item.center.x, y: placed.y + item.center.y }
     })
     return { item, points, ink: inkOf(points, body) }
@@ -297,14 +290,13 @@ function place(
   radius: number,
   minSide: number,
   middle: Vec2,
-  breath: number,
   pitched: number,
   noise: readonly { x: number; y: number; turn: number }[],
 ): Placed[] {
   const out: Placed[] = []
   const centred = (i: number) => i - (count - 1) / 2
   const span = count === 1 ? 0 : count - 1
-  const step = radius * 2 * (0.25 + params.gap) * breath
+  const step = radius * 2 * (0.25 + params.gap)
   const scatter = params.scatter * minSide * 0.25
 
   for (let i = 0; i < count; i++) {
@@ -330,9 +322,9 @@ function place(
       // than at a fixed depth, so the fan is centred in the frame whatever
       // size the blades are — pinning it put small fans down in the corner
       // with the frame empty above them.
-      const opening = params.spread * Math.PI * 0.9 * breath
+      const opening = params.spread * Math.PI * 0.9
       const at = span === 0 ? 0 : -opening / 2 + opening * (i / span)
-      const reach = (radius * (1.15 + Math.max(0, params.gap))) * breath
+      const reach = radius * (1.15 + Math.max(0, params.gap))
       const hinge: Vec2 = { x: middle.x, y: middle.y + reach }
       center = { x: hinge.x + Math.sin(at) * reach, y: hinge.y - Math.cos(at) * reach }
       turn = at
@@ -342,7 +334,7 @@ function place(
       // same amount they are: a full circle when nothing is tipped, an ellipse
       // as the plane tips away, a line when it is nearly edge-on.
       const at = (i / count) * TAU
-      const reach = minSide * (0.12 + params.spread * 0.3) * breath
+      const reach = minSide * (0.12 + params.spread * 0.3)
       center = { x: middle.x + Math.cos(at) * reach, y: middle.y + Math.sin(at) * reach * pitched }
       turn = at + Math.PI / 2
       inPlane = true
