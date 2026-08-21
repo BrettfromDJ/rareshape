@@ -4,6 +4,9 @@ import { defineTool, p, type ToolParams } from '@rareshape/schema'
  * Wave bands snapped to a pixel grid. Smooth curves are quantised to whole
  * cells, so the output reads as data plotted on graph paper rather than as a
  * drawing — the tension between the smooth wave and the hard grid is the tool.
+ *
+ * Every URL key is frozen at the value it was already inferring, so nothing
+ * shared before today changes and nothing shared after today breaks.
  */
 export const tool = defineTool({
   slug: 'pixel-waves',
@@ -21,18 +24,24 @@ export const tool = defineTool({
 
   params: {
     columns: p.int({
+      key: 'c',
       label: 'Columns',
       default: 96,
       min: 8,
-      max: 320,
-      randomRange: [28, 220],
+      // 213 columns is where a 16:9 frame hits the 120-row ceiling, so there is
+      // nothing above this to reach. A taller frame hits it sooner — at 4:5 the
+      // slider stops mattering around 96 — which is the price of square cells
+      // and a fixed number of rows.
+      max: 220,
+      randomRange: [28, 180],
       group: 'Grid',
-      hint: 'Cells across. Rows follow, so cells stay square.',
+      hint: 'Cells across. Rows follow, so cells stay square — and stop at 120.',
     }),
     // Rise and run. Kept as two controls because tying the tread to the cell
     // size meant the only way to get chunky stairs was a coarse grid — the two
     // were one slider fighting itself.
     step: p.int({
+      key: 's',
       label: 'Step height',
       default: 2,
       min: 1,
@@ -42,19 +51,18 @@ export const tool = defineTool({
       hint: 'Cells each vertical step jumps by.',
     }),
     tread: p.int({
+      key: 'tw',
       label: 'Step width',
       default: 1,
       min: 1,
       max: 24,
       randomRange: [1, 8],
-      // Frozen: an inferred key would take `t` from Thickness and break every
-      // link anyone has already shared.
-      key: 'tw',
       group: 'Grid',
       hint: 'Columns each step holds for. Wider treads without a coarser grid.',
     }),
-    grid: p.boolean({ label: 'Grid lines', default: true, group: 'Grid' }),
+    grid: p.boolean({ label: 'Grid lines', default: true, key: 'g', group: 'Grid' }),
     gridColor: p.color({
+      key: 'gc',
       label: 'Grid',
       default: '#b4c6d6',
       role: 'line',
@@ -62,14 +70,14 @@ export const tool = defineTool({
       when: (params) => params.grid === true,
     }),
     gridBlend: p.select({
+      key: 'gb',
       label: 'Grid blend',
-      default: 'auto',
+      default: 'multiply',
       group: 'Grid',
-      hint: 'How the grid takes its tint from the color beneath it. Auto stays visible on light and dark alike.',
-      // Pinned against randomize, alongside the weight. Auto is the mode that
-      // works against any ground; the others are choices you make on purpose,
-      // and rolling into `none` in particular flattens the grid to one flat
-      // color over the whole frame.
+      hint: 'How the grid takes its tint from the color beneath it.',
+      // Pinned against randomize, alongside the weight, and multiply is what
+      // it holds at. Rolling this landed on `none`, which paints one flat grid
+      // color across the whole frame whatever is under it.
       randomize: false,
       options: [
         { value: 'auto', label: 'Auto' },
@@ -82,6 +90,7 @@ export const tool = defineTool({
       when: (params) => params.grid === true,
     }),
     gridWeight: p.number({
+      key: 'gw',
       label: 'Grid weight',
       default: 1,
       min: 0.25,
@@ -99,6 +108,7 @@ export const tool = defineTool({
     // Two is the floor: one band anchored to the top edge and one to the
     // bottom is what guarantees color reaches both.
     layers: p.int({
+      key: 'l',
       label: 'Bands',
       default: 4,
       min: 2,
@@ -107,6 +117,7 @@ export const tool = defineTool({
       group: 'Waves',
     }),
     fill: p.select({
+      key: 'f',
       label: 'Fill',
       default: 'edges',
       group: 'Waves',
@@ -121,6 +132,7 @@ export const tool = defineTool({
       ],
     }),
     thickness: p.number({
+      key: 't',
       label: 'Thickness',
       default: 0.1,
       min: 0.01,
@@ -131,6 +143,7 @@ export const tool = defineTool({
       group: 'Waves',
     }),
     spread: p.number({
+      key: 's2',
       label: 'Spread',
       default: 0.6,
       min: 0,
@@ -142,6 +155,7 @@ export const tool = defineTool({
       hint: 'How far the bands sit apart.',
     }),
     amplitude: p.number({
+      key: 'a',
       label: 'Amplitude',
       default: 0.12,
       min: 0,
@@ -151,6 +165,7 @@ export const tool = defineTool({
       group: 'Waves',
     }),
     frequency: p.number({
+      key: 'f2',
       label: 'Frequency',
       default: 1.8,
       min: 0.2,
@@ -160,6 +175,7 @@ export const tool = defineTool({
       group: 'Waves',
     }),
     roughness: p.number({
+      key: 'r',
       label: 'Roughness',
       default: 0.45,
       min: 0,
@@ -169,17 +185,17 @@ export const tool = defineTool({
       hint: 'Noise mixed into the wave.',
     }),
     dither: p.int({
+      key: 'dt',
       label: 'Dither',
       default: 3,
       min: 0,
       max: 12,
       randomRange: [0, 8],
-      // Frozen: `d` is Drift's.
-      key: 'dt',
       group: 'Waves',
       hint: 'Rows of scattered cells where a band meets what is behind it. 0 is a hard edge.',
     }),
     drift: p.int({
+      key: 'd',
       label: 'Drift',
       default: 1,
       min: -3,
@@ -189,8 +205,15 @@ export const tool = defineTool({
       hint: 'Whole turns per loop, so the animation closes.',
     }),
 
-    background: p.color({ label: 'Paper', default: '#f4f2ed', role: 'ground', group: 'Color' }),
+    background: p.color({
+      label: 'Paper',
+      default: '#f4f2ed',
+      role: 'ground',
+      key: 'b',
+      group: 'Color',
+    }),
     palette: p.palette({
+      key: 'p',
       label: 'Bands',
       default: ['#e04a26', '#8ea3b8', '#151515', '#ffffff'],
       min: 1,
@@ -198,7 +221,7 @@ export const tool = defineTool({
       group: 'Color',
     }),
 
-    seed: p.seed({ label: 'Seed', default: 4, group: 'Color' }),
+    seed: p.seed({ label: 'Seed', default: 4, key: 's3', group: 'Color' }),
   },
 })
 

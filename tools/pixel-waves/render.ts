@@ -10,6 +10,9 @@ import {
 } from '@rareshape/core'
 import type { Params } from './tool'
 
+/** However fine the grid is set, never more rows than this. */
+const MAX_ROWS = 120
+
 /**
  * Every band is a smooth wave sampled once per column, then snapped to whole
  * grid cells — the quantising is what makes it read as plotted data rather than
@@ -22,7 +25,13 @@ export function render(frame: Frame<Params>): SvgFrame {
   const { params, t, width, height, rng } = frame
   const noise = makeNoise(rng)
 
-  const columns = Math.max(1, params.columns)
+  // Rows follow from the columns, so that a cell stays square — which means a
+  // tall frame at a high column count runs to hundreds of them, and a grid
+  // that fine is a texture rather than graph paper. The ceiling is applied by
+  // holding the columns back rather than by squashing the rows: capping the
+  // rows on their own would stretch every cell, and square cells are the point.
+  const widest = Math.max(1, Math.floor((MAX_ROWS * width) / height))
+  const columns = Math.max(1, Math.min(params.columns, widest))
   const cell = width / columns
   const rows = Math.max(1, Math.round(height / cell))
   const rowHeight = height / rows

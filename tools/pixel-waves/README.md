@@ -35,6 +35,13 @@ an ordinary area chart.
   (the tint is computed instead) and `<pattern>` fills (the grid is real line
   geometry). At 320 columns that is a few dozen KB of straight lines and still
   60fps on screen.
+- Rows never exceed 120. They follow from the columns so that a cell stays
+  square, which means a tall frame at a high column count runs to hundreds of
+  them, and a grid that fine is a texture rather than graph paper. The ceiling
+  is applied by holding the columns back, not by squashing the rows — capping
+  the rows on their own would stretch every cell, and square cells are the
+  point. The cost is that the Columns slider saturates sooner the taller the
+  frame: around 213 at 16:9, around 96 at 4:5.
 - `Grid weight` and `Grid blend` are both pinned against randomize. A heavier
   rule and a chosen blend mode are deliberate decisions: rolling the weight
   produced results veiled in grid color, and rolling the blend landed on
@@ -44,8 +51,9 @@ an ordinary area chart.
   2px line covers a third of every cell in both directions, and the grid color
   takes the frame over from the bands. `Grid weight` keeps its full range
   wherever the cells are big enough to carry a heavy rule.
-- `Auto` darkens the grid on light grounds and lightens it on dark ones, so it
-  stays visible on white and black alike. The other modes are the standard
+- `Multiply` is the default and what randomize holds it at. `Auto` darkens the
+  grid on light grounds and lightens it on dark ones, so it stays visible on
+  white and black alike. The other modes are the standard
   blend equations, computed rather than delegated.
 - `Fill` decides how a band relates to the canvas: floating **ribbons**, masses
   anchored to the nearest **edge**, or a **stacked** area chart.
