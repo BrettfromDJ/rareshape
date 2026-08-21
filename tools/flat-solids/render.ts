@@ -11,6 +11,13 @@ import {
 import type { Params } from './tool'
 
 /**
+ * The projection, fixed. 60° squashes a turned square to twice as wide as it
+ * is tall, which is the isometric everyone draws, and the body is dragged
+ * straight down because that is where light comes from.
+ */
+const PITCH = 60
+
+/**
  * A solid here is one slab face plus the faces its edges sweep out when the
  * whole thing is dragged in a single screen direction. There is no camera and
  * no z-axis: `pitch` squashes the face vertically, which is all it takes to
@@ -34,17 +41,12 @@ export function render(frame: Frame<Params>): SvgFrame {
   const radius = minSide * 0.2
 
   const lengths = params.lengths.length ? params.lengths : [1.6]
-  const pitched = Math.cos((params.pitch * TAU) / 360)
+  const pitched = Math.cos((PITCH * TAU) / 360)
   const turned = (params.turn * TAU) / 360
 
-  // The body direction, in screen space. Everything is dragged the same way —
-  // that shared direction is what makes a pile of unrelated shapes read as one
-  // scene lit from one side.
-  const lean = (params.lean * TAU) / 360
-  const body: Vec2 = {
-    x: Math.cos(lean) * params.depth * minSide,
-    y: Math.sin(lean) * params.depth * minSide,
-  }
+  // Every solid is dragged the same way, and that shared direction is what
+  // makes a pile of unrelated shapes read as one scene lit from one side.
+  const body: Vec2 = { x: 0, y: params.depth * minSide }
 
   // Position only. Scatter used to give each solid its own rotation too, and
   // a composition where every solid sits at a different angle stops reading as
@@ -54,11 +56,10 @@ export function render(frame: Frame<Params>): SvgFrame {
     y: rng.float(-1, 1),
   }))
 
-  const items = place(params, count, radius, minSide, middle, pitched, noise)
+  const items = place(params, count, radius, minSide, middle, noise)
 
-  // Painter's order. Which end of the pile is nearest depends on how the
-  // solids are laid out, so each arrangement says so rather than being sorted
-  // by one rule that would be wrong half the time.
+  // Seen from above, the top solid is the near one, so the pile is painted
+  // from the bottom up.
   items.sort((a, b) => a.order - b.order)
 
   const palette = params.palette.length ? params.palette : ['#ff5500']
@@ -77,19 +78,13 @@ export function render(frame: Frame<Params>): SvgFrame {
     // breadth, so a set reads as a set however much the lengths vary.
     const face = slabFace(lengths[item.index % lengths.length] as number, params.breadth)
 
-    // Face into place: sized, spun in its own plane, tipped away, then turned
-    // and moved as a whole.
+    // Face into place: spun in its own plane, tipped away, then moved.
     const points = face.map((point) => {
-      // Where the arrangement's rotation happens decides what the scene is.
-      // Turned before the tip, a solid lies in the same plane as every other
-      // one — a ring on the ground. Turned after, it stands up and faces you,
-      // pivoting on the picture surface — a fan of blades. Neither is more
-      // correct; they are different scenes, so the arrangement picks.
-      const inPlane = item.inPlane ? item.turn : 0
-      const spun = rotate(point, turned + inPlane)
-      const flat: Vec2 = { x: spun.x * item.scale * radius, y: spun.y * pitched * item.scale * radius }
-      const placed = item.inPlane ? flat : rotate(flat, item.turn)
-      return { x: placed.x + item.center.x, y: placed.y + item.center.y }
+      const spun = rotate(point, turned)
+      return {
+        x: spun.x * item.scale * radius + item.center.x,
+        y: spun.y * pitched * item.scale * radius + item.center.y,
+      }
     })
     return { item, points, ink: inkOf(points, body) }
   })
@@ -279,29 +274,20 @@ function runsWithin(run: readonly number[], match: (edge: number) => boolean): n
 
 interface Placed {
   center: Vec2
-  /** Rotation of the whole solid on screen, after it has been tipped. */
-  turn: number
   scale: number
-  /** Whether `turn` happens before the face is tipped. See the note at its use. */
-  inPlane: boolean
-  /** Index in the palette — kept through the sort so colors stay put. */
+  /** Index in the lengths list and the palette — kept through the sort. */
   index: number
   /** Low paints first. */
   order: number
 }
 
-/**
- * Where each solid sits. Every arrangement also says which end of it is
- * nearest, because that genuinely differs: a stack is lit from above so the
- * top one covers the rest, while a row just overlaps one way.
- */
+/** Where each slab sits in the stack. */
 function place(
   params: Params,
   count: number,
   radius: number,
   minSide: number,
   middle: Vec2,
-  pitched: number,
   noise: readonly { x: number; y: number }[],
 ): Placed[] {
   const out: Placed[] = []
@@ -312,75 +298,19 @@ function place(
 
   for (let i = 0; i < count; i++) {
     const grain = noise[i] as { x: number; y: number }
-    const scale = 1 + params.taper * (span === 0 ? 0 : (centred(i) / (span / 2)))
+    const scale = 1 + params.taper * (span === 0 ? 0 : centred(i) / (span / 2))
     const rise = params.drop * minSide * 0.25 * centred(i)
-
-    let center: Vec2 = { x: middle.x, y: middle.y }
-    let turn = 0
-    let order = i
-    let inPlane = false
-
-    if (params.arrangement === 'stack') {
-      center = { x: middle.x, y: middle.y + centred(i) * step }
-      // Seen from above, the top solid is the near one.
-      order = -center.y
-    } else if (params.arrangement === 'row') {
-      center = { x: middle.x + centred(i) * step, y: middle.y }
-      order = center.x
-    } else if (params.arrangement === 'fan') {
-      // Blades hinged below the composition, each pointing away from the
-      // hinge. The hinge is placed a blade's reach below the middle rather
-      // than at a fixed depth, so the fan is centred in the frame whatever
-      // size the blades are — pinning it put small fans down in the corner
-      // with the frame empty above them.
-      const opening = params.spread * Math.PI * 0.9
-      const at = span === 0 ? 0 : -opening / 2 + opening * (i / span)
-      const reach = radius * (1.15 + Math.max(0, params.gap))
-      const hinge: Vec2 = { x: middle.x, y: middle.y + reach }
-      center = { x: hinge.x + Math.sin(at) * reach, y: hinge.y - Math.cos(at) * reach }
-      turn = at
-      order = at
-    } else if (params.arrangement === 'ring') {
-      // The ring lies in the same plane the faces do, so it is squashed by the
-      // same amount they are: a full circle when nothing is tipped, an ellipse
-      // as the plane tips away, a line when it is nearly edge-on.
-      const at = (i / count) * TAU
-      const reach = minSide * (0.12 + params.spread * 0.3)
-      center = { x: middle.x + Math.cos(at) * reach, y: middle.y + Math.sin(at) * reach * pitched }
-      turn = at + Math.PI / 2
-      inPlane = true
-      // Round the back of the ring first.
-      order = center.y
-    } else if (params.arrangement === 'grid') {
-      const columns = Math.ceil(Math.sqrt(count))
-      const rows = Math.ceil(count / columns)
-      const column = i % columns
-      const row = Math.floor(i / columns)
-      center = {
-        x: middle.x + (column - (columns - 1) / 2) * step,
-        y: middle.y + (row - (rows - 1) / 2) * step,
-      }
-      order = row * 1000 + column
-    } else {
-      // Cascade: stepped down and across, each one in front of the last.
-      const drift = step * 0.8
-      center = {
-        x: middle.x + centred(i) * drift,
-        y: middle.y + centred(i) * drift * (0.3 + params.spread),
-      }
-      order = i
-    }
+    const y = middle.y + centred(i) * step
 
     out.push({
       center: {
-        x: center.x + grain.x * scatter,
-        y: center.y + grain.y * scatter + rise,
+        x: middle.x + grain.x * scatter,
+        y: y + grain.y * scatter + rise,
       },
-      turn,
       scale: Math.max(0.02, scale),
-      inPlane,
       index: i,
-      order,
+      // Seen from above, the top solid is the near one.
+      order: -y,
     })
   }
 

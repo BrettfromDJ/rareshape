@@ -1,6 +1,6 @@
 # Flat Solids
 
-Slabs extruded into solids.
+A stack of slabs extruded into solids.
 
 There is no camera here and no z-axis. A solid is one slab face, plus the faces
 its edges sweep out when the whole thing is dragged in a single screen
@@ -32,14 +32,13 @@ rather than a mesh.
 - The far face is drawn first, in whichever side tone is darker. It is hidden
   behind everything else until the body is dragged further than the shape is
   wide, which is the only time it has anything to say.
-- Where an arrangement's rotation happens decides what the scene is. Turned
-  before the tip, every solid lies in the same plane — a **Ring** on the
-  ground, squashed by exactly as much as the faces are. Turned after, it stands
-  up and faces you, pivoting on the picture surface — a **Fan** of blades.
-  Neither is more correct, so the arrangement picks.
-- Painter's order is per arrangement rather than one global rule, because which
-  end of the pile is nearest genuinely differs: a **Stack** is seen from above
-  so its top solid covers the rest, while a **Row** just overlaps one way.
+- One arrangement, one projection, one light. Six arrangements, a pitch slider
+  and an extrusion direction all worked, and every one of them was another way
+  to arrive at a picture that was not this one. What is left is a stack seen
+  from a fixed isometric with the light overhead, and the controls that remain
+  are about what is stacked rather than where you are standing.
+- The pile is painted from the bottom up: seen from above, the top slab is the
+  near one and covers the rest.
 - Slabs and nothing else. Discs and hexes and wedges all worked, and all of
   them pulled the tool toward being a shape library rather than a way of
   building one kind of composition well.
@@ -51,12 +50,11 @@ rather than a mesh.
 - `Zoom` and `Position` are the frame. The composition is fitted first and
   framed second, so pushing Zoom past 1 and dragging Position is a crop of a
   composition that is bigger than the frame it sits in.
-- `Pitch` and `Turn` together are the projection, and a projection is a
-  decision about the whole picture rather than something to re-roll — so
-  randomize leaves both alone. Rolling them landed on angles between the clean
-  ones, where a solid reads as a shape that has been knocked over rather than
-  one seen from a consistent point of view. 60° with a 45° turn squashes a
-  square to twice as wide as it is tall: the isometric everyone draws.
+- The pitch is fixed at 60°, which with a 45° turn squashes a square to twice
+  as wide as it is tall: the isometric everyone draws. `Turn` is the one angle
+  left open, because spinning the face in its own plane changes what the slab
+  is rather than where you are standing — and it is pinned against randomize
+  for the same reason the projection is not a control at all.
 - `Scatter` nudges position and nothing else. Giving each solid its own
   rotation as well meant a composition where everything sat at a different
   angle, and the shared projection is the whole illusion.

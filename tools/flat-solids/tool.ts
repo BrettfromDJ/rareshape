@@ -1,9 +1,9 @@
 import { defineTool, p, type ToolParams } from '@rareshape/schema'
 
 /**
- * Slabs given a body by extruding them along one screen-space direction: a
- * face, the faces its edges sweep out, and nothing else. There is no camera and
- * no z-axis — the solidity is an illusion made of three flat colors, which is
+ * A stack of slabs, each given a body by dragging it straight down: a face, the
+ * faces its edges sweep out, and nothing else. There is no camera and no
+ * z-axis — the solidity is an illusion made of three flat colors, which is
  * exactly how it is done in the poster work this comes from.
  *
  * Every face is a plain polygon, so what lands in Figma is a handful of shapes
@@ -16,7 +16,7 @@ import { defineTool, p, type ToolParams } from '@rareshape/schema'
 export const tool = defineTool({
   slug: 'flat-solids',
   name: 'Flat Solids',
-  tagline: 'Slabs extruded into solids.',
+  tagline: 'A stack of slabs extruded into solids.',
   category: 'Shapes',
   engine: 'svg',
   outputs: ['SVG', 'PNG', 'HTML'],
@@ -70,39 +70,6 @@ export const tool = defineTool({
       group: 'Slab',
       hint: 'The short side. The same for all of them.',
     }),
-    // Pitch and Turn together are the projection, and a projection is a
-    // decision about the whole picture rather than something to re-roll. Left
-    // to randomize they landed on angles between the clean ones, where a solid
-    // reads as a shape that has been knocked over rather than one seen from a
-    // consistent point of view.
-    //
-    // A slider rather than a dial for Pitch: it only ever travels a quarter
-    // turn, and a dial reading 60 of a possible 360 misrepresents that.
-    pitch: p.number({
-      label: 'Pitch',
-      // 60° squashes a turned square to twice as wide as it is tall, which is
-      // the isometric everyone draws.
-      default: 60,
-      min: 0,
-      max: 80,
-      step: 1,
-      unit: '°',
-      randomize: false,
-      key: 'pt',
-      group: 'Slab',
-      hint: 'How far the face tips away. 0 faces you flat on, 60 is isometric.',
-    }),
-    turn: p.angle({
-      label: 'Turn',
-      default: 45,
-      step: 1,
-      randomize: false,
-      key: 'tn',
-      group: 'Slab',
-      hint: 'The face spun in its own plane, before it tips. 0 for blades, 45 for boxes.',
-    }),
-
-    /* --- the extrusion --------------------------------------------------- */
     depth: p.number({
       label: 'Depth',
       default: 0.12,
@@ -113,37 +80,24 @@ export const tool = defineTool({
       // reading as solid at all.
       randomRange: [0.09, 0.28],
       key: 'dp',
-      group: 'Extrusion',
-      hint: 'How far the face is dragged to make a body.',
+      group: 'Slab',
+      hint: 'How far the face is dragged to make a body. The third dimension.',
     }),
-    lean: p.angle({
-      label: 'Direction',
-      default: 90,
+    // The projection is fixed: 60° of pitch with a 45° turn, which squashes a
+    // square to twice as wide as it is tall — the isometric everyone draws.
+    // Only the spin in the face's own plane is left open, because that is the
+    // one that changes what the slab is rather than where you are standing.
+    turn: p.angle({
+      label: 'Turn',
+      default: 45,
       step: 1,
-      // Where the light is coming from is a decision about the whole scene, so
-      // randomize leaves it alone. Rolling it mostly produced bodies hanging
-      // upward, which reads as a mistake rather than as a choice.
       randomize: false,
-      key: 'dr',
-      group: 'Extrusion',
-      hint: 'Which way the body is dragged. 90 is straight down.',
+      key: 'tn',
+      group: 'Slab',
+      hint: 'The face spun in its own plane, before it tips. 0 for blades, 45 for boxes.',
     }),
 
     /* --- how they sit together ------------------------------------------- */
-    arrangement: p.select({
-      label: 'Arrangement',
-      default: 'stack',
-      key: 'ar',
-      group: 'Arrangement',
-      options: [
-        { value: 'stack', label: 'Stack' },
-        { value: 'fan', label: 'Fan' },
-        { value: 'row', label: 'Row' },
-        { value: 'ring', label: 'Ring' },
-        { value: 'grid', label: 'Grid' },
-        { value: 'cascade', label: 'Cascade' },
-      ],
-    }),
     gap: p.number({
       label: 'Gap',
       default: 0.34,
@@ -157,17 +111,6 @@ export const tool = defineTool({
       key: 'gp',
       group: 'Arrangement',
       hint: 'Space between them. Negative overlaps.',
-    }),
-    spread: p.number({
-      label: 'Spread',
-      default: 0.55,
-      min: 0,
-      max: 1,
-      step: 0.01,
-      randomRange: [0.25, 1],
-      key: 'sp',
-      group: 'Arrangement',
-      hint: 'How far a fan opens, or how wide a ring sits.',
     }),
     taper: p.number({
       label: 'Taper',

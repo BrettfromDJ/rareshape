@@ -19,7 +19,6 @@ an ordinary area chart.
   stays fixed in space and the edge sweeps through it — a random screen drags a
   cloud of fizz along with the band. An edge sitting on the canvas boundary is
   left alone: there is nothing behind it to fade into.
-
 - The wave is a travelling sine mixed with 3D noise. `Roughness` crossfades
   between them: 0 is a clean sine, 1 is pure noise.
 - The animation loops because both terms are periodic over `t`: the sine moves
@@ -33,22 +32,23 @@ an ordinary area chart.
 - Two things it deliberately does not use, because both look right in a browser
   and vanish in the tools people actually open exports in: `mix-blend-mode`
   (the tint is computed instead) and `<pattern>` fills (the grid is real line
-  geometry). At 320 columns that is a few dozen KB of straight lines and still
-  60fps on screen.
-- Rows never exceed 120. They follow from the columns so that a cell stays
-  square, which means a tall frame at a high column count runs to hundreds of
-  them, and a grid that fine is a texture rather than graph paper. The ceiling
-  is applied by holding the columns back, not by squashing the rows — capping
-  the rows on their own would stretch every cell, and square cells are the
-  point. The cost is that the Columns slider saturates sooner the taller the
-  frame: around 213 at 16:9, around 96 at 4:5.
+  geometry). At the full 120 columns that is a few KB of straight lines and
+  still 60fps on screen.
+- Neither columns nor rows pass 120. Rows follow from the columns so that a
+  cell stays square, which means a tall frame at a high column count ran to
+  hundreds of them, and a grid that fine is a texture rather than graph paper.
+  The row ceiling is applied by holding the columns back, not by squashing the
+  rows — capping rows on their own would stretch every cell, and square cells
+  are the point. The Columns slider stops at 120 too, so it never shows a
+  number the render is quietly overruling. A tall frame still reaches the row
+  ceiling before the slider ends: 4:5 tops out around 95 columns.
 - `Grid weight` and `Grid blend` are both pinned against randomize. A heavier
   rule and a chosen blend mode are deliberate decisions: rolling the weight
   produced results veiled in grid color, and rolling the blend landed on
   `none`, which paints one flat grid color across the whole frame.
 - The grid rule is capped at a fraction of its own cell. A stroke that is wide
-  relative to the cell stops being a rule and becomes a veil — at 200 columns a
-  2px line covers a third of every cell in both directions, and the grid color
+  relative to the cell stops being a rule and becomes a veil — at 120 columns a
+  2px line covers a quarter of every cell in both directions, and the grid color
   takes the frame over from the bands. `Grid weight` keeps its full range
   wherever the cells are big enough to carry a heavy rule.
 - `Multiply` is the default and what randomize holds it at. `Auto` darkens the
