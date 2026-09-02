@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
+import { saveTextFile } from '../_lib/download'
 import { difficultyLabel } from '../_lib/engine'
 import { isWord, setWords, useBee, useDispatch } from '../_lib/store'
 import type { Difficulty, Word } from '../_lib/types'
@@ -53,22 +54,16 @@ export function WordBank({ onClose }: { onClose: () => void }) {
     say(target ? `Deleted “${target.word}”` : 'Deleted')
   }
 
-  const exportJson = () => {
+  const exportJson = async () => {
     const payload = {
       app: 'rareshape-spelling-bee',
       exportedAt: new Date().toISOString(),
       words: words.map((word) => ({ ...word, used: used.has(word.id) })),
     }
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = 'spelling-bee-words.json'
-    document.body.appendChild(anchor)
-    anchor.click()
-    anchor.remove()
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-    say(`Exported ${words.length} words`)
+    const outcome = await saveTextFile('spelling-bee-words.json', JSON.stringify(payload, null, 2))
+    if (outcome === 'saved') say(`Exported ${words.length} words`)
+    else if (outcome === 'declined') say('Export cancelled')
+    else say('Saving files is not available in this view')
   }
 
   const importJson = async (file: File) => {
@@ -160,7 +155,7 @@ export function WordBank({ onClose }: { onClose: () => void }) {
             changeEvent.target.value = ''
           }}
         />
-        <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost" onClick={exportJson}>
+        <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost" onClick={() => void exportJson()}>
           Export JSON
         </button>
         <button
