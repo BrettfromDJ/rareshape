@@ -114,6 +114,20 @@ export function defaultGame(): GameState {
   }
 }
 
+/**
+ * Where the audience view lives. The site serves it at /spelling-bee/audience;
+ * a single-file build of the app sets `data-bee-audience-href` on <html> to
+ * point somewhere else (the same page with a hash, for instance).
+ */
+export function audienceHref(): string {
+  if (typeof document === 'undefined') return '/spelling-bee/audience'
+  const override = document.documentElement.dataset.beeAudienceHref
+  if (override) return override
+  return `${window.location.pathname.replace(/\/+$/, '')}/audience`
+}
+
+export const AUDIENCE_MODE_KEY = 'rareshape.bee.v1.audienceMode'
+
 export function nextTeamColor(taken: TeamColorId[]): TeamColorId {
   const free = TEAM_COLORS.find((color) => !taken.includes(color.id))
   return (free ?? TEAM_COLORS[taken.length % TEAM_COLORS.length] ?? TEAM_COLORS[0]!).id

@@ -8,7 +8,7 @@ import { primeAudio } from '../_lib/sound'
 import { resetAll, useBee, useDispatch } from '../_lib/store'
 import type { RoundConfig, RoundDifficulty, Settings, Team } from '../_lib/types'
 import { DIFFICULTIES } from '../_lib/types'
-import { openAudienceWindow } from './TopBar'
+import { POPUP_BLOCKED, openAudienceWindow } from './TopBar'
 import { Confirm, Pill, Toast } from './ui'
 import { WordBank } from './WordBank'
 
@@ -65,7 +65,7 @@ export function SetupScreen() {
             type="button"
             className="bee-btn bee-btn-sm bee-btn-teal"
             onClick={() => {
-              if (!openAudienceWindow()) say('Pop-up blocked. Allow pop-ups, or open /spelling-bee/audience in a new window.')
+              if (!openAudienceWindow()) say(POPUP_BLOCKED)
             }}
           >
             ⧉ Open audience window

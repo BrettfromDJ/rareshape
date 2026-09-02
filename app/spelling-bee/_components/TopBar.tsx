@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
+import { audienceHref } from '../_lib/defaults'
 import { primeAudio } from '../_lib/sound'
 import { setPrefs, undo, useBee } from '../_lib/store'
 import type { GameState } from '../_lib/types'
@@ -8,10 +9,12 @@ import { Kbd, Toast } from './ui'
 
 /** Opens the audience route in its own window. Returns false when a pop-up blocker refused. */
 export function openAudienceWindow(): boolean {
-  const base = window.location.pathname.replace(/\/+$/, '')
-  const opened = window.open(`${base}/audience`, 'rareshape-bee-audience')
+  const opened = window.open(audienceHref(), 'rareshape-bee-audience')
   return Boolean(opened)
 }
+
+export const POPUP_BLOCKED =
+  'The browser blocked the pop-up. Open this page in a second tab or on the TV and press Audience mode there.'
 
 export function TopBar({
   game,
@@ -69,7 +72,7 @@ export function TopBar({
           type="button"
           className="bee-btn bee-btn-sm bee-btn-teal"
           onClick={() => {
-            if (!openAudienceWindow()) say('The browser blocked the pop-up. Allow pop-ups here, or open /spelling-bee/audience in a new window.')
+            if (!openAudienceWindow()) say(POPUP_BLOCKED)
           }}
           title="Open the audience view in a second window to drag onto the TV"
         >
