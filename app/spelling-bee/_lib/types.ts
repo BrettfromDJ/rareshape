@@ -58,6 +58,8 @@ export interface Settings {
   stealMode: StealMode
   stealPoints: number
   stealWorth: StealWorth
+  /** Points a team loses when it buzzes in to steal and misses. */
+  stealPenalty: number
   stealTimerSeconds: number
   doubleWordEnabled: boolean
   timedRounds: boolean

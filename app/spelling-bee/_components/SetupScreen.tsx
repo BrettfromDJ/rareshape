@@ -198,7 +198,7 @@ export function SetupScreen() {
           <div className="bee-toggle-row">
             <div>
               <div className="font-semibold text-lg">Steals</div>
-              <div className="bee-hint">A missed word can be stolen by another team.</div>
+              <div className="bee-hint">A missed word can be stolen by another team. Buzz in and miss, and the penalty comes off your score.</div>
             </div>
             <input type="checkbox" className="bee-check" checked={game.settings.stealsEnabled} onChange={(changeEvent) => settings({ stealsEnabled: changeEvent.target.checked })} aria-label="Enable steals" />
           </div>
@@ -224,6 +224,10 @@ export function SetupScreen() {
                   <input type="number" min={0} max={99} className="bee-input" value={game.settings.stealPoints} onChange={(changeEvent) => settings({ stealPoints: Math.max(0, int(changeEvent.target.value, game.settings.stealPoints)) })} />
                 </label>
               )}
+              <label className="bee-field">
+                <span className="bee-label">A missed steal costs</span>
+                <input type="number" min={0} max={99} className="bee-input" value={game.settings.stealPenalty} onChange={(changeEvent) => settings({ stealPenalty: Math.max(0, int(changeEvent.target.value, game.settings.stealPenalty)) })} />
+              </label>
               <label className="bee-field">
                 <span className="bee-label">Steal timer (seconds)</span>
                 <input type="number" min={3} max={120} className="bee-input" value={game.settings.stealTimerSeconds} onChange={(changeEvent) => settings({ stealTimerSeconds: Math.min(120, Math.max(3, int(changeEvent.target.value, game.settings.stealTimerSeconds))) })} />

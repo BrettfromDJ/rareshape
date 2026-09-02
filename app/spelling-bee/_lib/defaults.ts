@@ -57,6 +57,7 @@ export function defaultSettings(): Settings {
     stealMode: 'buzz',
     stealPoints: 1,
     stealWorth: 'fixed',
+    stealPenalty: 1,
     stealTimerSeconds: 15,
     doubleWordEnabled: true,
     timedRounds: true,

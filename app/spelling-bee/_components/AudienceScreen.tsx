@@ -244,7 +244,9 @@ function Status({ game, team, stealer }: { game: GameState; team: Team; stealer:
       }
       const parts: string[] = [turn.doubled ? `Missed. ${formatPoints(turn.pointsAwarded)} for ${team.name}` : 'Missed. No points']
       if (turn.stealOutcome === 'correct' && stealer) parts.push(`${stealer.name} steals ${formatPoints(turn.stealPointsAwarded)}!`)
-      if (turn.stealOutcome === 'incorrect' && stealer) parts.push(`${stealer.name} missed the steal.`)
+      if (turn.stealOutcome === 'incorrect' && stealer) {
+        parts.push(`${stealer.name} missed the steal${turn.stealPointsAwarded < 0 ? ` (${formatPoints(turn.stealPointsAwarded)})` : ''}.`)
+      }
       return <p className={`${big} bee-anim-shake`}>{parts.join(' ')}</p>
     }
     default:

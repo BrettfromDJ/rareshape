@@ -378,7 +378,9 @@ function resolveSteal(state: GameState, words: Word[], stealTeamId: string | nul
     }
   }
   const word = wordById(words, turn.wordId)
-  const points = won ? stealValue(state, round) : 0
+  // Buzzing in is a bet: a miss costs the penalty. In written steals nobody
+  // buzzes, so a round with no winner charges no one.
+  const points = won ? stealValue(state, round) : -Math.max(0, state.settings.stealPenalty)
   const entry = logEntry({
     kind: 'steal',
     roundIndex: turn.roundIndex,

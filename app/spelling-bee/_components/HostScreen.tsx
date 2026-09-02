@@ -426,6 +426,7 @@ function ActionPanel({ game, team, word, onPronounce, act }: { game: GameState; 
   const timed = game.settings.timedRounds
   const others = game.teams.filter((item) => item.id !== team.id)
   const stealWorth = game.settings.stealWorth === 'word' ? round.points : game.settings.stealPoints
+  const stealPenalty = Math.max(0, game.settings.stealPenalty)
   const stealer = teamById(game, turn.stealTeamId)
 
   const timerControls = timed && (
@@ -498,7 +499,11 @@ function ActionPanel({ game, team, word, onPronounce, act }: { game: GameState; 
           <p className="bee-display text-3xl text-[var(--bee-red-soft)]">
             Missed{turn.doubled ? ` (−${round.points}, Double Word)` : ''}. Steal for {stealWorth} {stealWorth === 1 ? 'point' : 'points'}!
           </p>
-          <p className="text-lg">{game.settings.stealMode === 'written' ? 'Every other team writes their spelling. Pick the team that got it, or nobody.' : 'Which team is buzzing in?'}</p>
+          <p className="text-lg">
+            {game.settings.stealMode === 'written'
+              ? 'Every other team writes their spelling. Pick the team that got it, or nobody.'
+              : `Which team is buzzing in?${stealPenalty ? ` Miss it and they lose ${stealPenalty}.` : ''}`}
+          </p>
           <div className="flex flex-wrap gap-3">
             {others.map((other) => {
               const c = teamColor(other.color)
@@ -534,7 +539,10 @@ function ActionPanel({ game, team, word, onPronounce, act }: { game: GameState; 
           <div className="flex flex-wrap items-center gap-3">
             <p className="bee-display text-3xl">Steal attempt:</p>
             {stealer && <TeamChip team={stealer} className="text-2xl" />}
-            <span className="bee-hint">for {stealWorth} {stealWorth === 1 ? 'point' : 'points'}</span>
+            <span className="bee-hint">
+              for {stealWorth} {stealWorth === 1 ? 'point' : 'points'}
+              {stealPenalty ? `, or −${stealPenalty} if they miss` : ''}
+            </span>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             {timerControls}
@@ -566,7 +574,11 @@ function ActionPanel({ game, team, word, onPronounce, act }: { game: GameState; 
                 {stealer.name} stole it for {formatPoints(turn.stealPointsAwarded)}!
               </p>
             )}
-            {turn.stealOutcome === 'incorrect' && stealer && <p className="bee-display text-2xl text-[var(--bee-dim)]">{stealer.name} missed the steal.</p>}
+            {turn.stealOutcome === 'incorrect' && stealer && (
+              <p className="bee-display text-2xl text-[var(--bee-red-soft)]">
+                {stealer.name} missed the steal{turn.stealPointsAwarded < 0 ? ` and loses ${Math.abs(turn.stealPointsAwarded)}` : ''}.
+              </p>
+            )}
             {word && turn.outcome !== 'skipped' && <p className="bee-hint mt-1">The word was “{word.word}”.</p>}
           </div>
           <button type="button" className="bee-btn bee-btn-xl bee-btn-gold" onClick={act(() => dispatch({ type: 'next' }))}>
