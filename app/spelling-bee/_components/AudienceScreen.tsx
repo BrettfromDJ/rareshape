@@ -7,7 +7,7 @@ import { formatPoints, ordinal } from '../_lib/format'
 import { useBee } from '../_lib/store'
 import type { GameState, RoundConfig, Team, Turn, Word } from '../_lib/types'
 import { Leaderboard } from './Leaderboard'
-import { TimerRing } from './TimerRing'
+import { TimerFill, TimerRing } from './TimerRing'
 import { Pill, TeamChip, TeamSwatch, Token } from './ui'
 
 /**
@@ -178,12 +178,16 @@ function AudiencePlaying({ game }: { game: GameState }) {
           </Pill>
         </div>
 
-        <div
+        <TimerFill
           key={turn.number}
-          className="bee-marquee flex-1 flex flex-col justify-center gap-[clamp(0.75rem,1.6vw,1.5rem)] p-[clamp(1.25rem,3vw,3rem)] bee-anim-rise"
-          style={{ background: color.bg, color: color.fg }}
+          timer={game.timer}
+          enabled={game.settings.timedRounds}
+          bg={color.bg}
+          fg={color.fg}
+          size="lg"
+          className="bee-marquee flex-1 flex flex-col justify-center p-[clamp(1.25rem,3vw,3rem)] bee-anim-rise"
         >
-          <div className="grid md:grid-cols-[1fr_auto] gap-6 items-center">
+          <div className="flex flex-col gap-[clamp(0.75rem,1.6vw,1.5rem)]">
             <div className="min-w-0">
               <p className="bee-label text-[clamp(1rem,1.8vw,1.6rem)]" style={{ color: 'inherit', opacity: 0.8 }}>
                 Now spelling for {team.name}
@@ -207,15 +211,11 @@ function AudiencePlaying({ game }: { game: GameState }) {
                 )}
               </div>
             </div>
-            <div className="justify-self-center rounded-full bg-[var(--bee-ink)] p-3">
-              <TimerRing timer={game.timer} size={220} enabled={game.settings.timedRounds} />
+            <div className="min-h-[3rem]">
+              <Status game={game} team={team} stealer={stealer} />
             </div>
           </div>
-
-          <div className="min-h-[3rem]">
-            <Status game={game} team={team} stealer={stealer} />
-          </div>
-        </div>
+        </TimerFill>
 
         {next && turn.stage !== 'resolved' && (
           <p className="text-[clamp(1rem,1.8vw,1.6rem)] text-[var(--bee-dim)]">
@@ -282,17 +282,19 @@ function WordStage({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 md:gap-6 rounded-2xl border-[3px] border-[var(--bee-ink)] px-4 md:px-6 py-3" style={{ background: color.bg, color: color.fg, boxShadow: '0 5px 0 var(--bee-ink)' }}>
-        <div className="min-w-0 flex-1">
-          <p className="bee-label text-[clamp(0.85rem,1.3vw,1.2rem)]" style={{ color: 'inherit', opacity: 0.8 }}>
-            Now spelling for {team.name}
-          </p>
-          <p className="bee-display text-[clamp(2rem,4.2vw,4.2rem)] leading-none break-words">{contestant}</p>
-        </div>
-        <div className="rounded-full bg-[var(--bee-ink)] p-2">
-          <TimerRing timer={game.timer} size={140} enabled={game.settings.timedRounds} />
-        </div>
-      </div>
+      <TimerFill
+        timer={game.timer}
+        enabled={game.settings.timedRounds}
+        bg={color.bg}
+        fg={color.fg}
+        className="rounded-2xl border-[3px] border-[var(--bee-ink)] px-4 md:px-6 py-3"
+        style={{ boxShadow: '0 5px 0 var(--bee-ink)' }}
+      >
+        <p className="bee-label text-[clamp(0.85rem,1.3vw,1.2rem)]" style={{ color: 'inherit', opacity: 0.8 }}>
+          Now spelling for {team.name}
+        </p>
+        <p className="bee-display text-[clamp(2rem,4.2vw,4.2rem)] leading-none break-words">{contestant}</p>
+      </TimerFill>
 
       <div key={word.id} className="bee-plate bee-marquee flex-1 grid place-items-center text-center px-[clamp(1rem,3vw,3rem)] py-[clamp(1rem,2.5vw,2.5rem)] bee-anim-pop min-h-0">
         <div className="min-w-0 max-w-full">
