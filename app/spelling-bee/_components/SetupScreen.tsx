@@ -259,6 +259,14 @@ export function SetupScreen() {
 
           <div className="bee-toggle-row">
             <div>
+              <div className="font-semibold text-lg">Show the word on the audience screen</div>
+              <div className="bee-hint">For contestants who face away from the TV. The word appears big once you reveal it, and hides again during a steal so the stealing team can&rsquo;t read it.</div>
+            </div>
+            <input type="checkbox" className="bee-check" checked={game.settings.audienceShowsWord} onChange={(changeEvent) => settings({ audienceShowsWord: changeEvent.target.checked })} aria-label="Show the word on the audience screen" />
+          </div>
+
+          <div className="bee-toggle-row">
+            <div>
               <div className="font-semibold text-lg">Rotate players automatically</div>
               <div className="bee-hint">Off means the host picks who spells at the start of each turn. Either way, the app suggests who is due.</div>
             </div>

@@ -65,6 +65,8 @@ export interface Settings {
   timedRounds: boolean
   timerSeconds: number
   autoRotate: boolean
+  /** Show the word on the audience screen once revealed. For contestants who face away from the TV. */
+  audienceShowsWord: boolean
 }
 
 export type Phase = 'setup' | 'playing' | 'tiebreaker' | 'results'

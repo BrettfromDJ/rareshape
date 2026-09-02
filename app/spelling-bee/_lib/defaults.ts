@@ -63,6 +63,7 @@ export function defaultSettings(): Settings {
     timedRounds: true,
     timerSeconds: 30,
     autoRotate: true,
+    audienceShowsWord: true,
   }
 }
 

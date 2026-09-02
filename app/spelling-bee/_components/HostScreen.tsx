@@ -353,7 +353,8 @@ function WordCard({ game, word, onPronounce }: { game: GameState; word: Word | u
           <p className="text-lg mt-1">
             {word ? (
               <>
-                A <strong>{difficultyLabel(word.difficulty).toLowerCase()}</strong> word is loaded. Reveal it when the contestant is ready; the audience screen never shows it.
+                A <strong>{difficultyLabel(word.difficulty).toLowerCase()}</strong> word is loaded. Reveal it when the contestant is ready
+                {game.settings.audienceShowsWord ? '; it goes up on the audience screen too, so make sure they face away.' : '; the audience screen keeps it hidden.'}
               </>
             ) : (
               turn.wordNote ?? 'No word could be drawn.'

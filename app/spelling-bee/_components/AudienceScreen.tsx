@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import { teamColor } from '../_lib/defaults'
-import { contestantName, currentRound, difficultyLabel, standings, teamById, upNext } from '../_lib/engine'
+import { contestantName, currentRound, difficultyLabel, standings, teamById, upNext, wordById } from '../_lib/engine'
 import { formatPoints, ordinal } from '../_lib/format'
-import type { GameState, Team } from '../_lib/types'
+import { useBee } from '../_lib/store'
+import type { GameState, Team, Turn, Word } from '../_lib/types'
 import { Leaderboard } from './Leaderboard'
 import { TimerRing } from './TimerRing'
 import { Pill, TeamChip, Token } from './ui'
 
 /**
- * What the room sees. This component never receives a word: it reads only
- * the team, contestant, round, timer and scores from the game.
+ * What the room sees: team, contestant, round, timer and scores. The word
+ * itself appears only when the "show the word on the audience screen" rule
+ * is on, only after the host reveals it, and never while a steal is open or
+ * a tiebreaker is being written.
  */
 export function AudienceScreen({
   game,
@@ -118,7 +121,16 @@ function AudienceLobby({ game }: { game: GameState }) {
   )
 }
 
+/** The word is safe to show while the contestant, and only the contestant, is spelling. */
+function audienceWord(game: GameState, turn: Turn, words: Word[]): Word | null {
+  if (!game.settings.audienceShowsWord) return null
+  if (turn.stage === 'ready' || turn.stage === 'steal-select' || turn.stage === 'steal-attempt') return null
+  if (turn.outcome === 'skipped') return null
+  return wordById(words, turn.wordId) ?? null
+}
+
 function AudiencePlaying({ game }: { game: GameState }) {
+  const { words } = useBee()
   const round = currentRound(game)
   const turn = game.turn
   const team = teamById(game, turn?.teamId)
@@ -147,6 +159,8 @@ function AudiencePlaying({ game }: { game: GameState }) {
   const color = teamColor(team.color)
   const contestant = contestantName(team, turn.playerIndex)
   const stealer = teamById(game, turn.stealTeamId)
+  const shown = audienceWord(game, turn, words)
+  const stealHidden = game.settings.audienceShowsWord && (turn.stage === 'steal-select' || turn.stage === 'steal-attempt')
 
   return (
     <div className="flex-1 grid lg:grid-cols-[1.4fr_1fr] gap-[clamp(1rem,2.5vw,2.5rem)] min-h-0">
@@ -170,7 +184,28 @@ function AudiencePlaying({ game }: { game: GameState }) {
               Now spelling for
             </p>
             <p className="bee-display text-[clamp(2rem,4.5vw,4.5rem)] leading-none break-words">{team.name}</p>
-            <p className="bee-display text-[clamp(3.6rem,9vw,9.5rem)] leading-none mt-3 break-words">{contestant}</p>
+            <p className={`bee-display leading-none mt-3 break-words ${shown ? 'text-[clamp(2.4rem,5.5vw,5.5rem)]' : 'text-[clamp(3.6rem,9vw,9.5rem)]'}`}>{contestant}</p>
+
+            {shown && (
+              <div key={shown.id} className="bee-plate mt-5 px-[clamp(1rem,2.5vw,2.5rem)] py-[clamp(0.75rem,2vw,2rem)] bee-anim-pop">
+                <p className="bee-label" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
+                  The word · {difficultyLabel(shown.difficulty)} · {shown.partOfSpeech}
+                </p>
+                <p className="bee-display text-[clamp(3.5rem,9vw,10rem)] leading-none tracking-wider break-words">{shown.word}</p>
+                {shown.pronunciation && <p className="font-mono text-[clamp(1rem,1.8vw,1.6rem)] mt-2 opacity-80">{shown.pronunciation}</p>}
+                {(turn.showDefinition || turn.showSentence) && (
+                  <div className="mt-3 pt-3 border-t-2 border-[rgba(14,9,33,0.2)] grid gap-1 text-[clamp(1.1rem,2vw,1.9rem)] leading-snug">
+                    {turn.showDefinition && <p>{shown.definition}</p>}
+                    {turn.showSentence && <p className="opacity-85">“{shown.sentence}”</p>}
+                  </div>
+                )}
+              </div>
+            )}
+            {stealHidden && (
+              <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--bee-ink)] text-[var(--bee-cream)] px-4 py-2 bee-display text-[clamp(1.1rem,2vw,1.8rem)]">
+                🙈 Word hidden for the steal
+              </p>
+            )}
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
               {turn.doubled && (

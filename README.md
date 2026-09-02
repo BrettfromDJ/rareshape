@@ -42,7 +42,8 @@ scripts/        Registry, previews, scaffolder, and the checks
 `/spelling-bee` is a self-contained party app rather than a tool: a team spelling
 bee for a room full of adults, hosted from a laptop or iPad and cast to a TV. The
 host runs it from `/spelling-bee`; `/spelling-bee/audience` opens a second window
-that mirrors the game without ever showing the word. No backend, no accounts:
+that mirrors the game for the room, with the word shown big for contestants who
+face away from the TV (a rule you can turn off). No backend, no accounts:
 the whole game, the word bank and undo history live in localStorage and sync
 between windows over BroadcastChannel.
 
