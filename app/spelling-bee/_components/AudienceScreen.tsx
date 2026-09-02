@@ -176,56 +176,61 @@ function AudiencePlaying({ game }: { game: GameState }) {
 
         <div
           key={turn.number}
-          className="bee-marquee flex-1 grid md:grid-cols-[1fr_auto] gap-6 items-center p-[clamp(1.25rem,3vw,3rem)] bee-anim-rise"
+          className="bee-marquee flex-1 flex flex-col justify-center gap-[clamp(0.75rem,1.6vw,1.5rem)] p-[clamp(1.25rem,3vw,3rem)] bee-anim-rise"
           style={{ background: color.bg, color: color.fg }}
         >
-          <div className="min-w-0">
-            <p className="bee-label text-[clamp(1rem,1.8vw,1.6rem)]" style={{ color: 'inherit', opacity: 0.8 }}>
-              Now spelling for
-            </p>
-            <p className="bee-display text-[clamp(2rem,4.5vw,4.5rem)] leading-none break-words">{team.name}</p>
-            <p className={`bee-display leading-none mt-3 break-words ${shown ? 'text-[clamp(2.4rem,5.5vw,5.5rem)]' : 'text-[clamp(3.6rem,9vw,9.5rem)]'}`}>{contestant}</p>
-
-            {shown && (
-              <div key={shown.id} className="bee-plate mt-5 px-[clamp(1rem,2.5vw,2.5rem)] py-[clamp(0.75rem,2vw,2rem)] bee-anim-pop">
-                <p className="bee-label" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
-                  The word · {difficultyLabel(shown.difficulty)} · {shown.partOfSpeech}
-                </p>
-                <p className="bee-display text-[clamp(3.5rem,9vw,10rem)] leading-none tracking-wider break-words">{shown.word}</p>
-                {shown.pronunciation && <p className="font-mono text-[clamp(1rem,1.8vw,1.6rem)] mt-2 opacity-80">{shown.pronunciation}</p>}
-                {(turn.showDefinition || turn.showSentence) && (
-                  <div className="mt-3 pt-3 border-t-2 border-[rgba(14,9,33,0.2)] grid gap-1 text-[clamp(1.1rem,2vw,1.9rem)] leading-snug">
-                    {turn.showDefinition && <p>{shown.definition}</p>}
-                    {turn.showSentence && <p className="opacity-85">“{shown.sentence}”</p>}
-                  </div>
+          <div className="grid md:grid-cols-[1fr_auto] gap-6 items-center">
+            <div className="min-w-0">
+              <p className="bee-label text-[clamp(1rem,1.8vw,1.6rem)]" style={{ color: 'inherit', opacity: 0.8 }}>
+                Now spelling for {team.name}
+              </p>
+              <p className={`bee-display leading-none mt-1 break-words ${shown ? 'text-[clamp(2.6rem,6vw,6.5rem)]' : 'text-[clamp(3.6rem,9vw,9.5rem)]'}`}>{contestant}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {turn.doubled && (
+                  <span className="inline-flex items-center gap-2 bee-anim-spin-in rounded-full bg-[var(--bee-ink)] text-[var(--bee-gold)] px-4 py-2 bee-display text-[clamp(1.2rem,2.2vw,2rem)]">
+                    <Token available size="sm" label={false} /> Double Word is on
+                  </span>
+                )}
+                {turn.distraction && (
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[var(--bee-ink)] text-[var(--bee-cream)] px-4 py-2 bee-display text-[clamp(1.2rem,2.2vw,2rem)] bee-anim-wobble">
+                    🎪 {turn.distraction}
+                  </span>
+                )}
+                {stealHidden && (
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[var(--bee-ink)] text-[var(--bee-cream)] px-4 py-2 bee-display text-[clamp(1.1rem,2vw,1.8rem)]">
+                    🙈 Word hidden for the steal
+                  </span>
                 )}
               </div>
-            )}
-            {stealHidden && (
-              <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--bee-ink)] text-[var(--bee-cream)] px-4 py-2 bee-display text-[clamp(1.1rem,2vw,1.8rem)]">
-                🙈 Word hidden for the steal
-              </p>
-            )}
-
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              {turn.doubled && (
-                <span className="inline-flex items-center gap-2 bee-anim-spin-in rounded-full bg-[var(--bee-ink)] text-[var(--bee-gold)] px-4 py-2 bee-display text-[clamp(1.2rem,2.2vw,2rem)]">
-                  <Token available size="sm" label={false} /> Double Word is on
-                </span>
-              )}
-              {turn.distraction && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-[var(--bee-ink)] text-[var(--bee-cream)] px-4 py-2 bee-display text-[clamp(1.2rem,2.2vw,2rem)] bee-anim-wobble">
-                  🎪 {turn.distraction}
-                </span>
-              )}
             </div>
-
-            <div className="mt-6 min-h-[3rem]">
-              <Status game={game} team={team} stealer={stealer} />
+            <div className="justify-self-center rounded-full bg-[var(--bee-ink)] p-3">
+              <TimerRing timer={game.timer} size={shown ? 190 : 220} enabled={game.settings.timedRounds} />
             </div>
           </div>
-          <div className="justify-self-center rounded-full bg-[var(--bee-ink)] p-3">
-            <TimerRing timer={game.timer} size={220} enabled={game.settings.timedRounds} />
+
+          {shown && (
+            <div key={shown.id} className="bee-plate px-[clamp(1rem,2.5vw,2.5rem)] py-[clamp(0.75rem,1.8vw,1.75rem)] bee-anim-pop">
+              <p className="bee-label" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
+                The word · {difficultyLabel(shown.difficulty)} · {shown.partOfSpeech}
+              </p>
+              <p
+                className="bee-display leading-none tracking-wider whitespace-nowrap overflow-hidden"
+                style={{ fontSize: `clamp(2.5rem, ${Math.min(9, 100 / Math.max(6, shown.word.length)).toFixed(2)}vw, 10rem)` }}
+              >
+                {shown.word}
+              </p>
+              {shown.pronunciation && <p className="font-mono text-[clamp(1rem,1.6vw,1.5rem)] mt-1 opacity-80">{shown.pronunciation}</p>}
+              {(turn.showDefinition || turn.showSentence) && (
+                <div className="mt-3 pt-3 border-t-2 border-[rgba(14,9,33,0.2)] grid gap-1 text-[clamp(1.05rem,1.8vw,1.7rem)] leading-snug">
+                  {turn.showDefinition && <p>{shown.definition}</p>}
+                  {turn.showSentence && <p className="opacity-85">“{shown.sentence}”</p>}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="min-h-[3rem]">
+            <Status game={game} team={team} stealer={stealer} />
           </div>
         </div>
 
