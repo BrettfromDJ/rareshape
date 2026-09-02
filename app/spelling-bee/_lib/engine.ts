@@ -34,9 +34,6 @@ export type Action =
   | { type: 'timer-reset' }
   | { type: 'timer-expired' }
   | { type: 'mark'; result: 'correct' | 'incorrect' }
-  | { type: 'steal-select'; teamId: string | null }
-  | { type: 'steal-mark'; result: 'correct' | 'incorrect' }
-  | { type: 'steal-written'; winnerId: string | null }
   | { type: 'skip' }
   | { type: 'replace' }
   | { type: 'activate-token' }
@@ -62,9 +59,6 @@ export type Action =
 export const UNDOABLE: ReadonlySet<Action['type']> = new Set<Action['type']>([
   'reveal',
   'mark',
-  'steal-select',
-  'steal-mark',
-  'steal-written',
   'skip',
   'replace',
   'activate-token',
@@ -247,11 +241,8 @@ function makeTurn(
       distraction,
       showDefinition: false,
       showSentence: false,
-      stealTeamId: null,
       outcome: null,
-      stealOutcome: null,
       pointsAwarded: 0,
-      stealPointsAwarded: 0,
     },
     lastDistraction: distraction ?? state.lastDistraction,
   }
@@ -334,75 +325,14 @@ function resolveTurn(state: GameState, words: Word[], outcome: Outcome): GameSta
     ...(turn.distraction ? { distraction: turn.distraction } : {}),
   })
 
-  const canSteal =
-    outcome === 'incorrect' &&
-    state.settings.stealsEnabled &&
-    state.teams.length > 1 &&
-    turn.wordId !== null
-
   return {
     ...state,
     scores: addScore(state, turn.teamId, points),
     usedWordIds: outcome === 'skipped' ? state.usedWordIds : markUsed(state, turn.wordId),
     log: [...state.log, entry],
     timer: { ...state.timer, running: false, endsAt: null, remainingMs: state.timer.running ? Math.max(0, (state.timer.endsAt ?? 0) - Date.now()) : state.timer.remainingMs },
-    turn: {
-      ...turn,
-      outcome,
-      pointsAwarded: points,
-      stage: canSteal ? 'steal-select' : 'resolved',
-      stealOutcome: canSteal ? null : 'none',
-    },
-    lastEvent:
-      outcome === 'correct'
-        ? event('correct', turn.teamId)
-        : outcome === 'incorrect'
-          ? event(canSteal ? 'steal-open' : 'incorrect', turn.teamId)
-          : state.lastEvent,
-  }
-}
-
-function stealValue(state: GameState, round: RoundConfig): number {
-  return state.settings.stealWorth === 'word' ? round.points : state.settings.stealPoints
-}
-
-function resolveSteal(state: GameState, words: Word[], stealTeamId: string | null, won: boolean): GameState {
-  const turn = state.turn as Turn
-  const round = state.rounds[turn.roundIndex] as RoundConfig
-  if (!stealTeamId) {
-    return {
-      ...state,
-      timer: { ...state.timer, running: false, endsAt: null },
-      turn: { ...turn, stage: 'resolved', stealOutcome: 'none', stealTeamId: null },
-      lastEvent: event('incorrect', turn.teamId),
-    }
-  }
-  const word = wordById(words, turn.wordId)
-  // Buzzing in is a bet: a miss costs the penalty. In written steals nobody
-  // buzzes, so a round with no winner charges no one.
-  const points = won ? stealValue(state, round) : -Math.max(0, state.settings.stealPenalty)
-  const entry = logEntry({
-    kind: 'steal',
-    roundIndex: turn.roundIndex,
-    teamId: stealTeamId,
-    ...(word ? { wordId: word.id, word: word.word, difficulty: word.difficulty } : {}),
-    outcome: won ? 'correct' : 'incorrect',
-    points,
-    fromTeamId: turn.teamId,
-  })
-  return {
-    ...state,
-    scores: addScore(state, stealTeamId, points),
-    log: [...state.log, entry],
-    timer: { ...state.timer, running: false, endsAt: null },
-    turn: {
-      ...turn,
-      stage: 'resolved',
-      stealTeamId,
-      stealOutcome: won ? 'correct' : 'incorrect',
-      stealPointsAwarded: points,
-    },
-    lastEvent: event(won ? 'steal-won' : 'steal-lost', stealTeamId),
+    turn: { ...turn, outcome, pointsAwarded: points, stage: 'resolved' },
+    lastEvent: outcome === 'correct' ? event('correct', turn.teamId) : outcome === 'incorrect' ? event('incorrect', turn.teamId) : state.lastEvent,
   }
 }
 
@@ -553,43 +483,13 @@ export function reduce(state: GameState, action: Action, words: Word[]): GameSta
       return resolveTurn(state, words, action.result)
     }
 
-    case 'steal-select': {
-      const turn = state.turn
-      if (!turn || turn.stage !== 'steal-select') return state
-      if (action.teamId === null) return resolveSteal(state, words, null, false)
-      if (action.teamId === turn.teamId || !teamById(state, action.teamId)) return state
-      const duration = state.settings.stealTimerSeconds * 1000
-      return {
-        ...state,
-        turn: { ...turn, stage: 'steal-attempt', stealTeamId: action.teamId },
-        timer: state.settings.timedRounds
-          ? { running: true, endsAt: Date.now() + duration, remainingMs: duration, durationMs: duration, expired: false }
-          : idleTimer(duration),
-      }
-    }
-    case 'steal-mark': {
-      const turn = state.turn
-      if (!turn || turn.stage !== 'steal-attempt' || !turn.stealTeamId) return state
-      return resolveSteal(state, words, turn.stealTeamId, action.result === 'correct')
-    }
-    case 'steal-written': {
-      const turn = state.turn
-      if (!turn || turn.stage !== 'steal-select') return state
-      if (action.winnerId === turn.teamId) return state
-      return resolveSteal(state, words, action.winnerId, action.winnerId !== null)
-    }
-
     case 'skip': {
       const turn = state.turn
       if (!turn || (turn.stage !== 'ready' && turn.stage !== 'revealed')) return state
       const resolved = resolveTurn(state, words, 'skipped')
       // A skipped word that was already read aloud stays used; one that was
       // never revealed goes back to the bank.
-      return {
-        ...resolved,
-        usedWordIds: turn.stage === 'ready' ? state.usedWordIds : markUsed(state, turn.wordId),
-        turn: { ...(resolved.turn as Turn), stage: 'resolved', stealOutcome: 'none' },
-      }
+      return { ...resolved, usedWordIds: turn.stage === 'ready' ? state.usedWordIds : markUsed(state, turn.wordId) }
     }
 
     case 'replace': {
@@ -800,7 +700,6 @@ export interface TeamStats {
   incorrect: number
   accuracy: number | null
   tokenLeft: boolean
-  steals: number
 }
 
 export interface GameStats {
@@ -809,7 +708,7 @@ export interface GameStats {
   totalIncorrect: number
   hardestWord: { word: string; team: Team; difficulty: Difficulty } | null
   mostMissed: { word: string; misses: number } | null
-  biggestSteal: { team: Team; from: Team; word: string; points: number } | null
+  longestWord: { word: string; team: Team } | null
   tokensLeft: Team[]
   durationMs: number | null
 }
@@ -817,10 +716,9 @@ export interface GameStats {
 export function gameStats(state: GameState): GameStats {
   const rows = standings(state)
   const teams: TeamStats[] = rows.map((row) => {
-    const entries = state.log.filter((entry) => entry.teamId === row.team.id && (entry.kind === 'turn' || entry.kind === 'steal'))
+    const entries = state.log.filter((entry) => entry.teamId === row.team.id && entry.kind === 'turn')
     const correct = entries.filter((entry) => entry.outcome === 'correct').length
     const incorrect = entries.filter((entry) => entry.outcome === 'incorrect').length
-    const steals = state.log.filter((entry) => entry.kind === 'steal' && entry.teamId === row.team.id && entry.outcome === 'correct').length
     return {
       team: row.team,
       score: row.score,
@@ -829,11 +727,10 @@ export function gameStats(state: GameState): GameStats {
       incorrect,
       accuracy: correct + incorrect ? correct / (correct + incorrect) : null,
       tokenLeft: Boolean(state.tokens[row.team.id]),
-      steals,
     }
   })
 
-  const spelled = state.log.filter((entry) => (entry.kind === 'turn' || entry.kind === 'steal') && entry.outcome === 'correct' && entry.word && entry.difficulty)
+  const spelled = state.log.filter((entry) => entry.kind === 'turn' && entry.outcome === 'correct' && entry.word && entry.difficulty)
   const hardest = [...spelled].sort((a, b) => {
     const byRank = difficultyRank(b.difficulty as Difficulty) - difficultyRank(a.difficulty as Difficulty)
     return byRank || (b.word?.length ?? 0) - (a.word?.length ?? 0)
@@ -841,16 +738,13 @@ export function gameStats(state: GameState): GameStats {
 
   const misses = new Map<string, number>()
   for (const entry of state.log) {
-    if ((entry.kind === 'turn' || entry.kind === 'steal') && entry.outcome === 'incorrect' && entry.word) {
+    if (entry.kind === 'turn' && entry.outcome === 'incorrect' && entry.word) {
       misses.set(entry.word, (misses.get(entry.word) ?? 0) + 1)
     }
   }
   const mostMissed = [...misses.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]
 
-  const steals = state.log
-    .filter((entry) => entry.kind === 'steal' && entry.outcome === 'correct')
-    .sort((a, b) => b.points - a.points || difficultyRank(b.difficulty ?? 'easy') - difficultyRank(a.difficulty ?? 'easy'))
-  const bigSteal = steals[0]
+  const longest = [...spelled].sort((a, b) => (b.word?.length ?? 0) - (a.word?.length ?? 0))[0]
 
   return {
     teams,
@@ -861,15 +755,8 @@ export function gameStats(state: GameState): GameStats {
         ? { word: hardest.word, team: teamById(state, hardest.teamId) as Team, difficulty: hardest.difficulty }
         : null,
     mostMissed: mostMissed ? { word: mostMissed[0], misses: mostMissed[1] } : null,
-    biggestSteal:
-      bigSteal && teamById(state, bigSteal.teamId) && teamById(state, bigSteal.fromTeamId)
-        ? {
-            team: teamById(state, bigSteal.teamId) as Team,
-            from: teamById(state, bigSteal.fromTeamId) as Team,
-            word: bigSteal.word ?? '',
-            points: bigSteal.points,
-          }
-        : null,
+    longestWord:
+      longest && longest.word && teamById(state, longest.teamId) ? { word: longest.word, team: teamById(state, longest.teamId) as Team } : null,
     tokensLeft: state.teams.filter((team) => state.tokens[team.id]),
     durationMs: state.startedAt && state.endedAt ? state.endedAt - state.startedAt : null,
   }

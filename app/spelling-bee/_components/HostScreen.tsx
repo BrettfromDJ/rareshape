@@ -12,7 +12,7 @@ import { HistoryList } from './History'
 import { Leaderboard } from './Leaderboard'
 import { TimerRing } from './TimerRing'
 import { TopBar } from './TopBar'
-import { Dialog, Kbd, Pill, TeamChip, Toast, Token } from './ui'
+import { Dialog, Kbd, Pill, Toast, Token } from './ui'
 import { WordBank } from './WordBank'
 
 type DialogKind = 'end' | 'adjust' | 'history' | 'bank' | 'help' | null
@@ -106,14 +106,14 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
   useShortcuts(
     game.paused ? { escape: resume, space: resume } : {
       r: stage === 'ready' && word ? act(() => dispatch({ type: 'reveal' })) : undefined,
-      space: stage === 'revealed' || stage === 'steal-attempt' ? act(toggleTimer) : undefined,
+      space: stage === 'revealed' ? act(toggleTimer) : undefined,
       t: timed ? () => dispatch({ type: 'timer-reset' }) : undefined,
-      c: stage === 'revealed' ? act(() => dispatch({ type: 'mark', result: 'correct' })) : stage === 'steal-attempt' ? act(() => dispatch({ type: 'steal-mark', result: 'correct' })) : undefined,
-      x: stage === 'revealed' ? act(() => dispatch({ type: 'mark', result: 'incorrect' })) : stage === 'steal-attempt' ? act(() => dispatch({ type: 'steal-mark', result: 'incorrect' })) : undefined,
+      c: stage === 'revealed' ? act(() => dispatch({ type: 'mark', result: 'correct' })) : undefined,
+      x: stage === 'revealed' ? act(() => dispatch({ type: 'mark', result: 'incorrect' })) : undefined,
       n: stage === 'resolved' ? act(() => dispatch({ type: 'next' })) : game.interlude ? act(() => dispatch({ type: 'start-round' })) : undefined,
       d: stage === 'revealed' ? () => dispatch({ type: 'toggle-definition' }) : undefined,
       s: stage === 'revealed' ? () => dispatch({ type: 'toggle-sentence' }) : undefined,
-      p: stage === 'revealed' || stage === 'steal-attempt' || stage === 'steal-select' ? pronounce : undefined,
+      p: stage === 'revealed' ? pronounce : undefined,
       '2': stage === 'ready' ? act(() => dispatch({ type: 'activate-token' })) : undefined,
       w: stage === 'ready' || stage === 'revealed' ? () => dispatch({ type: 'replace' }) : undefined,
       k: stage === 'ready' || stage === 'revealed' ? () => dispatch({ type: 'skip' }) : undefined,
@@ -231,7 +231,7 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
 
               <WordCard game={game} word={word} onPronounce={pronounce} />
 
-              <ActionPanel game={game} team={team} word={word} onPronounce={pronounce} act={act} />
+              <ActionPanel game={game} team={team} word={word} act={act} />
             </>
           )}
 
@@ -419,16 +419,12 @@ function WordCard({ game, word, onPronounce }: { game: GameState; word: Word | u
 
 // ---------------------------------------------------------------------------
 
-function ActionPanel({ game, team, word, onPronounce, act }: { game: GameState; team: Team; word: Word | undefined; onPronounce: () => void; act: (fn: () => void) => () => void }) {
+function ActionPanel({ game, team, word, act }: { game: GameState; team: Team; word: Word | undefined; act: (fn: () => void) => () => void }) {
   const dispatch = useDispatch()
   const turn = game.turn
   const round = currentRound(game)
   if (!turn || !round) return null
   const timed = game.settings.timedRounds
-  const others = game.teams.filter((item) => item.id !== team.id)
-  const stealWorth = game.settings.stealWorth === 'word' ? round.points : game.settings.stealPoints
-  const stealPenalty = Math.max(0, game.settings.stealPenalty)
-  const stealer = teamById(game, turn.stealTeamId)
 
   const timerControls = timed && (
     <div className="flex items-center gap-4">
@@ -494,71 +490,6 @@ function ActionPanel({ game, team, word, onPronounce, act }: { game: GameState; 
         </div>
       )
 
-    case 'steal-select':
-      return (
-        <div className="bee-card p-4 flex flex-col gap-3 bee-anim-shake" style={{ borderColor: 'var(--bee-red)' }}>
-          <p className="bee-display text-3xl text-[var(--bee-red-soft)]">
-            Missed{turn.doubled ? ` (−${round.points}, Double Word)` : ''}. Steal for {stealWorth} {stealWorth === 1 ? 'point' : 'points'}!
-          </p>
-          <p className="text-lg">
-            {game.settings.stealMode === 'written'
-              ? 'Every other team writes their spelling. Pick the team that got it, or nobody.'
-              : `Which team is buzzing in?${stealPenalty ? ` Miss it and they lose ${stealPenalty}.` : ''}`}
-          </p>
-          <div className="flex flex-wrap gap-3">
-            {others.map((other) => {
-              const c = teamColor(other.color)
-              return (
-                <button
-                  key={other.id}
-                  type="button"
-                  className="bee-btn bee-btn-lg"
-                  style={{ background: c.bg, color: c.fg }}
-                  onClick={act(() => dispatch(game.settings.stealMode === 'written' ? { type: 'steal-written', winnerId: other.id } : { type: 'steal-select', teamId: other.id }))}
-                >
-                  {other.name}
-                </button>
-              )
-            })}
-            <button
-              type="button"
-              className="bee-btn bee-btn-lg bee-btn-ghost"
-              onClick={act(() => dispatch(game.settings.stealMode === 'written' ? { type: 'steal-written', winnerId: null } : { type: 'steal-select', teamId: null }))}
-            >
-              {game.settings.stealMode === 'written' ? 'Nobody got it' : 'No steal'}
-            </button>
-            <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost self-center" onClick={onPronounce} disabled={!canSpeak()}>
-              🔁 Say it again
-            </button>
-          </div>
-        </div>
-      )
-
-    case 'steal-attempt':
-      return (
-        <div className="bee-card p-4 flex flex-col gap-4" style={{ borderColor: 'var(--bee-gold)' }}>
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="bee-display text-3xl">Steal attempt:</p>
-            {stealer && <TeamChip team={stealer} className="text-2xl" />}
-            <span className="bee-hint">
-              for {stealWorth} {stealWorth === 1 ? 'point' : 'points'}
-              {stealPenalty ? `, or −${stealPenalty} if they miss` : ''}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            {timerControls}
-            <div className="flex-1 grid grid-cols-2 gap-3 min-w-[18rem]">
-              <button type="button" className="bee-btn bee-btn-xl bee-btn-green" onClick={act(() => dispatch({ type: 'steal-mark', result: 'correct' }))}>
-                ✓ Stolen! <Kbd>C</Kbd>
-              </button>
-              <button type="button" className="bee-btn bee-btn-xl bee-btn-red" onClick={act(() => dispatch({ type: 'steal-mark', result: 'incorrect' }))}>
-                ✕ Missed <Kbd>X</Kbd>
-              </button>
-            </div>
-          </div>
-        </div>
-      )
-
     case 'resolved': {
       const isLast = turn.roundIndex === game.rounds.length - 1 && turn.indexInRound === turnsInRound(game, round) - 1
       const tone = turn.outcome === 'correct' ? 'var(--bee-green)' : turn.outcome === 'incorrect' ? 'var(--bee-red-soft)' : 'var(--bee-dim)'
@@ -570,16 +501,6 @@ function ActionPanel({ game, team, word, onPronounce, act }: { game: GameState; 
               {turn.outcome === 'incorrect' && (turn.doubled ? `Missed. ${formatPoints(turn.pointsAwarded)} for ${team.name}` : `Missed. No points for ${team.name}`)}
               {turn.outcome === 'skipped' && 'Word skipped. No points.'}
             </p>
-            {turn.stealOutcome === 'correct' && stealer && (
-              <p className="bee-display text-2xl text-[var(--bee-green)]">
-                {stealer.name} stole it for {formatPoints(turn.stealPointsAwarded)}!
-              </p>
-            )}
-            {turn.stealOutcome === 'incorrect' && stealer && (
-              <p className="bee-display text-2xl text-[var(--bee-red-soft)]">
-                {stealer.name} missed the steal{turn.stealPointsAwarded < 0 ? ` and loses ${Math.abs(turn.stealPointsAwarded)}` : ''}.
-              </p>
-            )}
             {word && turn.outcome !== 'skipped' && <p className="bee-hint mt-1">The word was “{word.word}”.</p>}
           </div>
           <button type="button" className="bee-btn bee-btn-xl bee-btn-gold" onClick={act(() => dispatch({ type: 'next' }))}>

@@ -11,8 +11,6 @@ function describe(game: GameState, entry: LogEntry): string {
   switch (entry.kind) {
     case 'turn':
       return `${entry.playerName ?? team} ${entry.outcome === 'correct' ? 'spelled' : 'missed'} “${entry.word ?? '?'}”${entry.doubled ? ' on a Double Word' : ''}${entry.distraction ? ` while: ${entry.distraction.toLowerCase()}` : ''}`
-    case 'steal':
-      return `${team} ${entry.outcome === 'correct' ? 'stole' : 'failed to steal'} “${entry.word ?? '?'}” from ${teamById(game, entry.fromTeamId)?.name ?? 'another team'}`
     case 'skip':
       return `${entry.playerName ?? team} skipped${entry.word ? ` “${entry.word}”` : ' a word'}`
     case 'adjust':
@@ -119,9 +117,9 @@ export function PrintSummary({ game, stats }: { game: GameState; stats?: GameSta
             Most missed word: “{data.mostMissed.word}” ({data.mostMissed.misses}×)
           </li>
         )}
-        {data.biggestSteal && (
+        {data.longestWord && (
           <li>
-            Biggest steal: {data.biggestSteal.team.name} took “{data.biggestSteal.word}” from {data.biggestSteal.from.name} for {data.biggestSteal.points}
+            Longest word spelled: “{data.longestWord.word}” ({data.longestWord.word.length} letters) by {data.longestWord.team.name}
           </li>
         )}
         <li>Unused Double Word tokens: {data.tokensLeft.length ? data.tokensLeft.map((team) => team.name).join(', ') : 'none'}</li>

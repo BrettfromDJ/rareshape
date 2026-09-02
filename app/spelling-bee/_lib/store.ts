@@ -94,6 +94,8 @@ function normalizeGame(game: GameState): GameState {
     usedWordIds: Array.isArray(game.usedWordIds) ? game.usedWordIds : [],
     finalOrder: Array.isArray(game.finalOrder) ? game.finalOrder : [],
     timer: game.timer ?? idleTimer(settings.timerSeconds * 1000),
+    // Saves from before steals were removed can sit in a steal stage.
+    turn: game.turn && String(game.turn.stage).startsWith('steal') ? { ...game.turn, stage: 'resolved' } : game.turn,
   }
 }
 

@@ -197,46 +197,6 @@ export function SetupScreen() {
 
           <div className="bee-toggle-row">
             <div>
-              <div className="font-semibold text-lg">Steals</div>
-              <div className="bee-hint">A missed word can be stolen by another team. Buzz in and miss, and the penalty comes off your score.</div>
-            </div>
-            <input type="checkbox" className="bee-check" checked={game.settings.stealsEnabled} onChange={(changeEvent) => settings({ stealsEnabled: changeEvent.target.checked })} aria-label="Enable steals" />
-          </div>
-          {game.settings.stealsEnabled && (
-            <div className="grid grid-cols-2 gap-3 py-3 border-b border-[var(--bee-line)]">
-              <label className="bee-field">
-                <span className="bee-label">Steal style</span>
-                <select className="bee-select" value={game.settings.stealMode} onChange={(changeEvent) => settings({ stealMode: changeEvent.target.value as Settings['stealMode'] })}>
-                  <option value="buzz">One team buzzes in</option>
-                  <option value="written">Everyone writes it down</option>
-                </select>
-              </label>
-              <label className="bee-field">
-                <span className="bee-label">Steal is worth</span>
-                <select className="bee-select" value={game.settings.stealWorth} onChange={(changeEvent) => settings({ stealWorth: changeEvent.target.value as Settings['stealWorth'] })}>
-                  <option value="fixed">A fixed bonus</option>
-                  <option value="word">The word&rsquo;s full value</option>
-                </select>
-              </label>
-              {game.settings.stealWorth === 'fixed' && (
-                <label className="bee-field">
-                  <span className="bee-label">Bonus points</span>
-                  <input type="number" min={0} max={99} className="bee-input" value={game.settings.stealPoints} onChange={(changeEvent) => settings({ stealPoints: Math.max(0, int(changeEvent.target.value, game.settings.stealPoints)) })} />
-                </label>
-              )}
-              <label className="bee-field">
-                <span className="bee-label">A missed steal costs</span>
-                <input type="number" min={0} max={99} className="bee-input" value={game.settings.stealPenalty} onChange={(changeEvent) => settings({ stealPenalty: Math.max(0, int(changeEvent.target.value, game.settings.stealPenalty)) })} />
-              </label>
-              <label className="bee-field">
-                <span className="bee-label">Steal timer (seconds)</span>
-                <input type="number" min={3} max={120} className="bee-input" value={game.settings.stealTimerSeconds} onChange={(changeEvent) => settings({ stealTimerSeconds: Math.min(120, Math.max(3, int(changeEvent.target.value, game.settings.stealTimerSeconds))) })} />
-              </label>
-            </div>
-          )}
-
-          <div className="bee-toggle-row">
-            <div>
               <div className="font-semibold text-lg">Double Word tokens</div>
               <div className="bee-hint">One per team. Play it before the word: double points if right, minus the word&rsquo;s value if wrong.</div>
             </div>
@@ -260,7 +220,7 @@ export function SetupScreen() {
           <div className="bee-toggle-row">
             <div>
               <div className="font-semibold text-lg">Show the word on the audience screen</div>
-              <div className="bee-hint">For contestants who face away from the TV. The word appears big once you reveal it, and hides again during a steal so the stealing team can&rsquo;t read it.</div>
+              <div className="bee-hint">For contestants who face away from the TV. The word appears big once you reveal it.</div>
             </div>
             <input type="checkbox" className="bee-check" checked={game.settings.audienceShowsWord} onChange={(changeEvent) => settings({ audienceShowsWord: changeEvent.target.checked })} aria-label="Show the word on the audience screen" />
           </div>

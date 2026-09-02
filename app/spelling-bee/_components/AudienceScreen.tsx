@@ -131,7 +131,7 @@ function AudienceLobby({ game }: { game: GameState }) {
 /** The word is safe to show while the contestant, and only the contestant, is spelling. */
 function audienceWord(game: GameState, turn: Turn, words: Word[]): Word | null {
   if (!game.settings.audienceShowsWord) return null
-  if (turn.stage === 'ready' || turn.stage === 'steal-select' || turn.stage === 'steal-attempt') return null
+  if (turn.stage === 'ready') return null
   if (turn.outcome === 'skipped') return null
   return wordById(words, turn.wordId) ?? null
 }
@@ -165,12 +165,10 @@ function AudiencePlaying({ game }: { game: GameState }) {
   if (!turn || !team || !round) return null
   const color = teamColor(team.color)
   const contestant = contestantName(team, turn.playerIndex)
-  const stealer = teamById(game, turn.stealTeamId)
   const shown = audienceWord(game, turn, words)
-  const stealHidden = game.settings.audienceShowsWord && (turn.stage === 'steal-select' || turn.stage === 'steal-attempt')
 
   if (shown) {
-    return <WordStage game={game} round={round} turn={turn} team={team} contestant={contestant} stealer={stealer} word={shown} next={next} />
+    return <WordStage game={game} round={round} turn={turn} team={team} contestant={contestant} word={shown} next={next} />
   }
 
   return (
@@ -202,7 +200,7 @@ function AudiencePlaying({ game }: { game: GameState }) {
               <p className="bee-display leading-none mt-1 break-words text-[clamp(3.6rem,9vw,9.5rem)]">{contestant}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 {turn.doubled && (
-                  <span className="inline-flex items-center gap-2 bee-anim-spin-in rounded-full bg-[var(--bee-ink)] text-[var(--bee-gold)] px-4 py-2 bee-display text-[clamp(1.2rem,2.2vw,2rem)]">
+                  <span className="inline-flex items-center gap-2 bee-anim-pulse rounded-full bg-[var(--bee-gold)] text-[var(--bee-ink)] px-5 py-2 bee-display text-[clamp(1.4rem,2.6vw,2.4rem)] border-[3px] border-[var(--bee-ink)]">
                     <Token available size="sm" label={false} /> Double Word is on
                   </span>
                 )}
@@ -211,15 +209,10 @@ function AudiencePlaying({ game }: { game: GameState }) {
                     🎪 {turn.distraction}
                   </span>
                 )}
-                {stealHidden && (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-[var(--bee-ink)] text-[var(--bee-cream)] px-4 py-2 bee-display text-[clamp(1.1rem,2vw,1.8rem)]">
-                    🙈 Word hidden for the steal
-                  </span>
-                )}
               </div>
             </div>
             <div className="min-h-[3rem]">
-              <Status game={game} team={team} stealer={stealer} />
+              <Status game={game} team={team} />
             </div>
           </div>
         </TimerFill>
@@ -250,7 +243,6 @@ function WordStage({
   turn,
   team,
   contestant,
-  stealer,
   word,
   next,
 }: {
@@ -259,7 +251,6 @@ function WordStage({
   turn: Turn
   team: Team
   contestant: string
-  stealer: Team | undefined
   word: Word
   next: ReturnType<typeof upNext>
 }) {
@@ -278,8 +269,8 @@ function WordStage({
           Turn {turn.indexInRound + 1} of {round.turnsPerTeam * game.teams.length}
         </Pill>
         {turn.doubled && (
-          <span className="inline-flex items-center gap-2 bee-anim-spin-in rounded-full bg-[var(--bee-gold)] text-[var(--bee-ink)] px-3 py-1 bee-display text-base tracking-wider">
-            <Token available size="sm" label={false} /> Double Word
+          <span className="inline-flex items-center gap-2 bee-anim-pulse rounded-full bg-[var(--bee-gold)] text-[var(--bee-ink)] px-4 py-1 bee-display text-[clamp(1rem,1.8vw,1.6rem)] tracking-wider border-2 border-[var(--bee-ink)]">
+            <Token available size="sm" label={false} /> Double Word: 2× or −{round.points}
           </span>
         )}
         {turn.distraction && (
@@ -321,7 +312,7 @@ function WordStage({
 
       <div className="grid lg:grid-cols-[1fr_auto] items-center gap-3">
         <div className="min-h-[2.5rem]">
-          <Status game={game} team={team} stealer={stealer} compact={turn.stage !== 'resolved'} />
+          <Status game={game} team={team} compact={turn.stage !== 'resolved'} />
         </div>
         {next && turn.stage !== 'resolved' && (
           <p className="text-[clamp(0.9rem,1.5vw,1.3rem)] text-[var(--bee-dim)] lg:text-right">
@@ -401,7 +392,7 @@ function BoardStrip({ game, activeTeamId }: { game: GameState; activeTeamId: str
   )
 }
 
-function Status({ game, team, stealer, compact = false }: { game: GameState; team: Team; stealer: Team | undefined; compact?: boolean }) {
+function Status({ game, team, compact = false }: { game: GameState; team: Team; compact?: boolean }) {
   const turn = game.turn
   if (!turn) return null
   const big = compact ? 'bee-display text-[clamp(1.5rem,3vw,3rem)] leading-none' : 'bee-display text-[clamp(2rem,4.5vw,4.5rem)] leading-none'
@@ -410,20 +401,6 @@ function Status({ game, team, stealer, compact = false }: { game: GameState; tea
       return <p className={`${big} opacity-80`}>Waiting for the word…</p>
     case 'revealed':
       return <p className={`${big} bee-anim-blink`}>Spell it!</p>
-    case 'steal-select':
-      return (
-        <p className={`${big} bee-anim-shake`}>
-          Missed! {game.settings.stealMode === 'written' ? 'Whiteboards up: steal for ' : 'Steal for '}
-          {game.settings.stealWorth === 'word' ? `${currentRound(game)?.points ?? 0}` : game.settings.stealPoints}{' '}
-          {(game.settings.stealWorth === 'word' ? currentRound(game)?.points : game.settings.stealPoints) === 1 ? 'point' : 'points'}
-        </p>
-      )
-    case 'steal-attempt':
-      return (
-        <p className={`${big} bee-anim-pop`}>
-          Steal attempt: {stealer?.name ?? 'another team'}
-        </p>
-      )
     case 'resolved': {
       if (turn.outcome === 'skipped') return <p className={`${big} opacity-80`}>Word skipped</p>
       if (turn.outcome === 'correct') {
@@ -433,14 +410,9 @@ function Status({ game, team, stealer, compact = false }: { game: GameState; tea
           </p>
         )
       }
-      const parts: string[] = [turn.doubled ? `Missed. ${formatPoints(turn.pointsAwarded)} for ${team.name}` : 'Missed. No points']
-      if (turn.stealOutcome === 'correct' && stealer) parts.push(`${stealer.name} steals ${formatPoints(turn.stealPointsAwarded)}!`)
-      if (turn.stealOutcome === 'incorrect' && stealer) {
-        parts.push(`${stealer.name} missed the steal${turn.stealPointsAwarded < 0 ? ` (${formatPoints(turn.stealPointsAwarded)})` : ''}.`)
-      }
       return (
         <p className={`${big} bee-anim-shake`} style={{ color: 'var(--bee-red-soft)' }}>
-          ✕ {parts.join(' ')}
+          ✕ {turn.doubled ? `Missed. ${formatPoints(turn.pointsAwarded)} for ${team.name}` : 'Missed. No points'}
         </p>
       )
     }

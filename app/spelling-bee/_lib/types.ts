@@ -48,19 +48,9 @@ export interface RoundConfig {
   turnsPerTeam: number
 }
 
-export type StealMode = 'buzz' | 'written'
-export type StealWorth = 'fixed' | 'word'
-
 export interface Settings {
   eventName: string
   trophyTitle: string
-  stealsEnabled: boolean
-  stealMode: StealMode
-  stealPoints: number
-  stealWorth: StealWorth
-  /** Points a team loses when it buzzes in to steal and misses. */
-  stealPenalty: number
-  stealTimerSeconds: number
   doubleWordEnabled: boolean
   timedRounds: boolean
   timerSeconds: number
@@ -71,7 +61,7 @@ export interface Settings {
 
 export type Phase = 'setup' | 'playing' | 'tiebreaker' | 'results'
 
-export type TurnStage = 'ready' | 'revealed' | 'steal-select' | 'steal-attempt' | 'resolved'
+export type TurnStage = 'ready' | 'revealed' | 'resolved'
 
 export type Outcome = 'correct' | 'incorrect' | 'skipped'
 
@@ -100,14 +90,11 @@ export interface Turn {
   distraction: string | null
   showDefinition: boolean
   showSentence: boolean
-  stealTeamId: string | null
   outcome: Outcome | null
-  stealOutcome: 'correct' | 'incorrect' | 'none' | null
   pointsAwarded: number
-  stealPointsAwarded: number
 }
 
-export type LogKind = 'turn' | 'steal' | 'adjust' | 'skip' | 'tiebreak' | 'token'
+export type LogKind = 'turn' | 'adjust' | 'skip' | 'tiebreak' | 'token'
 
 export interface LogEntry {
   id: string
@@ -123,8 +110,6 @@ export interface LogEntry {
   points: number
   doubled?: boolean
   distraction?: string
-  /** For steals: the team that missed the word first. */
-  fromTeamId?: string
   text?: string
 }
 
@@ -148,9 +133,6 @@ export type EventType =
   | 'reveal'
   | 'correct'
   | 'incorrect'
-  | 'steal-open'
-  | 'steal-won'
-  | 'steal-lost'
   | 'token'
   | 'round-complete'
   | 'winner'

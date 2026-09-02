@@ -53,12 +53,6 @@ export function defaultSettings(): Settings {
   return {
     eventName: DEFAULT_EVENT_NAME,
     trophyTitle: DEFAULT_TROPHY_TITLE,
-    stealsEnabled: true,
-    stealMode: 'buzz',
-    stealPoints: 1,
-    stealWorth: 'fixed',
-    stealPenalty: 1,
-    stealTimerSeconds: 15,
     doubleWordEnabled: true,
     timedRounds: true,
     timerSeconds: 30,
