@@ -23,10 +23,13 @@ const CUE_FOR: Partial<Record<EventType, Cue>> = {
 
 const CONFETTI: ReadonlySet<EventType> = new Set<EventType>(['correct', 'steal-won', 'winner'])
 
+const VERDICT: ReadonlySet<EventType> = new Set<EventType>(['correct', 'steal-won', 'incorrect', 'steal-lost', 'steal-open'])
+
 function flashColor(game: GameState): string | null {
   const current = game.lastEvent
   if (!current) return null
-  if (CONFETTI.has(current.type)) {
+  if (current.type === 'correct' || current.type === 'steal-won') return 'var(--bee-green)'
+  if (current.type === 'winner') {
     const team = teamById(game, current.teamId)
     return team ? teamColor(team.color).bg : 'var(--bee-gold)'
   }
@@ -63,7 +66,7 @@ export function Celebrations({ game, sound, rain = false }: { game: GameState; s
   return (
     <>
       <Confetti burst={fresh && CONFETTI.has(fresh.type) ? fresh.id : ''} rain={rain} />
-      {fresh && color && <div key={fresh.id} className="bee-flash" style={{ background: color }} />}
+      {fresh && color && <div key={fresh.id} className={`bee-flash ${VERDICT.has(fresh.type) ? 'bee-flash-verdict' : ''}`} style={{ background: color }} />}
     </>
   )
 }

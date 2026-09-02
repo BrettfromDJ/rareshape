@@ -57,8 +57,15 @@ export function AudienceScreen({
     return () => window.removeEventListener('keydown', onKey)
   }, [onExit])
 
+  const verdict = game.phase === 'playing' && game.turn?.stage === 'resolved' ? game.turn.outcome : null
+  const ground =
+    verdict === 'correct' ? 'var(--bee-ground-correct)' : verdict === 'incorrect' ? 'var(--bee-ground-wrong)' : 'transparent'
+
   return (
-    <div className="bee-screen min-h-dvh flex flex-col p-[clamp(1rem,2.5vw,2.5rem)] gap-[clamp(0.75rem,2vw,1.5rem)]">
+    <div
+      className="bee-screen min-h-dvh flex flex-col p-[clamp(1rem,2.5vw,2.5rem)] gap-[clamp(0.75rem,2vw,1.5rem)]"
+      style={{ background: ground, transition: 'background 350ms ease' }}
+    >
       <header className="flex items-center justify-between gap-4">
         <h1 className="bee-display text-[clamp(1.6rem,3.2vw,3.2rem)] text-[var(--bee-gold)] truncate">{game.settings.eventName}</h1>
         <div
@@ -314,7 +321,7 @@ function WordStage({
 
       <div className="grid lg:grid-cols-[1fr_auto] items-center gap-3">
         <div className="min-h-[2.5rem]">
-          <Status game={game} team={team} stealer={stealer} compact />
+          <Status game={game} team={team} stealer={stealer} compact={turn.stage !== 'resolved'} />
         </div>
         {next && turn.stage !== 'resolved' && (
           <p className="text-[clamp(0.9rem,1.5vw,1.3rem)] text-[var(--bee-dim)] lg:text-right">
@@ -421,8 +428,8 @@ function Status({ game, team, stealer, compact = false }: { game: GameState; tea
       if (turn.outcome === 'skipped') return <p className={`${big} opacity-80`}>Word skipped</p>
       if (turn.outcome === 'correct') {
         return (
-          <p className={`${big} bee-anim-pop`}>
-            Correct! {formatPoints(turn.pointsAwarded)} for {team.name}
+          <p className={`${big} bee-anim-pop`} style={{ color: 'var(--bee-green)' }}>
+            ✓ Correct! {formatPoints(turn.pointsAwarded)} for {team.name}
           </p>
         )
       }
@@ -431,7 +438,11 @@ function Status({ game, team, stealer, compact = false }: { game: GameState; tea
       if (turn.stealOutcome === 'incorrect' && stealer) {
         parts.push(`${stealer.name} missed the steal${turn.stealPointsAwarded < 0 ? ` (${formatPoints(turn.stealPointsAwarded)})` : ''}.`)
       }
-      return <p className={`${big} bee-anim-shake`}>{parts.join(' ')}</p>
+      return (
+        <p className={`${big} bee-anim-shake`} style={{ color: 'var(--bee-red-soft)' }}>
+          ✕ {parts.join(' ')}
+        </p>
+      )
     }
     default:
       return null

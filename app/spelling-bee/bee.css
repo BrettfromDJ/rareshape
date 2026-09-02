@@ -18,6 +18,8 @@
   --bee-gold-deep: #e0a100;
   --bee-red: #ff3d5a;
   --bee-red-soft: #ff8a9a;
+  --bee-ground-correct: #0f4a1f;
+  --bee-ground-wrong: #5c1020;
   --bee-green: #8fe03a;
   --bee-teal: #26d7c3;
   --bee-sky: #5cc8ff;
@@ -588,6 +590,21 @@
   pointer-events: none;
   z-index: 60;
   animation: bee-flash 700ms ease-out both;
+}
+
+/* The verdict: held longer and brighter so nobody has to ask. */
+.bee-flash-verdict {
+  animation: bee-flash-verdict 1400ms ease-out both;
+}
+
+@keyframes bee-flash-verdict {
+  0%,
+  30% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Leaderboard rows slide to their new rank. */
