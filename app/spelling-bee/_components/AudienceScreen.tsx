@@ -338,7 +338,7 @@ function FitWord({ word, size }: { word: string; size: string }) {
     const parent = el?.parentElement
     if (!el || !parent) return
     const fit = () => {
-      el.style.fontSize = ''
+      el.style.fontSize = size
       const base = Number.parseFloat(getComputedStyle(el).fontSize)
       const available = parent.clientWidth
       const width = el.scrollWidth
