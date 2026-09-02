@@ -1,0 +1,741 @@
+/* ---------------------------------------------------------------------------
+   The spelling bee has its own register: a televised game show crossed with a
+   county fair. Everything is scoped under .bee so the rest of the site keeps
+   its monochrome system untouched.
+   --------------------------------------------------------------------------- */
+
+.bee {
+  --bee-bg: #170f2f;
+  --bee-bg-2: #211846;
+  --bee-surface: #2a2158;
+  --bee-surface-2: #352b6b;
+  --bee-ink: #0e0921;
+  --bee-cream: #fff5dc;
+  --bee-dim: rgba(255, 245, 220, 0.66);
+  --bee-faint: rgba(255, 245, 220, 0.4);
+  --bee-line: rgba(255, 245, 220, 0.18);
+  --bee-gold: #ffc531;
+  --bee-gold-deep: #e0a100;
+  --bee-red: #ff3d5a;
+  --bee-red-soft: #ff8a9a;
+  --bee-green: #8fe03a;
+  --bee-teal: #26d7c3;
+  --bee-sky: #5cc8ff;
+  --bee-display: var(--font-bee-display), 'Bebas Neue', 'Arial Narrow', 'Helvetica Neue', Impact, sans-serif;
+
+  min-height: 100dvh;
+  background-color: var(--bee-bg);
+  background-image:
+    radial-gradient(rgba(255, 245, 220, 0.06) 1.2px, transparent 1.6px),
+    radial-gradient(rgba(255, 245, 220, 0.04) 1.2px, transparent 1.6px);
+  background-size: 28px 28px, 28px 28px;
+  background-position: 0 0, 14px 14px;
+  color: var(--bee-cream);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bee *,
+.bee *::before,
+.bee *::after {
+  box-sizing: border-box;
+}
+
+.bee :focus-visible {
+  outline: 3px solid var(--bee-gold);
+  outline-offset: 3px;
+}
+
+.bee ::selection {
+  background: var(--bee-gold);
+  color: var(--bee-ink);
+}
+
+@layer components {
+/* Type ------------------------------------------------------------------- */
+
+.bee-display {
+  font-family: var(--bee-display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 0.92;
+  font-weight: 400;
+}
+
+.bee-label {
+  font-family: var(--bee-display);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.95rem;
+  color: var(--bee-dim);
+}
+
+.bee-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Surfaces ---------------------------------------------------------------- */
+
+.bee-card {
+  background: var(--bee-surface);
+  border: 3px solid var(--bee-ink);
+  border-radius: 20px;
+  box-shadow: 0 8px 0 var(--bee-ink);
+}
+
+.bee-card-flat {
+  background: var(--bee-surface);
+  border: 2px solid var(--bee-line);
+  border-radius: 16px;
+}
+
+.bee-plate {
+  background: var(--bee-cream);
+  color: var(--bee-ink);
+  border: 3px solid var(--bee-ink);
+  border-radius: 20px;
+  box-shadow: 0 8px 0 var(--bee-ink);
+}
+
+/* Marquee bulbs around a stage. */
+.bee-marquee {
+  position: relative;
+  border: 4px solid var(--bee-gold);
+  border-radius: 24px;
+  box-shadow:
+    0 0 0 4px var(--bee-ink),
+    0 12px 0 var(--bee-ink);
+}
+
+.bee-marquee::before,
+.bee-marquee::after {
+  content: '';
+  position: absolute;
+  inset: -22px;
+  border-radius: 40px;
+  pointer-events: none;
+  --bulb: radial-gradient(circle at 14px 9px, var(--bee-gold) 0 4px, var(--bee-ink) 4.5px 6px, transparent 6.5px);
+  --bulb-v: radial-gradient(circle at 9px 14px, var(--bee-gold) 0 4px, var(--bee-ink) 4.5px 6px, transparent 6.5px);
+  background:
+    var(--bulb) 14px 0 / 28px 18px repeat-x,
+    var(--bulb) 14px 100% / 28px 18px repeat-x,
+    var(--bulb-v) 0 14px / 18px 28px repeat-y,
+    var(--bulb-v) 100% 14px / 18px 28px repeat-y;
+}
+
+/* The second layer is offset by one bulb and the two blink in turn. */
+.bee-marquee::after {
+  background-position: 28px 0, 28px 100%, 0 28px, 100% 28px;
+  animation: bee-bulbs 1.1s steps(1) infinite;
+}
+
+.bee-marquee::before {
+  animation: bee-bulbs 1.1s steps(1) infinite reverse;
+}
+
+@keyframes bee-bulbs {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.35;
+  }
+}
+
+/* Buttons ----------------------------------------------------------------- */
+
+.bee-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  font-family: var(--bee-display);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 1.3rem;
+  line-height: 1;
+  min-height: 3rem;
+  padding: 0.7rem 1.3rem;
+  border: 3px solid var(--bee-ink);
+  border-radius: 14px;
+  background: var(--bee-cream);
+  color: var(--bee-ink);
+  box-shadow: 0 5px 0 var(--bee-ink);
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  transition:
+    transform 80ms ease,
+    box-shadow 80ms ease,
+    filter 80ms ease;
+}
+
+.bee-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 0 var(--bee-ink);
+  filter: brightness(1.05);
+}
+
+.bee-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--bee-ink);
+}
+
+.bee-btn:disabled,
+.bee-btn[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 5px 0 var(--bee-ink);
+  filter: none;
+}
+
+.bee-btn-gold {
+  background: var(--bee-gold);
+}
+
+.bee-btn-green {
+  background: var(--bee-green);
+}
+
+.bee-btn-red {
+  background: var(--bee-red);
+}
+
+.bee-btn-teal {
+  background: var(--bee-teal);
+}
+
+.bee-btn-ghost {
+  background: transparent;
+  color: var(--bee-cream);
+  border-color: var(--bee-cream);
+  box-shadow: 0 5px 0 rgba(255, 245, 220, 0.35);
+}
+
+.bee-btn-ghost:hover {
+  box-shadow: 0 6px 0 rgba(255, 245, 220, 0.35);
+}
+
+.bee-btn-ghost:active {
+  box-shadow: 0 1px 0 rgba(255, 245, 220, 0.35);
+}
+
+.bee-btn-ghost:disabled {
+  box-shadow: 0 5px 0 rgba(255, 245, 220, 0.35);
+}
+
+.bee-btn-sm {
+  font-size: 1.05rem;
+  min-height: 2.4rem;
+  padding: 0.45rem 0.9rem;
+  border-width: 2px;
+  border-radius: 10px;
+  box-shadow: 0 3px 0 var(--bee-ink);
+}
+
+.bee-btn-sm:hover {
+  box-shadow: 0 4px 0 var(--bee-ink);
+}
+
+.bee-btn-sm:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--bee-ink);
+}
+
+.bee-btn-sm.bee-btn-ghost {
+  box-shadow: 0 3px 0 rgba(255, 245, 220, 0.35);
+}
+
+.bee-btn-lg {
+  font-size: 1.7rem;
+  min-height: 4rem;
+  padding: 0.9rem 1.8rem;
+  border-radius: 18px;
+}
+
+.bee-btn-xl {
+  font-size: clamp(1.8rem, 2.6vw, 2.6rem);
+  min-height: 5rem;
+  padding: 1rem 2rem;
+  border-radius: 22px;
+  box-shadow: 0 7px 0 var(--bee-ink);
+}
+
+.bee-btn-xl:active {
+  transform: translateY(6px);
+  box-shadow: 0 1px 0 var(--bee-ink);
+}
+
+.bee-btn-block {
+  width: 100%;
+}
+
+.bee-kbd {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 0.1rem 0.4rem;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+  opacity: 0.75;
+  line-height: 1.2;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+/* Fields ------------------------------------------------------------------ */
+
+.bee-input,
+.bee-select,
+.bee-textarea {
+  width: 100%;
+  background: var(--bee-ink);
+  color: var(--bee-cream);
+  border: 2px solid var(--bee-line);
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  font-size: 1.05rem;
+  font-family: var(--font-sans);
+  line-height: 1.3;
+  min-height: 3rem;
+}
+
+.bee-input:focus,
+.bee-select:focus,
+.bee-textarea:focus {
+  border-color: var(--bee-gold);
+}
+
+.bee-input::placeholder,
+.bee-textarea::placeholder {
+  color: var(--bee-faint);
+}
+
+.bee-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.4rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23fff5dc' stroke-width='2.2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+}
+
+.bee-input-lg {
+  font-family: var(--bee-display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 1.8rem;
+  min-height: 3.6rem;
+}
+
+.bee-check {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 3.4rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 999px;
+  background: var(--bee-ink);
+  border: 2px solid var(--bee-line);
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.bee-check::after {
+  content: '';
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: var(--bee-cream);
+  transition: transform 140ms ease;
+}
+
+.bee-check:checked {
+  background: var(--bee-green);
+  border-color: var(--bee-green);
+}
+
+.bee-check:checked::after {
+  transform: translateX(1.4rem);
+  background: var(--bee-ink);
+}
+
+.bee-check:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bee-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bee-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--bee-line);
+}
+
+.bee-toggle-row:last-child {
+  border-bottom: 0;
+}
+
+.bee-hint {
+  color: var(--bee-dim);
+  font-size: 0.9rem;
+}
+
+/* Score & ranks ---------------------------------------------------------- */
+
+.bee-score {
+  font-family: var(--bee-display);
+  font-variant-numeric: tabular-nums;
+  line-height: 0.85;
+}
+
+.bee-rank {
+  display: inline-grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  background: var(--bee-ink);
+  color: var(--bee-cream);
+  font-family: var(--bee-display);
+  font-size: 1.3rem;
+  flex: none;
+}
+
+/* Motion ------------------------------------------------------------------ */
+
+@keyframes bee-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bee-rise {
+  from {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes bee-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-10px) rotate(-1deg);
+  }
+  40% {
+    transform: translateX(10px) rotate(1deg);
+  }
+  60% {
+    transform: translateX(-7px);
+  }
+  80% {
+    transform: translateX(7px);
+  }
+}
+
+@keyframes bee-flash {
+  0% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes bee-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes bee-wobble {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes bee-spin-in {
+  0% {
+    transform: rotate(-540deg) scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: rotate(10deg) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(0) scale(1);
+  }
+}
+
+@keyframes bee-tick {
+  0% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bee-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes bee-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.bee-anim-pop {
+  animation: bee-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.bee-anim-rise {
+  animation: bee-rise 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.bee-anim-shake {
+  animation: bee-shake 500ms ease both;
+}
+
+.bee-anim-pulse {
+  animation: bee-pulse 900ms ease-in-out infinite;
+}
+
+.bee-anim-wobble {
+  animation: bee-wobble 1.6s ease-in-out infinite;
+}
+
+.bee-anim-spin-in {
+  animation: bee-spin-in 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.bee-anim-tick {
+  animation: bee-tick 180ms ease-out both;
+}
+
+.bee-anim-blink {
+  animation: bee-blink 700ms steps(1) infinite;
+}
+
+.bee-anim-float {
+  animation: bee-float 2.4s ease-in-out infinite;
+}
+
+.bee-stagger > * {
+  animation: bee-rise 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+/* Full-screen colour flash on a scoring moment. */
+.bee-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  animation: bee-flash 700ms ease-out both;
+}
+
+/* Leaderboard rows slide to their new rank. */
+.bee-board {
+  position: relative;
+}
+
+.bee-board-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+/* Timer ring ------------------------------------------------------------- */
+
+.bee-ring {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.bee-ring-track {
+  fill: none;
+  stroke: var(--bee-line);
+  stroke-width: 10;
+}
+
+.bee-ring-fill {
+  fill: none;
+  stroke: var(--bee-green);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 120ms linear, stroke 300ms ease;
+}
+
+.bee-ring-fill[data-tone='warn'] {
+  stroke: var(--bee-gold);
+}
+
+.bee-ring-fill[data-tone='danger'] {
+  stroke: var(--bee-red);
+}
+
+/* Dialogs ---------------------------------------------------------------- */
+
+.bee-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(14, 9, 33, 0.82);
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.bee-dialog {
+  width: min(100%, 36rem);
+  max-height: calc(100dvh - 3rem);
+  overflow: auto;
+  padding: 1.75rem;
+}
+
+.bee-dialog-wide {
+  width: min(100%, 64rem);
+}
+
+/* Scrollbars in the bee's palette. */
+.bee * {
+  scrollbar-color: var(--bee-faint) transparent;
+}
+
+}
+
+/* Reduced motion --------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .bee-marquee::before,
+  .bee-marquee::after,
+  .bee-anim-pulse,
+  .bee-anim-wobble,
+  .bee-anim-blink,
+  .bee-anim-float {
+    animation: none;
+  }
+}
+
+/* Print: only the results summary. ---------------------------------------- */
+
+.bee-print {
+  display: none;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .bee {
+    background: #fff !important;
+    color: #000 !important;
+    min-height: 0;
+  }
+
+  .bee-screen {
+    display: none !important;
+  }
+
+  .bee-print {
+    display: block;
+    color: #000;
+    font-family: var(--font-sans);
+    padding: 1rem;
+  }
+
+  .bee-print h1,
+  .bee-print h2 {
+    font-family: var(--bee-display);
+    text-transform: uppercase;
+    margin: 0 0 0.5rem;
+  }
+
+  .bee-print table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5rem 0 1.25rem;
+  }
+
+  .bee-print th,
+  .bee-print td {
+    border-bottom: 1px solid #999;
+    padding: 0.35rem 0.5rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .bee-print .swatch {
+    display: inline-block;
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 1px solid #000;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-right: 0.4rem;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

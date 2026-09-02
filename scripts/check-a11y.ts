@@ -20,6 +20,8 @@ const PAGES: Array<[string, string]> = [
   ['index', '/'],
   ['info', '/info'],
   ['tool', '/tools/_harness-svg'],
+  ['spelling-bee', '/spelling-bee'],
+  ['spelling-bee-audience', '/spelling-bee/audience'],
 ]
 
 interface Violation {

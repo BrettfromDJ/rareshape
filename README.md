@@ -27,7 +27,7 @@ one.
 ## Layout
 
 ```
-app/            Index, /tools/[slug] host, /info, and /lab (headless driver)
+app/            Index, /tools/[slug] host, /info, /lab (headless driver), and /spelling-bee
 packages/core   Seeded RNG, math, easing, color, noise, geometry. Pure, no deps
 packages/schema Param types, defineTool, URL codec, the framework-free store
 packages/kit    React: controls, Stage, export sheet, shortcuts
@@ -36,6 +36,15 @@ packages/eject  Vanilla DOM shell, schema-driven, no framework
 tools/          One folder per tool. `_` prefixed folders are harness fixtures
 scripts/        Registry, previews, scaffolder, and the checks
 ```
+
+## Spelling bee
+
+`/spelling-bee` is a self-contained party app rather than a tool: a team spelling
+bee for a room full of adults, hosted from a laptop or iPad and cast to a TV. The
+host runs it from `/spelling-bee`; `/spelling-bee/audience` opens a second window
+that mirrors the game without ever showing the word. No backend, no accounts:
+the whole game, the word bank and undo history live in localStorage and sync
+between windows over BroadcastChannel.
 
 ## Commands
 
