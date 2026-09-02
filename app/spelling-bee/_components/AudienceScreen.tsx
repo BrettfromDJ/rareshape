@@ -5,10 +5,10 @@ import { teamColor } from '../_lib/defaults'
 import { contestantName, currentRound, difficultyLabel, standings, teamById, upNext, wordById } from '../_lib/engine'
 import { formatPoints, ordinal } from '../_lib/format'
 import { useBee } from '../_lib/store'
-import type { GameState, Team, Turn, Word } from '../_lib/types'
+import type { GameState, RoundConfig, Team, Turn, Word } from '../_lib/types'
 import { Leaderboard } from './Leaderboard'
 import { TimerRing } from './TimerRing'
-import { Pill, TeamChip, Token } from './ui'
+import { Pill, TeamChip, TeamSwatch, Token } from './ui'
 
 /**
  * What the room sees: team, contestant, round, timer and scores. The word
@@ -162,6 +162,10 @@ function AudiencePlaying({ game }: { game: GameState }) {
   const shown = audienceWord(game, turn, words)
   const stealHidden = game.settings.audienceShowsWord && (turn.stage === 'steal-select' || turn.stage === 'steal-attempt')
 
+  if (shown) {
+    return <WordStage game={game} round={round} turn={turn} team={team} contestant={contestant} stealer={stealer} word={shown} next={next} />
+  }
+
   return (
     <div className="flex-1 grid lg:grid-cols-[1.4fr_1fr] gap-[clamp(1rem,2.5vw,2.5rem)] min-h-0">
       <section className="flex flex-col gap-[clamp(0.75rem,1.5vw,1.25rem)] min-h-0">
@@ -184,7 +188,7 @@ function AudiencePlaying({ game }: { game: GameState }) {
               <p className="bee-label text-[clamp(1rem,1.8vw,1.6rem)]" style={{ color: 'inherit', opacity: 0.8 }}>
                 Now spelling for {team.name}
               </p>
-              <p className={`bee-display leading-none mt-1 break-words ${shown ? 'text-[clamp(2.6rem,6vw,6.5rem)]' : 'text-[clamp(3.6rem,9vw,9.5rem)]'}`}>{contestant}</p>
+              <p className="bee-display leading-none mt-1 break-words text-[clamp(3.6rem,9vw,9.5rem)]">{contestant}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 {turn.doubled && (
                   <span className="inline-flex items-center gap-2 bee-anim-spin-in rounded-full bg-[var(--bee-ink)] text-[var(--bee-gold)] px-4 py-2 bee-display text-[clamp(1.2rem,2.2vw,2rem)]">
@@ -204,30 +208,9 @@ function AudiencePlaying({ game }: { game: GameState }) {
               </div>
             </div>
             <div className="justify-self-center rounded-full bg-[var(--bee-ink)] p-3">
-              <TimerRing timer={game.timer} size={shown ? 190 : 220} enabled={game.settings.timedRounds} />
+              <TimerRing timer={game.timer} size={220} enabled={game.settings.timedRounds} />
             </div>
           </div>
-
-          {shown && (
-            <div key={shown.id} className="bee-plate px-[clamp(1rem,2.5vw,2.5rem)] py-[clamp(0.75rem,1.8vw,1.75rem)] bee-anim-pop">
-              <p className="bee-label" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
-                The word · {difficultyLabel(shown.difficulty)} · {shown.partOfSpeech}
-              </p>
-              <p
-                className="bee-display leading-none tracking-wider whitespace-nowrap overflow-hidden"
-                style={{ fontSize: `clamp(2.5rem, ${Math.min(9, 100 / Math.max(6, shown.word.length)).toFixed(2)}vw, 10rem)` }}
-              >
-                {shown.word}
-              </p>
-              {shown.pronunciation && <p className="font-mono text-[clamp(1rem,1.6vw,1.5rem)] mt-1 opacity-80">{shown.pronunciation}</p>}
-              {(turn.showDefinition || turn.showSentence) && (
-                <div className="mt-3 pt-3 border-t-2 border-[rgba(14,9,33,0.2)] grid gap-1 text-[clamp(1.05rem,1.8vw,1.7rem)] leading-snug">
-                  {turn.showDefinition && <p>{shown.definition}</p>}
-                  {turn.showSentence && <p className="opacity-85">“{shown.sentence}”</p>}
-                </div>
-              )}
-            </div>
-          )}
 
           <div className="min-h-[3rem]">
             <Status game={game} team={team} stealer={stealer} />
@@ -250,10 +233,143 @@ function AudiencePlaying({ game }: { game: GameState }) {
   )
 }
 
-function Status({ game, team, stealer }: { game: GameState; team: Team; stealer: Team | undefined }) {
+/**
+ * The word is the show. It runs the full width of the screen, sized to fill
+ * it, with the contestant and clock above and the standings below.
+ */
+function WordStage({
+  game,
+  round,
+  turn,
+  team,
+  contestant,
+  stealer,
+  word,
+  next,
+}: {
+  game: GameState
+  round: RoundConfig
+  turn: Turn
+  team: Team
+  contestant: string
+  stealer: Team | undefined
+  word: Word
+  next: ReturnType<typeof upNext>
+}) {
+  const color = teamColor(team.color)
+  // Bebas Neue runs about 0.47em per letter with this tracking, so this keeps
+  // the word on one line inside 90% of the screen, capped by height.
+  const vw = Math.min(21, 185 / Math.max(4, word.word.length)).toFixed(2)
+  const extras = turn.showDefinition || turn.showSentence
+
+  return (
+    <div className="flex-1 flex flex-col gap-[clamp(0.6rem,1.4vw,1.25rem)] min-h-0">
+      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+        <Pill tone="gold">{round.name}</Pill>
+        <Pill>{round.points} pts a word</Pill>
+        <Pill>
+          Turn {turn.indexInRound + 1} of {round.turnsPerTeam * game.teams.length}
+        </Pill>
+        {turn.doubled && (
+          <span className="inline-flex items-center gap-2 bee-anim-spin-in rounded-full bg-[var(--bee-gold)] text-[var(--bee-ink)] px-3 py-1 bee-display text-base tracking-wider">
+            <Token available size="sm" label={false} /> Double Word
+          </span>
+        )}
+        {turn.distraction && (
+          <span className="inline-flex items-center gap-2 rounded-full bg-[var(--bee-ink)] text-[var(--bee-cream)] px-3 py-1 bee-display text-base tracking-wider bee-anim-wobble">
+            🎪 {turn.distraction}
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 md:gap-6 rounded-2xl border-[3px] border-[var(--bee-ink)] px-4 md:px-6 py-3" style={{ background: color.bg, color: color.fg, boxShadow: '0 5px 0 var(--bee-ink)' }}>
+        <div className="min-w-0 flex-1">
+          <p className="bee-label text-[clamp(0.85rem,1.3vw,1.2rem)]" style={{ color: 'inherit', opacity: 0.8 }}>
+            Now spelling for {team.name}
+          </p>
+          <p className="bee-display text-[clamp(2rem,4.2vw,4.2rem)] leading-none break-words">{contestant}</p>
+        </div>
+        <div className="rounded-full bg-[var(--bee-ink)] p-2">
+          <TimerRing timer={game.timer} size={140} enabled={game.settings.timedRounds} />
+        </div>
+      </div>
+
+      <div key={word.id} className="bee-plate bee-marquee flex-1 grid place-items-center text-center px-[clamp(1rem,3vw,3rem)] py-[clamp(1rem,2.5vw,2.5rem)] bee-anim-pop min-h-0">
+        <div className="min-w-0 max-w-full">
+          <p className="bee-label text-[clamp(0.9rem,1.5vw,1.4rem)]" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
+            {difficultyLabel(word.difficulty)} · {word.partOfSpeech}
+          </p>
+          <p
+            className="bee-display leading-none tracking-wider whitespace-nowrap"
+            style={{ fontSize: `clamp(3rem, min(${vw}vw, ${extras ? 30 : 42}vh), 26rem)` }}
+          >
+            {word.word}
+          </p>
+          {word.pronunciation && <p className="font-mono text-[clamp(1.1rem,2vw,2rem)] mt-2 opacity-80">{word.pronunciation}</p>}
+          {extras && (
+            <div className="mt-3 pt-3 border-t-2 border-[rgba(14,9,33,0.2)] grid gap-1 text-[clamp(1.1rem,2.1vw,2.1rem)] leading-snug max-w-[40ch] mx-auto" style={{ textWrap: 'balance' }}>
+              {turn.showDefinition && <p>{word.definition}</p>}
+              {turn.showSentence && <p className="opacity-85">“{word.sentence}”</p>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-[1fr_auto] items-center gap-3">
+        <div className="min-h-[2.5rem]">
+          <Status game={game} team={team} stealer={stealer} compact />
+        </div>
+        {next && turn.stage !== 'resolved' && (
+          <p className="text-[clamp(0.9rem,1.5vw,1.3rem)] text-[var(--bee-dim)] lg:text-right">
+            Up next: <span className="text-[var(--bee-cream)] bee-display">{next.team.name}</span> · <span className="text-[var(--bee-cream)]">{contestantName(next.team, next.playerIndex)}</span>
+          </p>
+        )}
+      </div>
+
+      <BoardStrip game={game} activeTeamId={team.id} />
+    </div>
+  )
+}
+
+/** The standings in one row, for screens where the word needs the room. */
+function BoardStrip({ game, activeTeamId }: { game: GameState; activeTeamId: string }) {
+  const rows = standings(game)
+  return (
+    <ol className="flex flex-wrap justify-center gap-2 md:gap-3" aria-label="Leaderboard">
+      {rows.map((row) => {
+        const color = teamColor(row.team.color)
+        const active = row.team.id === activeTeamId
+        return (
+          <li
+            key={row.team.id}
+            className="flex items-center gap-2 md:gap-3 rounded-full border-[3px] pl-2 pr-4 py-1"
+            style={{
+              background: active ? color.bg : 'var(--bee-surface)',
+              color: active ? color.fg : 'var(--bee-cream)',
+              borderColor: active ? 'var(--bee-cream)' : 'var(--bee-ink)',
+              boxShadow: '0 4px 0 var(--bee-ink)',
+            }}
+          >
+            <span className="bee-rank" aria-label={`Rank ${row.rank}`}>
+              {row.rank}
+            </span>
+            {!active && <TeamSwatch team={row.team} size="sm" />}
+            <span className="bee-display text-[clamp(1.1rem,2vw,1.9rem)] whitespace-nowrap">{row.team.name}</span>
+            {game.settings.doubleWordEnabled && <Token available={Boolean(game.tokens[row.team.id])} size="sm" label={false} />}
+            <span className="bee-score text-[clamp(1.6rem,3vw,2.8rem)]" aria-label={`${row.score} points`}>
+              {row.score}
+            </span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+function Status({ game, team, stealer, compact = false }: { game: GameState; team: Team; stealer: Team | undefined; compact?: boolean }) {
   const turn = game.turn
   if (!turn) return null
-  const big = 'bee-display text-[clamp(2rem,4.5vw,4.5rem)] leading-none'
+  const big = compact ? 'bee-display text-[clamp(1.5rem,3vw,3rem)] leading-none' : 'bee-display text-[clamp(2rem,4.5vw,4.5rem)] leading-none'
   switch (turn.stage) {
     case 'ready':
       return <p className={`${big} opacity-80`}>Waiting for the word…</p>
