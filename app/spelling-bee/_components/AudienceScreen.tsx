@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { teamColor } from '../_lib/defaults'
 import { contestantName, currentRound, difficultyLabel, standings, teamById, upNext, wordById } from '../_lib/engine'
 import { formatPoints, ordinal } from '../_lib/format'
@@ -299,12 +299,7 @@ function WordStage({
           <p className="bee-label text-[clamp(0.9rem,1.5vw,1.4rem)]" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
             {difficultyLabel(word.difficulty)} · {word.partOfSpeech}
           </p>
-          <p
-            className="bee-display leading-none tracking-wider whitespace-nowrap"
-            style={{ fontSize: `clamp(3rem, min(${vw}vw, ${extras ? 30 : 42}vh), 26rem)` }}
-          >
-            {word.word}
-          </p>
+          <FitWord word={word.word} size={`clamp(3rem, min(${vw}vw, ${extras ? 30 : 42}vh), 26rem)`} />
           {word.pronunciation && <p className="font-mono text-[clamp(1.1rem,2vw,2rem)] mt-2 opacity-80">{word.pronunciation}</p>}
           {extras && (
             <div className="mt-3 pt-3 border-t-2 border-[rgba(14,9,33,0.2)] grid gap-1 text-[clamp(1.1rem,2.1vw,2.1rem)] leading-snug max-w-[40ch] mx-auto" style={{ textWrap: 'balance' }}>
@@ -328,6 +323,37 @@ function WordStage({
 
       <BoardStrip game={game} activeTeamId={team.id} />
     </div>
+  )
+}
+
+/**
+ * The word at its largest size that still fits on one line. The CSS size is
+ * an estimate for the display face; this measures the real rendering, so a
+ * fallback font (or an offline laptop) never clips a letter.
+ */
+function FitWord({ word, size }: { word: string; size: string }) {
+  const ref = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    const parent = el?.parentElement
+    if (!el || !parent) return
+    const fit = () => {
+      el.style.fontSize = ''
+      const base = Number.parseFloat(getComputedStyle(el).fontSize)
+      const available = parent.clientWidth
+      const width = el.scrollWidth
+      if (width > available && width > 0) el.style.fontSize = `${Math.floor(base * (available / width) * 0.97)}px`
+    }
+    fit()
+    const observer = new ResizeObserver(fit)
+    observer.observe(parent)
+    void document.fonts?.ready.then(fit)
+    return () => observer.disconnect()
+  }, [word, size])
+  return (
+    <p ref={ref} className="bee-display leading-none tracking-wider whitespace-nowrap" style={{ fontSize: size }}>
+      {word}
+    </p>
   )
 }
 
