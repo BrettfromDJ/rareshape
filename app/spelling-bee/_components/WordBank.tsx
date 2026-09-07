@@ -166,6 +166,8 @@ export function WordBank({ onClose }: { onClose: () => void }) {
             className="bee-textarea bee-input-lg"
             rows={Math.min(6, Math.max(1, quick.split('\n').length))}
             placeholder="Type a word and press Enter, or paste a list"
+            spellCheck
+            lang="en"
             value={quick}
             onChange={(changeEvent) => setQuick(changeEvent.target.value)}
             onKeyDown={(keyEvent) => {
@@ -376,7 +378,7 @@ function WordForm({ initial, existing, onSave, onClose }: { initial: Word | null
         <div className="grid sm:grid-cols-[1fr_auto] gap-3">
           <label className="bee-field">
             <span className="bee-label">Word</span>
-            <input className="bee-input bee-input-lg" value={draft.word} onChange={(changeEvent) => update({ word: changeEvent.target.value })} data-autofocus="true" required />
+            <input className="bee-input bee-input-lg" value={draft.word} onChange={(changeEvent) => update({ word: changeEvent.target.value })} data-autofocus="true" spellCheck lang="en" required />
           </label>
           <label className="bee-field">
             <span className="bee-label">Difficulty</span>
