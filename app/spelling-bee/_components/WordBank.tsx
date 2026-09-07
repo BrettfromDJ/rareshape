@@ -21,7 +21,7 @@ export function WordBank({ onClose }: { onClose: () => void }) {
   const [difficulty, setDifficulty] = useState<'all' | Difficulty>('all')
   const [status, setStatus] = useState<Status>('all')
   const [editing, setEditing] = useState<Word | 'new' | null>(null)
-  const [confirm, setConfirm] = useState<'reset' | { deleteId: string } | null>(null)
+  const [confirm, setConfirm] = useState<'reset' | 'clear' | { deleteId: string } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const used = useMemo(() => new Set(game.usedWordIds), [game.usedWordIds])
@@ -172,6 +172,9 @@ export function WordBank({ onClose }: { onClose: () => void }) {
         <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost ml-auto" onClick={() => setConfirm('reset')}>
           Reset to built-in list
         </button>
+        <button type="button" className="bee-btn bee-btn-sm bee-btn-red" disabled={words.length === 0} onClick={() => setConfirm('clear')}>
+          Delete all words
+        </button>
       </div>
 
       <p className="bee-hint mb-2">
@@ -179,7 +182,11 @@ export function WordBank({ onClose }: { onClose: () => void }) {
       </p>
 
       <ul className="flex flex-col gap-2 max-h-[50vh] overflow-auto pr-1">
-        {filtered.length === 0 && <li className="bee-hint py-6 text-center">No words match.</li>}
+        {filtered.length === 0 && (
+          <li className="bee-hint py-6 text-center">
+            {words.length === 0 ? 'The bank is empty. Add words one at a time, or import a JSON file.' : 'No words match.'}
+          </li>
+        )}
         {filtered.map((word) => {
           const isUsed = used.has(word.id)
           return (
@@ -223,7 +230,21 @@ export function WordBank({ onClose }: { onClose: () => void }) {
           onClose={() => setConfirm(null)}
         />
       )}
-      {confirm && confirm !== 'reset' && (
+      {confirm === 'clear' && (
+        <Confirm
+          title="Delete every word?"
+          body={`All ${words.length} words go, built-in and custom alike, so you can build your own list. "Reset to built-in list" brings the original words back if you ever want them.`}
+          confirmLabel="Delete all words"
+          danger
+          onConfirm={() => {
+            setWords([])
+            dispatch({ type: 'restore-all-words' })
+            say('Word bank emptied')
+          }}
+          onClose={() => setConfirm(null)}
+        />
+      )}
+      {confirm && confirm !== 'reset' && confirm !== 'clear' && (
         <Confirm
           title="Delete this word?"
           body={`“${words.find((word) => word.id === confirm.deleteId)?.word ?? ''}” is removed from the bank.`}
