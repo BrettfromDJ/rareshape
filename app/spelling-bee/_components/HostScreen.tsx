@@ -111,8 +111,8 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
       c: stage === 'revealed' ? act(() => dispatch({ type: 'mark', result: 'correct' })) : undefined,
       x: stage === 'revealed' ? act(() => dispatch({ type: 'mark', result: 'incorrect' })) : undefined,
       n: stage === 'resolved' ? act(() => dispatch({ type: 'next' })) : game.interlude ? act(() => dispatch({ type: 'start-round' })) : undefined,
-      d: stage === 'revealed' ? () => dispatch({ type: 'toggle-definition' }) : undefined,
-      s: stage === 'revealed' ? () => dispatch({ type: 'toggle-sentence' }) : undefined,
+      d: stage === 'revealed' && word?.definition ? () => dispatch({ type: 'toggle-definition' }) : undefined,
+      s: stage === 'revealed' && word?.sentence ? () => dispatch({ type: 'toggle-sentence' }) : undefined,
       p: stage === 'revealed' ? pronounce : undefined,
       '2': stage === 'ready' ? act(() => dispatch({ type: 'activate-token' })) : undefined,
       w: stage === 'ready' || stage === 'revealed' ? () => dispatch({ type: 'replace' }) : undefined,
@@ -375,7 +375,8 @@ function WordCard({ game, word, onPronounce }: { game: GameState; word: Word | u
       <div className="flex flex-wrap items-start gap-4">
         <div className="flex-1 min-w-0">
           <p className="bee-label" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
-            Host only · {difficultyLabel(word.difficulty)} · {word.partOfSpeech}
+            Host only · {difficultyLabel(word.difficulty)}
+            {word.partOfSpeech ? ` · ${word.partOfSpeech}` : ''}
           </p>
           <p className="bee-display text-[clamp(3rem,6.5vw,6.5rem)] leading-none tracking-wider break-words mt-1">{word.word}</p>
           {word.pronunciation && <p className="font-mono text-lg mt-2 opacity-80">{word.pronunciation}</p>}
@@ -384,17 +385,21 @@ function WordCard({ game, word, onPronounce }: { game: GameState; word: Word | u
           <button type="button" className="bee-btn bee-btn-sm" onClick={onPronounce} disabled={!canSpeak()} title={canSpeak() ? 'Read the word aloud' : 'Speech is not available in this browser'}>
             🔁 Say it <Kbd>P</Kbd>
           </button>
-          <button type="button" className="bee-btn bee-btn-sm" aria-pressed={turn.showDefinition} onClick={() => dispatch({ type: 'toggle-definition' })}>
-            📖 Definition <Kbd>D</Kbd>
-          </button>
-          <button type="button" className="bee-btn bee-btn-sm" aria-pressed={turn.showSentence} onClick={() => dispatch({ type: 'toggle-sentence' })}>
-            💬 Sentence <Kbd>S</Kbd>
-          </button>
+          {word.definition && (
+            <button type="button" className="bee-btn bee-btn-sm" aria-pressed={turn.showDefinition} onClick={() => dispatch({ type: 'toggle-definition' })}>
+              📖 Definition <Kbd>D</Kbd>
+            </button>
+          )}
+          {word.sentence && (
+            <button type="button" className="bee-btn bee-btn-sm" aria-pressed={turn.showSentence} onClick={() => dispatch({ type: 'toggle-sentence' })}>
+              💬 Sentence <Kbd>S</Kbd>
+            </button>
+          )}
         </div>
       </div>
-      {(turn.showDefinition || turn.showSentence) && (
+      {((turn.showDefinition && word.definition) || (turn.showSentence && word.sentence)) && (
         <div className="mt-4 pt-4 border-t-2 border-[rgba(14,9,33,0.2)] grid gap-2 text-xl md:text-2xl leading-snug">
-          {turn.showDefinition && (
+          {turn.showDefinition && word.definition && (
             <p>
               <span className="bee-label" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
                 Definition ·{' '}
@@ -402,7 +407,7 @@ function WordCard({ game, word, onPronounce }: { game: GameState; word: Word | u
               {word.definition}
             </p>
           )}
-          {turn.showSentence && (
+          {turn.showSentence && word.sentence && (
             <p>
               <span className="bee-label" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
                 Sentence ·{' '}

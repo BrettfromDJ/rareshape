@@ -11,7 +11,21 @@ import { Confirm, Dialog, Pill, Toast } from './ui'
 
 type Status = 'all' | 'unused' | 'used'
 
-const EMPTY: Omit<Word, 'id'> = { word: '', difficulty: 'medium', definition: '', partOfSpeech: 'noun', sentence: '', pronunciation: '' }
+const EMPTY: Omit<Word, 'id'> = { word: '', difficulty: 'medium', definition: '', partOfSpeech: '', sentence: '', pronunciation: '' }
+
+/** Splits a pasted list on new lines, commas and semicolons. */
+function splitWords(text: string): string[] {
+  const seen = new Set<string>()
+  return text
+    .split(/[\n,;]+/)
+    .map((item) => item.trim())
+    .filter((item) => {
+      const key = item.toLowerCase()
+      if (!item || seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+}
 
 /** Search, filter, add, edit, delete, restore, import and export the word bank. */
 export function WordBank({ onClose }: { onClose: () => void }) {
@@ -21,6 +35,8 @@ export function WordBank({ onClose }: { onClose: () => void }) {
   const [difficulty, setDifficulty] = useState<'all' | Difficulty>('all')
   const [status, setStatus] = useState<Status>('all')
   const [editing, setEditing] = useState<Word | 'new' | null>(null)
+  const [quick, setQuick] = useState('')
+  const [quickLevel, setQuickLevel] = useState<Difficulty>('medium')
   const [confirm, setConfirm] = useState<'reset' | 'clear' | { deleteId: string } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -39,6 +55,33 @@ export function WordBank({ onClose }: { onClose: () => void }) {
       .filter((word) => !q || word.word.toLowerCase().includes(q) || word.definition.toLowerCase().includes(q))
       .sort((a, b) => DIFFICULTIES.indexOf(a.difficulty) - DIFFICULTIES.indexOf(b.difficulty) || a.word.localeCompare(b.word))
   }, [words, query, difficulty, status, used])
+
+  const quickAdd = () => {
+    const names = splitWords(quick)
+    if (names.length === 0) return
+    const taken = new Set(words.map((word) => word.word.toLowerCase()))
+    const ids = new Set(words.map((word) => word.id))
+    const fresh: Word[] = []
+    let skipped = 0
+    for (const name of names) {
+      if (taken.has(name.toLowerCase())) {
+        skipped += 1
+        continue
+      }
+      let id = wordId(name)
+      if (ids.has(id)) id = `${id}-${Date.now().toString(36)}`
+      ids.add(id)
+      taken.add(name.toLowerCase())
+      fresh.push({ id, word: name, difficulty: quickLevel, definition: '', partOfSpeech: '', sentence: '', custom: true })
+    }
+    if (fresh.length) setWords([...words, ...fresh])
+    setQuick('')
+    say(
+      fresh.length === 0
+        ? 'Already in the bank'
+        : `Added ${fresh.length === 1 ? `“${fresh[0]?.word}”` : `${fresh.length} words`}${skipped ? `, skipped ${skipped} already in the bank` : ''}`,
+    )
+  }
 
   const save = (word: Word) => {
     const exists = words.some((item) => item.id === word.id)
@@ -110,6 +153,46 @@ export function WordBank({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog title="Word bank" onClose={onClose} wide>
+      <form
+        className="bee-card-flat p-3 mb-4 flex flex-wrap items-end gap-2"
+        onSubmit={(submitEvent) => {
+          submitEvent.preventDefault()
+          quickAdd()
+        }}
+      >
+        <label className="bee-field flex-1 min-w-[14rem]">
+          <span className="bee-label">Add words</span>
+          <textarea
+            className="bee-textarea bee-input-lg"
+            rows={Math.min(6, Math.max(1, quick.split('\n').length))}
+            placeholder="Type a word and press Enter, or paste a list"
+            value={quick}
+            onChange={(changeEvent) => setQuick(changeEvent.target.value)}
+            onKeyDown={(keyEvent) => {
+              if (keyEvent.key === 'Enter' && !keyEvent.shiftKey) {
+                keyEvent.preventDefault()
+                quickAdd()
+              }
+            }}
+            data-autofocus="true"
+          />
+        </label>
+        <label className="bee-field">
+          <span className="bee-label">Level</span>
+          <select className="bee-select w-auto" value={quickLevel} onChange={(changeEvent) => setQuickLevel(changeEvent.target.value as Difficulty)}>
+            {DIFFICULTIES.map((level) => (
+              <option key={level} value={level}>
+                {difficultyLabel(level)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" className="bee-btn bee-btn-gold" disabled={!quick.trim()}>
+          + Add
+        </button>
+        <p className="bee-hint basis-full">Only the word is needed. Paste a list with one word per line, or separate them with commas; Shift+Enter starts a new line. Use Edit later for a definition or a sentence if you want one.</p>
+      </form>
+
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <label className="flex-1 min-w-[12rem]">
           <span className="sr-only">Search words</span>
@@ -137,8 +220,8 @@ export function WordBank({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        <button type="button" className="bee-btn bee-btn-sm bee-btn-gold" onClick={() => setEditing('new')}>
-          + Add word
+        <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost" onClick={() => setEditing('new')}>
+          + Add with details
         </button>
         <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost" onClick={() => fileRef.current?.click()}>
           Import JSON
@@ -184,7 +267,7 @@ export function WordBank({ onClose }: { onClose: () => void }) {
       <ul className="flex flex-col gap-2 max-h-[50vh] overflow-auto pr-1">
         {filtered.length === 0 && (
           <li className="bee-hint py-6 text-center">
-            {words.length === 0 ? 'The bank is empty. Add words one at a time, or import a JSON file.' : 'No words match.'}
+            {words.length === 0 ? 'The bank is empty. Type a word above, or import a JSON file.' : 'No words match.'}
           </li>
         )}
         {filtered.map((word) => {
@@ -197,7 +280,7 @@ export function WordBank({ onClose }: { onClose: () => void }) {
               </Pill>
               {isUsed && <Pill>Used</Pill>}
               {word.custom && <Pill>Custom</Pill>}
-              <span className="bee-hint flex-1 min-w-[10rem] truncate">{word.definition}</span>
+              <span className="bee-hint flex-1 min-w-[10rem] truncate">{word.definition || 'No definition'}</span>
               <span className="flex gap-2">
                 {isUsed && (
                   <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost" onClick={() => dispatch({ type: 'restore-word', wordId: word.id })}>
@@ -267,8 +350,6 @@ function WordForm({ initial, existing, onSave, onClose }: { initial: Word | null
   const submit = () => {
     const word = draft.word.trim()
     if (!word) return setError('The word itself is required.')
-    if (!draft.definition.trim()) return setError('Give it a short definition so the host can read one.')
-    if (!draft.sentence.trim()) return setError('Add an example sentence. Funny is encouraged.')
     let id = initial?.id ?? wordId(word)
     if (!initial && existing.some((item) => item.id === id)) id = `${id}-${Date.now().toString(36)}`
     onSave({
@@ -276,7 +357,7 @@ function WordForm({ initial, existing, onSave, onClose }: { initial: Word | null
       word,
       difficulty: draft.difficulty,
       definition: draft.definition.trim(),
-      partOfSpeech: draft.partOfSpeech.trim() || 'noun',
+      partOfSpeech: draft.partOfSpeech.trim(),
       sentence: draft.sentence.trim(),
       ...(draft.pronunciation?.trim() ? { pronunciation: draft.pronunciation.trim() } : {}),
       ...(initial ? (initial.custom ? { custom: true } : {}) : { custom: true }),
@@ -310,7 +391,7 @@ function WordForm({ initial, existing, onSave, onClose }: { initial: Word | null
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <label className="bee-field">
-            <span className="bee-label">Part of speech</span>
+            <span className="bee-label">Part of speech (optional)</span>
             <input className="bee-input" value={draft.partOfSpeech} onChange={(changeEvent) => update({ partOfSpeech: changeEvent.target.value })} placeholder="noun" />
           </label>
           <label className="bee-field">
@@ -319,12 +400,12 @@ function WordForm({ initial, existing, onSave, onClose }: { initial: Word | null
           </label>
         </div>
         <label className="bee-field">
-          <span className="bee-label">Definition</span>
-          <input className="bee-input" value={draft.definition} onChange={(changeEvent) => update({ definition: changeEvent.target.value })} required />
+          <span className="bee-label">Definition (optional)</span>
+          <input className="bee-input" value={draft.definition} onChange={(changeEvent) => update({ definition: changeEvent.target.value })} />
         </label>
         <label className="bee-field">
-          <span className="bee-label">Example sentence</span>
-          <textarea className="bee-textarea" rows={2} value={draft.sentence} onChange={(changeEvent) => update({ sentence: changeEvent.target.value })} required />
+          <span className="bee-label">Example sentence (optional)</span>
+          <textarea className="bee-textarea" rows={2} value={draft.sentence} onChange={(changeEvent) => update({ sentence: changeEvent.target.value })} />
         </label>
         {error && (
           <p role="alert" className="text-[var(--bee-red-soft)] font-medium">

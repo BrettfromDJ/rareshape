@@ -258,7 +258,7 @@ function WordStage({
   // Bebas Neue runs about 0.47em per letter with this tracking, so this keeps
   // the word on one line inside 90% of the screen, capped by height.
   const vw = Math.min(21, 185 / Math.max(4, word.word.length)).toFixed(2)
-  const extras = turn.showDefinition || turn.showSentence
+  const extras = Boolean((turn.showDefinition && word.definition) || (turn.showSentence && word.sentence))
 
   return (
     <div className="flex-1 flex flex-col gap-[clamp(0.6rem,1.4vw,1.25rem)] min-h-0">
@@ -297,14 +297,15 @@ function WordStage({
       <div key={word.id} className="bee-plate bee-marquee flex-1 grid place-items-center text-center px-[clamp(1rem,3vw,3rem)] py-[clamp(1rem,2.5vw,2.5rem)] bee-anim-pop min-h-0">
         <div className="min-w-0 max-w-full">
           <p className="bee-label text-[clamp(0.9rem,1.5vw,1.4rem)]" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
-            {difficultyLabel(word.difficulty)} · {word.partOfSpeech}
+            {difficultyLabel(word.difficulty)}
+            {word.partOfSpeech ? ` · ${word.partOfSpeech}` : ''}
           </p>
           <FitWord word={word.word} size={`clamp(3rem, min(${vw}vw, ${extras ? 30 : 42}vh), 26rem)`} />
           {word.pronunciation && <p className="font-mono text-[clamp(1.1rem,2vw,2rem)] mt-2 opacity-80">{word.pronunciation}</p>}
           {extras && (
             <div className="mt-3 pt-3 border-t-2 border-[rgba(14,9,33,0.2)] grid gap-1 text-[clamp(1.1rem,2.1vw,2.1rem)] leading-snug max-w-[40ch] mx-auto" style={{ textWrap: 'balance' }}>
-              {turn.showDefinition && <p>{word.definition}</p>}
-              {turn.showSentence && <p className="opacity-85">“{word.sentence}”</p>}
+              {turn.showDefinition && word.definition && <p>{word.definition}</p>}
+              {turn.showSentence && word.sentence && <p className="opacity-85">“{word.sentence}”</p>}
             </div>
           )}
         </div>
