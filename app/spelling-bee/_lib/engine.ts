@@ -136,19 +136,62 @@ export function totalTurns(state: GameState): number {
   return schedule(state).length
 }
 
+/**
+ * The final round is the last pass through the line-up: everyone's last word.
+ * Returns the 1-based number of its first turn, or null when the game is a
+ * single pass, which has no "last" to build up to.
+ */
+export function finalRoundStart(state: GameState): number | null {
+  const longest = Math.max(0, ...state.teams.map((team) => turnsForTeam(team, state.settings)))
+  if (longest < 2) return null
+  let before = 0
+  for (const team of state.teams) before += Math.min(turnsForTeam(team, state.settings), longest - 1)
+  return before + 1
+}
+
+export function isFinalRound(state: GameState, turnNumber: number): boolean {
+  const start = finalRoundStart(state)
+  return state.settings.finalRoundDouble && start !== null && turnNumber >= start
+}
+
+/** What a correct answer on this turn earns before any Double Word token. */
+export function wordValue(state: GameState, turnNumber: number): number {
+  const base = Math.max(0, state.settings.pointsPerWord)
+  return isFinalRound(state, turnNumber) ? base * 2 : base
+}
+
+export interface Upcoming {
+  team: Team
+  playerIndex: number
+  turnNumber: number
+}
+
+/**
+ * The next few turns after the current one, with who will spell them, so the
+ * room can see who is on deck. Walks each team's rotation forward from the
+ * current turn.
+ */
+export function upcoming(state: GameState, count = 3): Upcoming[] {
+  const turn = state.turn
+  if (!turn) return []
+  const order = schedule(state)
+  const cursor: Record<string, number> = { ...state.rotation }
+  const current = teamById(state, turn.teamId)
+  if (current && current.players.length) cursor[current.id] = (turn.playerIndex + 1) % current.players.length
+  const list: Upcoming[] = []
+  for (let n = turn.number; n < order.length && list.length < count; n += 1) {
+    const team = teamById(state, order[n])
+    if (!team) break
+    const playerIndex = team.players.length ? (cursor[team.id] ?? 0) % team.players.length : -1
+    list.push({ team, playerIndex, turnNumber: n + 1 })
+    if (team.players.length) cursor[team.id] = (playerIndex + 1) % team.players.length
+  }
+  return list
+}
+
 /** Which team spells the turn after this one, so the host can announce it. */
 export function upNext(state: GameState): { team: Team; playerIndex: number } | null {
-  const turn = state.turn
-  if (!turn) return null
-  const team = teamById(state, schedule(state)[turn.number])
-  if (!team) return null
-  const playerIndex =
-    team.id === turn.teamId
-      ? team.players.length
-        ? (turn.playerIndex + 1) % team.players.length
-        : -1
-      : (state.rotation[team.id] ?? 0)
-  return { team, playerIndex }
+  return upcoming(state, 1)[0] ?? null
 }
 
 export function wordCounts(words: Word[], usedIds: string[]): { total: number; left: number } {
@@ -245,7 +288,7 @@ function beginGame(state: GameState, words: Word[], keepUsed: boolean): GameStat
     lastDistraction: null,
   }
   const first = makeTurn(base, words, 1)
-  return { ...base, turn: first.turn, lastDistraction: first.lastDistraction }
+  return { ...base, turn: first.turn, lastDistraction: first.lastDistraction, lastEvent: finalRoundStart(base) === 1 && base.settings.finalRoundDouble ? event('final-round') : null }
 }
 
 // ---------------------------------------------------------------------------
@@ -256,7 +299,7 @@ function resolveTurn(state: GameState, words: Word[], outcome: Outcome): GameSta
   const turn = state.turn as Turn
   const team = teamById(state, turn.teamId)
   const word = wordById(words, turn.wordId)
-  const base = Math.max(0, state.settings.pointsPerWord)
+  const base = wordValue(state, turn.number)
   let points = 0
   if (outcome === 'correct') points = turn.doubled ? base * 2 : base
   if (outcome === 'incorrect') points = turn.doubled ? -base : 0
@@ -297,7 +340,8 @@ function advance(state: GameState, words: Word[]): GameState {
   }
   if (turn.number < totalTurns(state)) {
     const made = makeTurn(next, words, turn.number + 1)
-    return { ...next, turn: made.turn, lastDistraction: made.lastDistraction, lastEvent: null }
+    const opensFinal = state.settings.finalRoundDouble && finalRoundStart(state) === turn.number + 1
+    return { ...next, turn: made.turn, lastDistraction: made.lastDistraction, lastEvent: opensFinal ? event('final-round') : null }
   }
   return finish(next, words)
 }

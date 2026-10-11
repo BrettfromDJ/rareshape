@@ -159,6 +159,13 @@ export function SetupScreen() {
           </p>
           <div className="bee-toggle-row">
             <div>
+              <div className="font-semibold text-lg">Final round is worth double</div>
+              <div className="bee-hint">Everyone&rsquo;s last word pays {game.settings.pointsPerWord * 2} instead of {game.settings.pointsPerWord}. Announced on both screens when it starts.</div>
+            </div>
+            <input type="checkbox" className="bee-check" checked={game.settings.finalRoundDouble} onChange={(changeEvent) => settings({ finalRoundDouble: changeEvent.target.checked })} aria-label="Final round is worth double" />
+          </div>
+          <div className="bee-toggle-row">
+            <div>
               <div className="font-semibold text-lg">Distractions</div>
               <div className="bee-hint">Every contestant gets a ridiculous task before their word: oven mitts, one leg, a British accent.</div>
             </div>

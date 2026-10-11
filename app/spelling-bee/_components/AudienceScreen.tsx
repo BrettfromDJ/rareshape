@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { teamColor } from '../_lib/defaults'
-import { contestantName, standings, teamById, totalTurns, upNext, wordById } from '../_lib/engine'
+import { contestantName, isFinalRound, standings, teamById, totalTurns, upcoming, wordById, wordValue } from '../_lib/engine'
 import { formatPoints, ordinal } from '../_lib/format'
 import { useBee } from '../_lib/store'
 import type { GameState, Team, Turn, Word } from '../_lib/types'
@@ -182,7 +182,6 @@ function AudiencePlaying({ game }: { game: GameState }) {
   const { words } = useBee()
   const turn = game.turn
   const team = teamById(game, turn?.teamId)
-  const next = upNext(game)
 
   if (!turn || !team) return null
   const color = teamColor(team.color)
@@ -191,7 +190,7 @@ function AudiencePlaying({ game }: { game: GameState }) {
   const kids = game.settings.mode === 'kids'
 
   if (shown) {
-    return <WordStage game={game} turn={turn} team={team} contestant={contestant} word={shown} next={next} />
+    return <WordStage game={game} turn={turn} team={team} contestant={contestant} word={shown} />
   }
 
   return (
@@ -201,7 +200,13 @@ function AudiencePlaying({ game }: { game: GameState }) {
           <Pill tone="gold">
             Turn {turn.number} of {totalTurns(game)}
           </Pill>
-          <Pill>{game.settings.pointsPerWord} pts a word</Pill>
+          {isFinalRound(game, turn.number) ? (
+            <span className="inline-flex items-center gap-2 bee-anim-pulse rounded-full bg-[var(--bee-red)] text-[var(--bee-ink)] px-4 py-1 bee-display text-[clamp(1rem,1.8vw,1.6rem)] tracking-wider border-2 border-[var(--bee-ink)]">
+              🔥 Final round · {wordValue(game, turn.number)} pts a word
+            </span>
+          ) : (
+            <Pill>{game.settings.pointsPerWord} pts a word</Pill>
+          )}
         </div>
 
         <TimerFill
@@ -238,12 +243,7 @@ function AudiencePlaying({ game }: { game: GameState }) {
           </div>
         </TimerFill>
 
-        {next && turn.stage !== 'resolved' && (
-          <p className="text-[clamp(1rem,1.8vw,1.6rem)] text-[var(--bee-dim)]">
-            Up next: <span className="text-[var(--bee-cream)] bee-display">{next.team.name}</span>
-            {!kids && <> · <span className="text-[var(--bee-cream)]">{contestantName(next.team, next.playerIndex)}</span></>}
-          </p>
-        )}
+        <OnDeck game={game} />
       </section>
 
       <aside className="min-h-0">
@@ -264,14 +264,12 @@ function WordStage({
   team,
   contestant,
   word,
-  next,
 }: {
   game: GameState
   turn: Turn
   team: Team
   contestant: string
   word: Word
-  next: ReturnType<typeof upNext>
 }) {
   const color = teamColor(team.color)
   const kids = game.settings.mode === 'kids'
@@ -286,10 +284,16 @@ function WordStage({
         <Pill tone="gold">
           Turn {turn.number} of {totalTurns(game)}
         </Pill>
-        <Pill>{game.settings.pointsPerWord} pts a word</Pill>
+        {isFinalRound(game, turn.number) ? (
+          <span className="inline-flex items-center gap-2 bee-anim-pulse rounded-full bg-[var(--bee-red)] text-[var(--bee-ink)] px-4 py-1 bee-display text-[clamp(1rem,1.8vw,1.6rem)] tracking-wider border-2 border-[var(--bee-ink)]">
+            🔥 Final round · {wordValue(game, turn.number)} pts a word
+          </span>
+        ) : (
+          <Pill>{game.settings.pointsPerWord} pts a word</Pill>
+        )}
         {turn.doubled && (
           <span className="inline-flex items-center gap-2 bee-anim-pulse rounded-full bg-[var(--bee-gold)] text-[var(--bee-ink)] px-4 py-1 bee-display text-[clamp(1rem,1.8vw,1.6rem)] tracking-wider border-2 border-[var(--bee-ink)]">
-            <Token available size="sm" label={false} /> Double Word: 2× or −{game.settings.pointsPerWord}
+            <Token available size="sm" label={false} /> Double Word: {wordValue(game, turn.number) * 2} or −{wordValue(game, turn.number)}
           </span>
         )}
         {turn.distraction && (
@@ -333,12 +337,7 @@ function WordStage({
         <div className="min-h-[2.5rem]">
           <Status game={game} team={team} compact={turn.stage !== 'resolved'} />
         </div>
-        {next && turn.stage !== 'resolved' && (
-          <p className="text-[clamp(0.9rem,1.5vw,1.3rem)] text-[var(--bee-dim)] lg:text-right">
-            Up next: <span className="text-[var(--bee-cream)] bee-display">{next.team.name}</span>
-            {!kids && <> · <span className="text-[var(--bee-cream)]">{contestantName(next.team, next.playerIndex)}</span></>}
-          </p>
-        )}
+        <OnDeck game={game} />
       </div>
 
       <BoardStrip game={game} activeTeamId={team.id} />
@@ -374,6 +373,33 @@ function FitWord({ word, size }: { word: string; size: string }) {
     <p ref={ref} className="bee-display leading-none tracking-wider whitespace-nowrap" style={{ fontSize: size }}>
       {word}
     </p>
+  )
+}
+
+/** Who spells next, and the two after that. */
+function OnDeck({ game }: { game: GameState }) {
+  const kids = game.settings.mode === 'kids'
+  const list = upcoming(game, 3)
+  if (list.length === 0) {
+    return <p className="bee-label text-[clamp(0.9rem,1.5vw,1.3rem)] lg:text-right">Last word of the game</p>
+  }
+  const labels = ['On deck', 'Then', 'Then']
+  return (
+    <ol className="flex flex-wrap items-center gap-2 lg:justify-end" aria-label="Coming up">
+      {list.map((item, index) => {
+        const color = teamColor(item.team.color)
+        return (
+          <li key={item.turnNumber} className="inline-flex items-center gap-2 rounded-full pl-1 pr-3 py-1 border-2" style={{ borderColor: index === 0 ? 'var(--bee-cream)' : 'var(--bee-line)', opacity: index === 0 ? 1 : 0.8 }}>
+            <span className="bee-label text-[clamp(0.7rem,1.1vw,1rem)] pl-2">{labels[index]}</span>
+            <span aria-hidden="true" className="inline-block w-3 h-3 rounded-full border border-[var(--bee-ink)]" style={{ background: color.bg }} />
+            <span className="bee-display text-[clamp(1rem,1.9vw,1.7rem)] whitespace-nowrap">
+              {kids ? item.team.name : contestantName(item.team, item.playerIndex)}
+            </span>
+            {!kids && <span className="text-[clamp(0.8rem,1.3vw,1.1rem)] text-[var(--bee-dim)] whitespace-nowrap">{item.team.name}</span>}
+          </li>
+        )
+      })}
+    </ol>
   )
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { teamColor } from '../_lib/defaults'
-import { contestantName, teamById, totalTurns, upNext, wordById } from '../_lib/engine'
+import { contestantName, isFinalRound, teamById, totalTurns, upNext, wordById, wordValue } from '../_lib/engine'
 import { formatPoints } from '../_lib/format'
 import { useShortcuts } from '../_lib/hooks'
 import { canSpeak, playCue, primeAudio, speak } from '../_lib/sound'
@@ -166,7 +166,11 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
             Turn {turn.number} of {totalTurns(game)}
           </Pill>
         )}
-        <Pill>{game.settings.pointsPerWord} pts a word</Pill>
+        {turn && isFinalRound(game, turn.number) ? (
+          <Pill tone="red">Final round · {wordValue(game, turn.number)} pts a word</Pill>
+        ) : (
+          <Pill>{game.settings.pointsPerWord} pts a word</Pill>
+        )}
       </TopBar>
 
       <main className="flex-1 grid lg:grid-cols-[1.55fr_1fr] gap-4 min-h-0">
@@ -419,7 +423,7 @@ function ActionPanel({ game, team, word, act }: { game: GameState; team: Team; w
   const dispatch = useDispatch()
   const turn = game.turn
   if (!turn) return null
-  const points = Math.max(0, game.settings.pointsPerWord)
+  const points = wordValue(game, turn.number)
   const timed = game.settings.timedRounds
 
   const timerControls = timed && (
@@ -480,6 +484,7 @@ function ActionPanel({ game, team, word, act }: { game: GameState; team: Team; w
             </button>
             <span className="bee-hint self-center ml-auto">
               Worth {turn.doubled ? `${points * 2} (doubled), or −${points} if missed` : `${points} ${points === 1 ? 'point' : 'points'}`}
+              {isFinalRound(game, turn.number) ? ' · final round, double' : ''}
               {game.timer.expired ? " · Time's up" : ''}
             </span>
           </div>

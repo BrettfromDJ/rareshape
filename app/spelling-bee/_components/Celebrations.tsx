@@ -14,6 +14,7 @@ const CUE_FOR: Partial<Record<EventType, Cue>> = {
   token: 'token',
   winner: 'winner',
   'time-up': 'expired',
+  'final-round': 'round',
   tiebreak: 'steal',
 }
 
@@ -67,6 +68,15 @@ export function Celebrations({ game, sound, rain = false }: { game: GameState; s
             <div className="bee-takeover-coin">2×</div>
             <div className="bee-takeover-title">Double Word!</div>
             <div className="bee-takeover-sub">{tokenTeam ? `${tokenTeam.name} bets it all` : 'Double or nothing'}</div>
+          </div>
+        </div>
+      )}
+      {fresh?.type === 'final-round' && (
+        <div key={`${fresh.id}-final`} className="bee-takeover bee-takeover-final" aria-hidden="true">
+          <div className="bee-takeover-stack">
+            <div className="bee-takeover-coin bee-takeover-coin-final">2×</div>
+            <div className="bee-takeover-title">Final round!</div>
+            <div className="bee-takeover-sub">Every word is now worth double</div>
           </div>
         </div>
       )}

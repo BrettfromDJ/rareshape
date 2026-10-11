@@ -42,6 +42,8 @@ export interface Settings {
   /** How many words each player spells over the game. */
   timesEach: number
   pointsPerWord: number
+  /** Everyone's last word is worth double. */
+  finalRoundDouble: boolean
   /** Every contestant gets a ridiculous task before their word. */
   distractions: boolean
   doubleWordEnabled: boolean
@@ -121,6 +123,7 @@ export type EventType =
   | 'token'
   | 'winner'
   | 'time-up'
+  | 'final-round'
   | 'tiebreak'
 
 export interface GameEvent {

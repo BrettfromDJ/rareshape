@@ -60,6 +60,7 @@ export function defaultSettings(): Settings {
     trophyTitle: DEFAULT_TROPHY_TITLE,
     timesEach: 3,
     pointsPerWord: 1,
+    finalRoundDouble: true,
     distractions: false,
     doubleWordEnabled: true,
     timedRounds: true,
