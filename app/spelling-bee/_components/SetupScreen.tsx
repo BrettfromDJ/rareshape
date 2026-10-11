@@ -7,7 +7,7 @@ import { plural, shuffle } from '../_lib/format'
 import { primeAudio } from '../_lib/sound'
 import { resetAll, useBee, useDispatch } from '../_lib/store'
 import type { Settings, Team } from '../_lib/types'
-import { POPUP_BLOCKED, openAudienceWindow } from './TopBar'
+import { AudienceHelp, POPUP_BLOCKED, openAudienceWindow } from './TopBar'
 import { Confirm, Pill, Toast } from './ui'
 import { WordBank } from './WordBank'
 
@@ -20,6 +20,7 @@ export function SetupScreen() {
   const { game, words, undoDepth } = useBee()
   const dispatch = useDispatch()
   const [bankOpen, setBankOpen] = useState(false)
+  const [audienceHelp, setAudienceHelp] = useState(false)
   const [confirm, setConfirm] = useState<'reset' | { removeTeam: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
@@ -61,7 +62,9 @@ export function SetupScreen() {
             type="button"
             className="bee-btn bee-btn-sm bee-btn-teal"
             onClick={() => {
-              if (!openAudienceWindow()) say(POPUP_BLOCKED)
+              const result = openAudienceWindow()
+              if (result === 'blocked') say(POPUP_BLOCKED)
+              if (result === 'framed') setAudienceHelp(true)
             }}
           >
             ⧉ Open audience window
@@ -252,6 +255,7 @@ export function SetupScreen() {
       </footer>
 
       {bankOpen && <WordBank onClose={() => setBankOpen(false)} />}
+      {audienceHelp && <AudienceHelp onClose={() => setAudienceHelp(false)} />}
       {confirm === 'reset' && (
         <Confirm
           title="Erase everything?"

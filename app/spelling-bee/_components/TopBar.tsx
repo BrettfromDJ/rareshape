@@ -5,16 +5,62 @@ import { audienceHref } from '../_lib/defaults'
 import { primeAudio } from '../_lib/sound'
 import { setPrefs, undo, useBee } from '../_lib/store'
 import type { GameState } from '../_lib/types'
-import { Kbd, Toast } from './ui'
+import { Dialog, Kbd, Toast } from './ui'
 
-/** Opens the audience route in its own window. Returns false when a pop-up blocker refused. */
-export function openAudienceWindow(): boolean {
+export type AudienceOpen = 'opened' | 'blocked' | 'framed'
+
+/** True when the page runs inside another page, such as a hosted artifact viewer. */
+function framed(): boolean {
+  try {
+    return window.self !== window.top
+  } catch {
+    return true
+  }
+}
+
+/**
+ * Opens the audience view in a second window. On the site that is the
+ * audience route. Inside a hosted frame the frame's own address refuses to
+ * open on its own, so the host page is opened instead and the person
+ * switches that tab to audience mode by hand.
+ */
+export function openAudienceWindow(): AudienceOpen {
+  if (framed()) {
+    const host = document.referrer
+    if (host && /^https:\/\/[^/]*claude\.ai\//.test(host)) window.open(host, '_blank')
+    return 'framed'
+  }
   const opened = window.open(audienceHref(), 'rareshape-bee-audience')
-  return Boolean(opened)
+  return opened ? 'opened' : 'blocked'
 }
 
 export const POPUP_BLOCKED =
   'The browser blocked the pop-up. Open this page in a second tab or on the TV and press Audience mode there.'
+
+/** The steps for a hosted page, where a second window cannot open by itself. */
+export function AudienceHelp({ onClose }: { onClose: () => void }) {
+  return (
+    <Dialog title="Put the audience on the TV" onClose={onClose}>
+      <ol className="grid gap-3 text-lg list-decimal pl-6">
+        <li>
+          <strong>Open this same page in a second tab.</strong> A new tab may have just opened for you; if not, copy this page&rsquo;s address into one.
+        </li>
+        <li>
+          <strong>Move that tab to the TV.</strong> Drag it to the TV&rsquo;s desktop with the laptop set as an extended display, or cast just that tab.
+        </li>
+        <li>
+          <strong>Press Audience mode there</strong> (or the <kbd className="bee-kbd">A</kbd> key) and make it full screen. It stays in step with this screen and never shows anything the host sees first.
+        </li>
+      </ol>
+      <p className="bee-hint mt-4">Sound is off on the audience tab to begin with. Use its Sound button if the TV should carry the bells and buzzers.</p>
+      <div className="flex justify-end mt-5">
+        <button type="button" className="bee-btn bee-btn-gold" onClick={onClose} data-autofocus="true">
+          Got it
+        </button>
+      </div>
+    </Dialog>
+  )
+}
 
 export function TopBar({
   game,
@@ -31,6 +77,7 @@ export function TopBar({
 }) {
   const { prefs, undoDepth } = useBee()
   const [toast, setToast] = useState<string | null>(null)
+  const [help, setHelp] = useState(false)
 
   const say = (message: string) => {
     setToast(message)
@@ -72,7 +119,9 @@ export function TopBar({
           type="button"
           className="bee-btn bee-btn-sm bee-btn-teal"
           onClick={() => {
-            if (!openAudienceWindow()) say(POPUP_BLOCKED)
+            const result = openAudienceWindow()
+            if (result === 'blocked') say(POPUP_BLOCKED)
+            if (result === 'framed') setHelp(true)
           }}
           title="Open the audience view in a second window to drag onto the TV"
         >
@@ -85,6 +134,7 @@ export function TopBar({
         )}
       </div>
       {toast && <Toast message={toast} />}
+      {help && <AudienceHelp onClose={() => setHelp(false)} />}
     </header>
   )
 }
