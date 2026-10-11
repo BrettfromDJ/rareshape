@@ -32,7 +32,11 @@ export interface Team {
   players: string[]
 }
 
+/** Adults play in teams; kids each play as themselves. Each mode has its own word bank. */
+export type Mode = 'adults' | 'kids'
+
 export interface Settings {
+  mode: Mode
   eventName: string
   trophyTitle: string
   /** How many words each player spells over the game. */
@@ -131,6 +135,8 @@ export interface GameState {
   phase: Phase
   settings: Settings
   teams: Team[]
+  /** The other mode's teams, kept while that mode is not the one on screen. */
+  savedTeams: Record<Mode, Team[]>
   scores: Record<string, number>
   /** Double Word token still available, per team. */
   tokens: Record<string, boolean>

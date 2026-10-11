@@ -3,12 +3,13 @@
  * which returns the next state. Nothing here touches the DOM, so the store can
  * snapshot states for undo and mirror them to a second window.
  */
-import { DEFAULT_EVENT_NAME, DEFAULT_TROPHY_TITLE, idleTimer, uid } from './defaults'
+import { DEFAULT_EVENT_NAME, DEFAULT_TROPHY_TITLE, KIDS_TROPHY_TITLE, idleTimer, modeDefaults, uid } from './defaults'
 import { pickDistraction } from './distractions'
 import type {
   EventType,
   GameState,
   LogEntry,
+  Mode,
   Outcome,
   Settings,
   Team,
@@ -19,6 +20,7 @@ import type {
 
 export type Action =
   | { type: 'settings'; patch: Partial<Settings> }
+  | { type: 'mode'; mode: Mode }
   | { type: 'teams'; teams: Team[] }
   | { type: 'start' }
   | { type: 'reveal' }
@@ -359,10 +361,27 @@ export function reduce(state: GameState, action: Action, words: Word[]): GameSta
     case 'settings': {
       const settings = { ...state.settings, ...action.patch }
       if (!settings.eventName.trim()) settings.eventName = DEFAULT_EVENT_NAME
-      if (!settings.trophyTitle.trim()) settings.trophyTitle = DEFAULT_TROPHY_TITLE
+      if (!settings.trophyTitle.trim()) settings.trophyTitle = settings.mode === 'kids' ? KIDS_TROPHY_TITLE : DEFAULT_TROPHY_TITLE
       const timer =
         state.phase === 'setup' ? idleTimer(settings.timerSeconds * 1000) : state.timer
       return { ...state, settings, timer }
+    }
+    case 'mode': {
+      if (state.phase !== 'setup' || action.mode === state.settings.mode) return state
+      const was = state.settings.mode
+      // The trophy title follows the mode unless the host renamed it.
+      const stock = state.settings.trophyTitle === DEFAULT_TROPHY_TITLE || state.settings.trophyTitle === KIDS_TROPHY_TITLE
+      const patch = modeDefaults(action.mode)
+      if (!stock) delete patch.trophyTitle
+      const settings = { ...state.settings, ...patch }
+      return {
+        ...state,
+        settings,
+        teams: state.savedTeams[action.mode] ?? [],
+        savedTeams: { ...state.savedTeams, [was]: state.teams },
+        usedWordIds: [],
+        timer: idleTimer(settings.timerSeconds * 1000),
+      }
     }
     case 'teams':
       return { ...state, teams: action.teams }

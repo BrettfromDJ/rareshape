@@ -31,9 +31,9 @@ export function ResultsScreen({ onAudienceMode }: { onAudienceMode: () => void }
             <p className="bee-label text-lg">{game.settings.trophyTitle}</p>
             {winner && color ? (
               <div className="bee-marquee inline-block mt-4 px-8 py-6 md:px-14 md:py-8 bee-anim-pop" style={{ background: color.bg, color: color.fg }}>
-                <p className="bee-display text-2xl md:text-3xl opacity-80">🏆 Champions 🏆</p>
+                <p className="bee-display text-2xl md:text-3xl opacity-80">{game.settings.mode === 'kids' ? '⭐ Winner ⭐' : '🏆 Champions 🏆'}</p>
                 <p className="bee-display text-[clamp(3.5rem,8vw,8rem)] leading-none">{winner.name}</p>
-                <p className="text-xl mt-2">{winner.players.join(' · ') || 'A team of mystery'}</p>
+                {game.settings.mode !== 'kids' && <p className="text-xl mt-2">{winner.players.join(' · ') || 'A team of mystery'}</p>}
                 <p className="bee-score text-5xl mt-3">{game.scores[winner.id] ?? 0} pts</p>
               </div>
             ) : (

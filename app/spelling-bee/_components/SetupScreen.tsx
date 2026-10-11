@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MAX_TEAMS, TEAM_COLORS, nextTeamColor, teamColor, uid } from '../_lib/defaults'
+import { MAX_KIDS, MAX_TEAMS, TEAM_COLORS, kidTeam, nextTeamColor, teamColor, uid } from '../_lib/defaults'
 import { totalTurns, wordCounts } from '../_lib/engine'
 import { plural, shuffle } from '../_lib/format'
 import { primeAudio } from '../_lib/sound'
@@ -27,6 +27,8 @@ export function SetupScreen() {
   const counts = wordCounts(words, game.usedWordIds)
   const unused = counts.left
   const wordsNeeded = totalTurns(game)
+  const kids = game.settings.mode === 'kids'
+  const who = kids ? 'kid' : 'team'
   const hasHistory = game.log.length > 0 || undoDepth > 0
 
   const say = (message: string) => {
@@ -39,7 +41,7 @@ export function SetupScreen() {
 
   const start = () => {
     primeAudio()
-    if (game.teams.length === 0) return setError('Add at least one team.')
+    if (game.teams.length === 0) return setError(kids ? 'Add at least one kid.' : 'Add at least one team.')
     if (unused === 0) return setError('The word bank has no unused words. Restore some or add new ones.')
     const teams = game.teams.map((team, index) => ({ ...team, name: team.name.trim() || `Team ${index + 1}` }))
     setTeams(teams)
@@ -75,6 +77,18 @@ export function SetupScreen() {
       <main className="flex-1 px-5 md:px-8 pb-32 grid gap-6 lg:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1fr]">
         {/* Event ------------------------------------------------------------ */}
         <section className="bee-card p-5 flex flex-col gap-4 xl:col-span-3 lg:col-span-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="bee-label">Who is playing</span>
+            <div className="flex gap-2" role="radiogroup" aria-label="Game mode">
+              <button type="button" role="radio" aria-checked={!kids} className={`bee-btn ${kids ? 'bee-btn-ghost' : 'bee-btn-gold'}`} onClick={() => dispatch({ type: 'mode', mode: 'adults' })}>
+                🍻 Adults · in teams
+              </button>
+              <button type="button" role="radio" aria-checked={kids} className={`bee-btn ${kids ? 'bee-btn-gold' : 'bee-btn-ghost'}`} onClick={() => dispatch({ type: 'mode', mode: 'kids' })}>
+                ⭐ Kids · everyone for themselves
+              </button>
+            </div>
+            <span className="bee-hint">{kids ? 'Short words, no teams, no timer, no Double Word. Each mode keeps its own word bank and line-up.' : 'Teams, the full word bank, and all the rules below.'}</span>
+          </div>
           <div className="grid md:grid-cols-2 gap-4">
             <label className="bee-field">
               <span className="bee-label">Event name</span>
@@ -88,6 +102,9 @@ export function SetupScreen() {
         </section>
 
         {/* Teams ------------------------------------------------------------ */}
+        {kids ? (
+          <KidsEditor teams={game.teams} onChange={setTeams} />
+        ) : (
         <section className="bee-card p-5 flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <h2 className="bee-display text-3xl">Teams</h2>
@@ -121,13 +138,14 @@ export function SetupScreen() {
             ))}
           </div>
         </section>
+        )}
 
         {/* Game ------------------------------------------------------------- */}
         <section className="bee-card p-5 flex flex-col gap-4">
           <h2 className="bee-display text-3xl">The game</h2>
           <div className="grid grid-cols-2 gap-3">
             <label className="bee-field">
-              <span className="bee-label">Words each person spells</span>
+              <span className="bee-label">{kids ? 'Words each kid spells' : 'Words each person spells'}</span>
               <input type="number" min={1} max={20} className="bee-input bee-input-lg" value={game.settings.timesEach} onChange={(changeEvent) => settings({ timesEach: Math.min(20, Math.max(1, int(changeEvent.target.value, game.settings.timesEach))) })} />
             </label>
             <label className="bee-field">
@@ -136,8 +154,8 @@ export function SetupScreen() {
             </label>
           </div>
           <p className="bee-hint">
-            Teams take turns in a loop until everyone has spelled {plural(game.settings.timesEach, 'word')}. That is {plural(wordsNeeded, 'turn')} in all
-            {game.teams.some((team) => team.players.length === 0) ? '; a team with no players listed gets one turn per go.' : '.'}
+            {kids ? 'Kids take turns in order' : 'Teams take turns in a loop'} until everyone has spelled {plural(game.settings.timesEach, 'word')}. That is {plural(wordsNeeded, 'turn')} in all
+            {!kids && game.teams.some((team) => team.players.length === 0) ? '; a team with no players listed gets one turn per go.' : '.'}
           </p>
           <div className="bee-toggle-row">
             <div>
@@ -229,8 +247,8 @@ export function SetupScreen() {
             {hasHistory && ' A previous game is still in memory.'}
           </p>
           <div className="flex flex-wrap gap-2">
-            <Pill>{plural(words.length, 'word')} in bank</Pill>
-            <Pill>{plural(game.teams.length, 'team')}</Pill>
+            <Pill>{plural(words.length, 'word')} in the {kids ? 'kids' : 'adult'} bank</Pill>
+            <Pill>{plural(game.teams.length, who)}</Pill>
           </div>
           <button type="button" className="bee-btn bee-btn-sm bee-btn-red self-start" onClick={() => setConfirm('reset')}>
             Reset all stored data
@@ -240,7 +258,7 @@ export function SetupScreen() {
 
       <footer className="fixed bottom-0 inset-x-0 z-30 border-t-4 border-[var(--bee-ink)] bg-[var(--bee-bg-2)] px-5 md:px-8 py-4 flex flex-wrap items-center gap-4">
         <div className="text-lg">
-          <span className="bee-display text-2xl">{plural(game.teams.length, 'team')}</span> · <span className="bee-display text-2xl">{plural(wordsNeeded, 'turn')}</span> ·{' '}
+          <span className="bee-display text-2xl">{plural(game.teams.length, who)}</span> · <span className="bee-display text-2xl">{plural(wordsNeeded, 'turn')}</span> ·{' '}
           <span className="bee-display text-2xl">{game.settings.pointsPerWord} {game.settings.pointsPerWord === 1 ? 'pt' : 'pts'} a word</span>
           {game.settings.timedRounds && <span className="bee-hint"> · {game.settings.timerSeconds}s clock</span>}
         </div>
@@ -281,6 +299,78 @@ export function SetupScreen() {
       )}
       {toast && <Toast message={toast} />}
     </div>
+  )
+}
+
+/** Kids mode: one name per line, each a team of one with its own colour. */
+function KidsEditor({ teams, onChange }: { teams: Team[]; onChange: (teams: Team[]) => void }) {
+  const [draft, setDraft] = useState('')
+  const add = () => {
+    const names = draft
+      .split(/[\n,;]+/)
+      .map((name) => name.trim())
+      .filter(Boolean)
+    if (!names.length) return
+    let next = teams
+    for (const name of names) {
+      if (next.length >= MAX_KIDS) break
+      next = [...next, kidTeam(name, next.map((team) => team.color))]
+    }
+    onChange(next)
+    setDraft('')
+  }
+  return (
+    <section className="bee-card p-5 flex flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <h2 className="bee-display text-3xl">Kids</h2>
+        <span className="bee-hint">{plural(teams.length, 'kid')}</span>
+        <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost ml-auto" disabled={teams.length < 2} onClick={() => onChange(shuffle(teams))}>
+          🎲 Shuffle order
+        </button>
+      </div>
+      <div className="flex gap-2">
+        <label className="flex-1">
+          <span className="sr-only">Add a kid</span>
+          <input
+            className="bee-input bee-input-lg"
+            placeholder="Add a name and press Enter"
+            value={draft}
+            onChange={(changeEvent) => setDraft(changeEvent.target.value)}
+            onKeyDown={(keyEvent) => {
+              if (keyEvent.key === 'Enter') {
+                keyEvent.preventDefault()
+                add()
+              }
+            }}
+          />
+        </label>
+        <button type="button" className="bee-btn bee-btn-gold" onClick={add} disabled={!draft.trim() || teams.length >= MAX_KIDS}>
+          + Add
+        </button>
+      </div>
+      {teams.length === 0 && <p className="bee-hint">Nobody yet. Add the kids in the order they should go; paste several names separated by commas.</p>}
+      <ol className="flex flex-col gap-2">
+        {teams.map((team, index) => {
+          const color = teamColor(team.color)
+          return (
+            <li key={team.id} className="bee-card-flat flex items-center gap-3 px-3 py-2" style={{ borderColor: color.bg }}>
+              <span className="bee-rank" style={{ background: color.bg, color: color.fg }}>
+                {index + 1}
+              </span>
+              <input
+                className="bee-input bee-input-lg flex-1"
+                aria-label={`Kid ${index + 1} name`}
+                value={team.name}
+                onChange={(changeEvent) => onChange(teams.map((item) => (item.id === team.id ? { ...item, name: changeEvent.target.value, players: [changeEvent.target.value] } : item)))}
+              />
+              <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost" aria-label={`Remove ${team.name}`} onClick={() => onChange(teams.filter((item) => item.id !== team.id))}>
+                ✕
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
   )
 }
 

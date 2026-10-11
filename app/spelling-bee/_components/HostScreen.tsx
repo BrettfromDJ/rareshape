@@ -78,6 +78,7 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
   const team = teamById(game, turn?.teamId)
   const word = wordById(words, turn?.wordId)
   const stage = turn?.stage ?? null
+  const kids = game.settings.mode === 'kids'
   const timed = game.settings.timedRounds
 
   const say = (message: string) => {
@@ -176,9 +177,9 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
                 <div className="flex flex-wrap items-start gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="bee-label" style={{ color: 'inherit', opacity: 0.75 }}>
-                      Now spelling for {team.name}
+                      {kids ? 'Now spelling' : `Now spelling for ${team.name}`}
                     </p>
-                    {stage === 'ready' && team.players.length > 0 ? (
+                    {stage === 'ready' && team.players.length > 1 ? (
                       <label className="block mt-1">
                         <span className="sr-only">Contestant</span>
                         <select
@@ -200,7 +201,7 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
                     )}
                     {next && (
                       <p className="mt-2 text-base opacity-85">
-                        Up next: <strong>{next.team.name}</strong> · {contestantName(next.team, next.playerIndex)}
+                        Up next: <strong>{next.team.name}</strong>{kids ? '' : ` · ${contestantName(next.team, next.playerIndex)}`}
                       </p>
                     )}
                   </div>
@@ -244,7 +245,7 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
         <aside className="flex flex-col gap-4 min-w-0">
           <div>
             <p className="bee-label mb-2">Leaderboard</p>
-            <Leaderboard game={game} activeTeamId={team?.id ?? null} />
+            <Leaderboard game={game} activeTeamId={team?.id ?? null} showPlayers={!kids} />
           </div>
           <div className="bee-card-flat p-3 hidden lg:block">
             <p className="bee-label mb-2">Shortcuts</p>

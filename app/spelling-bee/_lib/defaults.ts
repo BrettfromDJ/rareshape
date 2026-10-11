@@ -1,9 +1,11 @@
-import type { GameState, Settings, Team, TeamColorId, TimerState } from './types'
+import type { GameState, Mode, Settings, Team, TeamColorId, TimerState } from './types'
 
 export const STORAGE_KEYS = {
   game: 'rareshape.bee.v1.game',
   words: 'rareshape.bee.v1.words',
   bankVersion: 'rareshape.bee.v1.bankVersion',
+  kidsWords: 'rareshape.bee.v1.kidsWords',
+  kidsBankVersion: 'rareshape.bee.v1.kidsBankVersion',
   undo: 'rareshape.bee.v1.undo',
   prefs: 'rareshape.bee.v1.prefs',
 } as const
@@ -12,6 +14,8 @@ export const CHANNEL_NAME = 'rareshape.bee.v1'
 
 export const DEFAULT_EVENT_NAME = 'The Williams Land Spelling Bee'
 export const DEFAULT_TROPHY_TITLE = 'Most Literate Adult on the Land'
+export const KIDS_TROPHY_TITLE = 'Spelling Superstar'
+export const MAX_KIDS = 16
 
 export const MAX_TEAMS = 8
 export const UNDO_DEPTH = 40
@@ -51,6 +55,7 @@ export function uid(prefix = 'id'): string {
 
 export function defaultSettings(): Settings {
   return {
+    mode: 'adults',
     eventName: DEFAULT_EVENT_NAME,
     trophyTitle: DEFAULT_TROPHY_TITLE,
     timesEach: 3,
@@ -83,6 +88,7 @@ export function defaultGame(): GameState {
     phase: 'setup',
     settings,
     teams: defaultTeams(),
+    savedTeams: { adults: [], kids: [] },
     scores: {},
     tokens: {},
     rotation: {},
@@ -115,6 +121,18 @@ export function audienceHref(): string {
 }
 
 export const AUDIENCE_MODE_KEY = 'rareshape.bee.v1.audienceMode'
+
+/** A kid plays as a team of one: the name is both the team and its only player. */
+export function kidTeam(name: string, taken: TeamColorId[]): Team {
+  return { id: uid('kid'), name, color: nextTeamColor(taken), players: [name] }
+}
+
+/** What each mode starts from when the host switches to it. */
+export function modeDefaults(mode: Mode): Partial<Settings> {
+  return mode === 'kids'
+    ? { mode, trophyTitle: KIDS_TROPHY_TITLE, doubleWordEnabled: false, distractions: false, timedRounds: false, timesEach: 3, pointsPerWord: 1 }
+    : { mode, trophyTitle: DEFAULT_TROPHY_TITLE, doubleWordEnabled: true, timedRounds: true }
+}
 
 export function nextTeamColor(taken: TeamColorId[]): TeamColorId {
   const free = TEAM_COLORS.find((color) => !taken.includes(color.id))

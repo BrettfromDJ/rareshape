@@ -87,6 +87,7 @@ export function TopBar({
   return (
     <header className="flex flex-wrap items-center gap-2 md:gap-3">
       <h1 className="bee-display text-2xl md:text-3xl text-[var(--bee-gold)] truncate max-w-[40vw]">{game.settings.eventName}</h1>
+      {game.settings.mode === 'kids' && <span className="rounded-full bg-[var(--bee-gold)] text-[var(--bee-ink)] px-3 py-1 bee-display text-base tracking-wider">⭐ Kids</span>}
       <div className="flex flex-wrap items-center gap-2">{children}</div>
       <div className="ml-auto flex flex-wrap items-center gap-2">
         {extra}

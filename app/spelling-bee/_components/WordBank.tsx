@@ -146,7 +146,7 @@ export function WordBank({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Dialog title="Word bank" onClose={onClose} wide>
+    <Dialog title={game.settings.mode === 'kids' ? 'Kids word bank' : 'Adult word bank'} onClose={onClose} wide>
       <form
         className="bee-card-flat p-3 mb-4 grid gap-2"
         onSubmit={(submitEvent) => {

@@ -146,6 +146,7 @@ function AudiencePlaying({ game }: { game: GameState }) {
   const color = teamColor(team.color)
   const contestant = contestantName(team, turn.playerIndex)
   const shown = audienceWord(game, turn, words)
+  const kids = game.settings.mode === 'kids'
 
   if (shown) {
     return <WordStage game={game} turn={turn} team={team} contestant={contestant} word={shown} next={next} />
@@ -173,7 +174,7 @@ function AudiencePlaying({ game }: { game: GameState }) {
           <div className="flex flex-col gap-[clamp(0.75rem,1.6vw,1.5rem)]">
             <div className="min-w-0">
               <p className="bee-label text-[clamp(1rem,1.8vw,1.6rem)]" style={{ color: 'inherit', opacity: 0.8 }}>
-                Now spelling for {team.name}
+                {kids ? 'Now spelling' : `Now spelling for ${team.name}`}
               </p>
               <p className="bee-display leading-none mt-1 break-words text-[clamp(3.6rem,9vw,9.5rem)]">{contestant}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -197,15 +198,15 @@ function AudiencePlaying({ game }: { game: GameState }) {
 
         {next && turn.stage !== 'resolved' && (
           <p className="text-[clamp(1rem,1.8vw,1.6rem)] text-[var(--bee-dim)]">
-            Up next: <span className="text-[var(--bee-cream)] bee-display">{next.team.name}</span> ·{' '}
-            <span className="text-[var(--bee-cream)]">{contestantName(next.team, next.playerIndex)}</span>
+            Up next: <span className="text-[var(--bee-cream)] bee-display">{next.team.name}</span>
+            {!kids && <> · <span className="text-[var(--bee-cream)]">{contestantName(next.team, next.playerIndex)}</span></>}
           </p>
         )}
       </section>
 
       <aside className="min-h-0">
         <p className="bee-label mb-3 text-[clamp(0.9rem,1.5vw,1.3rem)]">Leaderboard</p>
-        <Leaderboard game={game} size="lg" activeTeamId={team.id} />
+        <Leaderboard game={game} size="lg" activeTeamId={team.id} showPlayers={!kids} />
       </aside>
     </div>
   )
@@ -231,6 +232,7 @@ function WordStage({
   next: ReturnType<typeof upNext>
 }) {
   const color = teamColor(team.color)
+  const kids = game.settings.mode === 'kids'
   // Bebas Neue runs about 0.47em per letter with this tracking, so this keeps
   // the word on one line inside 90% of the screen, capped by height.
   const vw = Math.min(21, 185 / Math.max(4, word.word.length)).toFixed(2)
@@ -264,7 +266,7 @@ function WordStage({
         style={{ boxShadow: '0 5px 0 var(--bee-ink)' }}
       >
         <p className="bee-label text-[clamp(0.85rem,1.3vw,1.2rem)]" style={{ color: 'inherit', opacity: 0.8 }}>
-          Now spelling for {team.name}
+          {kids ? 'Now spelling' : `Now spelling for ${team.name}`}
         </p>
         <p className="bee-display text-[clamp(2rem,4.2vw,4.2rem)] leading-none break-words">{contestant}</p>
       </TimerFill>
@@ -291,7 +293,8 @@ function WordStage({
         </div>
         {next && turn.stage !== 'resolved' && (
           <p className="text-[clamp(0.9rem,1.5vw,1.3rem)] text-[var(--bee-dim)] lg:text-right">
-            Up next: <span className="text-[var(--bee-cream)] bee-display">{next.team.name}</span> · <span className="text-[var(--bee-cream)]">{contestantName(next.team, next.playerIndex)}</span>
+            Up next: <span className="text-[var(--bee-cream)] bee-display">{next.team.name}</span>
+            {!kids && <> · <span className="text-[var(--bee-cream)]">{contestantName(next.team, next.playerIndex)}</span></>}
           </p>
         )}
       </div>
@@ -432,9 +435,9 @@ function AudienceResults({ game }: { game: GameState }) {
         <p className="bee-label text-[clamp(1rem,2vw,1.8rem)]">{game.settings.trophyTitle}</p>
         {winner && color ? (
           <div className="bee-marquee inline-block mt-4 px-[clamp(1.5rem,4vw,4rem)] py-[clamp(1rem,3vw,3rem)] bee-anim-pop" style={{ background: color.bg, color: color.fg }}>
-            <p className="bee-display text-[clamp(1.4rem,3vw,3rem)] opacity-80">Champions</p>
+            <p className="bee-display text-[clamp(1.4rem,3vw,3rem)] opacity-80">{game.settings.mode === 'kids' ? '⭐ Winner ⭐' : 'Champions'}</p>
             <p className="bee-display text-[clamp(4rem,10vw,11rem)] leading-none">{winner.name}</p>
-            <p className="text-[clamp(1.1rem,2.2vw,2rem)] mt-2">{winner.players.join(' · ')}</p>
+            {game.settings.mode !== 'kids' && <p className="text-[clamp(1.1rem,2.2vw,2rem)] mt-2">{winner.players.join(' · ')}</p>}
           </div>
         ) : (
           <p className="bee-display text-[clamp(3rem,8vw,8rem)]">Game over</p>
