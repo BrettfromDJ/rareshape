@@ -12,7 +12,6 @@ const CUE_FOR: Partial<Record<EventType, Cue>> = {
   correct: 'correct',
   incorrect: 'incorrect',
   token: 'token',
-  'round-complete': 'round',
   winner: 'winner',
   'time-up': 'expired',
   tiebreak: 'steal',

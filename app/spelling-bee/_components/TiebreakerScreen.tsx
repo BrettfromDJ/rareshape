@@ -71,8 +71,7 @@ export function TiebreakerScreen({ onAudienceMode }: { onAudienceMode: () => voi
                 <div className="flex flex-wrap items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="bee-label" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
-                      Host only · {word.difficulty}
-                      {word.partOfSpeech ? ` · ${word.partOfSpeech}` : ''}
+                      Host only{word.partOfSpeech ? ` · ${word.partOfSpeech}` : ''}
                     </p>
                     <p className="bee-display text-[clamp(3rem,6.5vw,6.5rem)] leading-none tracking-wider break-words">{word.word}</p>
                     {word.pronunciation && <p className="font-mono text-lg mt-1 opacity-80">{word.pronunciation}</p>}

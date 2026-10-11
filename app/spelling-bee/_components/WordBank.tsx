@@ -2,16 +2,14 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { saveTextFile } from '../_lib/download'
-import { difficultyLabel } from '../_lib/engine'
 import { isWord, setWords, useBee, useDispatch } from '../_lib/store'
-import type { Difficulty, Word } from '../_lib/types'
-import { DIFFICULTIES } from '../_lib/types'
+import type { Word } from '../_lib/types'
 import { defaultWords, wordId } from '../_lib/words'
 import { Confirm, Dialog, Pill, Toast } from './ui'
 
 type Status = 'all' | 'unused' | 'used'
 
-const EMPTY: Omit<Word, 'id'> = { word: '', difficulty: 'medium', definition: '', partOfSpeech: '', sentence: '', pronunciation: '' }
+const EMPTY: Omit<Word, 'id'> = { word: '', definition: '', partOfSpeech: '', sentence: '', pronunciation: '' }
 
 /** Splits a pasted list on new lines, commas and semicolons. */
 function splitWords(text: string): string[] {
@@ -32,11 +30,9 @@ export function WordBank({ onClose }: { onClose: () => void }) {
   const { words, game } = useBee()
   const dispatch = useDispatch()
   const [query, setQuery] = useState('')
-  const [difficulty, setDifficulty] = useState<'all' | Difficulty>('all')
   const [status, setStatus] = useState<Status>('all')
   const [editing, setEditing] = useState<Word | 'new' | null>(null)
   const [quick, setQuick] = useState('')
-  const [quickLevel, setQuickLevel] = useState<Difficulty>('medium')
   const [confirm, setConfirm] = useState<'reset' | 'clear' | { deleteId: string } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -50,11 +46,10 @@ export function WordBank({ onClose }: { onClose: () => void }) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return words
-      .filter((word) => difficulty === 'all' || word.difficulty === difficulty)
       .filter((word) => status === 'all' || (status === 'used') === used.has(word.id))
       .filter((word) => !q || word.word.toLowerCase().includes(q) || word.definition.toLowerCase().includes(q))
-      .sort((a, b) => DIFFICULTIES.indexOf(a.difficulty) - DIFFICULTIES.indexOf(b.difficulty) || a.word.localeCompare(b.word))
-  }, [words, query, difficulty, status, used])
+      .sort((a, b) => a.word.localeCompare(b.word))
+  }, [words, query, status, used])
 
   const quickAdd = () => {
     const names = splitWords(quick)
@@ -72,7 +67,7 @@ export function WordBank({ onClose }: { onClose: () => void }) {
       if (ids.has(id)) id = `${id}-${Date.now().toString(36)}`
       ids.add(id)
       taken.add(name.toLowerCase())
-      fresh.push({ id, word: name, difficulty: quickLevel, definition: '', partOfSpeech: '', sentence: '', custom: true })
+      fresh.push({ id, word: name, definition: '', partOfSpeech: '', sentence: '', custom: true })
     }
     if (fresh.length) setWords([...words, ...fresh])
     setQuick('')
@@ -126,7 +121,6 @@ export function WordBank({ onClose }: { onClose: () => void }) {
         const candidate = {
           id: typeof item.id === 'string' && item.id ? item.id : wordId(String(item.word ?? '')),
           word: String(item.word ?? '').trim(),
-          difficulty: item.difficulty,
           definition: String(item.definition ?? ''),
           partOfSpeech: String(item.partOfSpeech ?? ''),
           sentence: String(item.sentence ?? ''),
@@ -140,7 +134,7 @@ export function WordBank({ onClose }: { onClose: () => void }) {
         incoming.push(candidate)
         if (item.used === true) usedIds.push(candidate.id)
       }
-      if (incoming.length === 0) throw new Error('No valid words found. Each needs word, difficulty, definition, partOfSpeech and sentence.')
+      if (incoming.length === 0) throw new Error('No valid words found. Each entry needs at least a "word".')
       const byId = new Map(words.map((word) => [word.id, word]))
       for (const word of incoming) byId.set(word.id, { ...(byId.get(word.id) ?? {}), ...word })
       setWords([...byId.values()])
@@ -154,18 +148,18 @@ export function WordBank({ onClose }: { onClose: () => void }) {
   return (
     <Dialog title="Word bank" onClose={onClose} wide>
       <form
-        className="bee-card-flat p-3 mb-4 flex flex-wrap items-end gap-2"
+        className="bee-card-flat p-3 mb-4 grid gap-2"
         onSubmit={(submitEvent) => {
           submitEvent.preventDefault()
           quickAdd()
         }}
       >
-        <label className="bee-field flex-1 min-w-[14rem]">
+        <label className="bee-field">
           <span className="bee-label">Add words</span>
           <textarea
             className="bee-textarea bee-input-lg"
-            rows={Math.min(6, Math.max(1, quick.split('\n').length))}
-            placeholder="Type a word and press Enter, or paste a list"
+            rows={Math.min(8, Math.max(2, quick.split('\n').length))}
+            placeholder={'Paste your list here, one word per line\n(or type a word and press Enter)'}
             spellCheck
             lang="en"
             value={quick}
@@ -179,37 +173,18 @@ export function WordBank({ onClose }: { onClose: () => void }) {
             data-autofocus="true"
           />
         </label>
-        <label className="bee-field">
-          <span className="bee-label">Level</span>
-          <select className="bee-select w-auto" value={quickLevel} onChange={(changeEvent) => setQuickLevel(changeEvent.target.value as Difficulty)}>
-            {DIFFICULTIES.map((level) => (
-              <option key={level} value={level}>
-                {difficultyLabel(level)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="submit" className="bee-btn bee-btn-gold" disabled={!quick.trim()}>
-          + Add
-        </button>
-        <p className="bee-hint basis-full">Only the word is needed. Paste a list with one word per line, or separate them with commas; Shift+Enter starts a new line. Use Edit later for a definition or a sentence if you want one.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="submit" className="bee-btn bee-btn-gold" disabled={!quick.trim()}>
+            + Add {splitWords(quick).length > 1 ? `${splitWords(quick).length} words` : 'word'}
+          </button>
+          <p className="bee-hint">Commas, semicolons or new lines all separate words. Shift+Enter adds a line by hand. Duplicates are skipped.</p>
+        </div>
       </form>
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <label className="flex-1 min-w-[12rem]">
           <span className="sr-only">Search words</span>
           <input className="bee-input" placeholder="Search words or definitions" value={query} onChange={(changeEvent) => setQuery(changeEvent.target.value)} />
-        </label>
-        <label className="bee-field">
-          <span className="sr-only">Difficulty</span>
-          <select className="bee-select w-auto" value={difficulty} onChange={(changeEvent) => setDifficulty(changeEvent.target.value as 'all' | Difficulty)}>
-            <option value="all">All levels</option>
-            {DIFFICULTIES.map((level) => (
-              <option key={level} value={level}>
-                {difficultyLabel(level)}
-              </option>
-            ))}
-          </select>
         </label>
         <label className="bee-field">
           <span className="sr-only">Used status</span>
@@ -277,9 +252,6 @@ export function WordBank({ onClose }: { onClose: () => void }) {
           return (
             <li key={word.id} className="bee-card-flat flex flex-wrap items-center gap-3 px-3 py-2">
               <span className="bee-display text-2xl min-w-[10rem]">{word.word}</span>
-              <Pill tone={word.difficulty === 'nightmare' ? 'red' : word.difficulty === 'hard' ? 'gold' : word.difficulty === 'medium' ? 'teal' : 'green'}>
-                {difficultyLabel(word.difficulty)}
-              </Pill>
               {isUsed && <Pill>Used</Pill>}
               {word.custom && <Pill>Custom</Pill>}
               <span className="bee-hint flex-1 min-w-[10rem] truncate">{word.definition || 'No definition'}</span>
@@ -357,7 +329,6 @@ function WordForm({ initial, existing, onSave, onClose }: { initial: Word | null
     onSave({
       id,
       word,
-      difficulty: draft.difficulty,
       definition: draft.definition.trim(),
       partOfSpeech: draft.partOfSpeech.trim(),
       sentence: draft.sentence.trim(),
@@ -375,22 +346,10 @@ function WordForm({ initial, existing, onSave, onClose }: { initial: Word | null
           submit()
         }}
       >
-        <div className="grid sm:grid-cols-[1fr_auto] gap-3">
-          <label className="bee-field">
-            <span className="bee-label">Word</span>
-            <input className="bee-input bee-input-lg" value={draft.word} onChange={(changeEvent) => update({ word: changeEvent.target.value })} data-autofocus="true" spellCheck lang="en" required />
-          </label>
-          <label className="bee-field">
-            <span className="bee-label">Difficulty</span>
-            <select className="bee-select" value={draft.difficulty} onChange={(changeEvent) => update({ difficulty: changeEvent.target.value as Difficulty })}>
-              {DIFFICULTIES.map((level) => (
-                <option key={level} value={level}>
-                  {difficultyLabel(level)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <label className="bee-field">
+          <span className="bee-label">Word</span>
+          <input className="bee-input bee-input-lg" value={draft.word} onChange={(changeEvent) => update({ word: changeEvent.target.value })} data-autofocus="true" spellCheck lang="en" required />
+        </label>
         <div className="grid sm:grid-cols-2 gap-3">
           <label className="bee-field">
             <span className="bee-label">Part of speech (optional)</span>

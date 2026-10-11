@@ -14,3 +14,6 @@ next-env.d.ts
 # Written by `next dev`/`next build` on each machine, not shared.
 AGENTS.md
 CLAUDE.md
+
+# Single-file build of the spelling bee (pnpm bee:artifact)
+/spelling-bee.html

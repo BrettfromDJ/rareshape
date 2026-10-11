@@ -2,16 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { teamColor } from '../_lib/defaults'
-import { contestantName, currentRound, difficultyLabel, standings, teamById, upNext, wordById } from '../_lib/engine'
+import { contestantName, standings, teamById, totalTurns, upNext, wordById } from '../_lib/engine'
 import { formatPoints, ordinal } from '../_lib/format'
 import { useBee } from '../_lib/store'
-import type { GameState, RoundConfig, Team, Turn, Word } from '../_lib/types'
+import type { GameState, Team, Turn, Word } from '../_lib/types'
 import { Leaderboard } from './Leaderboard'
 import { TimerFill, TimerRing } from './TimerRing'
 import { Pill, TeamChip, TeamSwatch, Token } from './ui'
 
 /**
- * What the room sees: team, contestant, round, timer and scores. The word
+ * What the room sees: team, contestant, turn, timer and scores. The word
  * itself appears only when the "show the word on the audience screen" rule
  * is on, only after the host reveals it, and never while a steal is open or
  * a tiebreaker is being written.
@@ -138,49 +138,27 @@ function audienceWord(game: GameState, turn: Turn, words: Word[]): Word | null {
 
 function AudiencePlaying({ game }: { game: GameState }) {
   const { words } = useBee()
-  const round = currentRound(game)
   const turn = game.turn
   const team = teamById(game, turn?.teamId)
   const next = upNext(game)
 
-  if (game.interlude && round) {
-    const rows = standings(game)
-    return (
-      <div className="flex-1 grid lg:grid-cols-[1.1fr_1fr] gap-[clamp(1rem,2.5vw,2.5rem)] items-center">
-        <div className="text-center lg:text-left">
-          <p className="bee-label text-[clamp(1rem,2vw,1.8rem)]">That&rsquo;s the end of</p>
-          <p className="bee-display text-[clamp(4rem,10vw,10rem)] text-[var(--bee-gold)] bee-anim-pop">{round.name}</p>
-          {rows[0] && (
-            <p className="text-[clamp(1.2rem,2.4vw,2.2rem)] mt-4">
-              {rows.filter((row) => row.rank === 1).length > 1 ? 'Tied at the top: ' : 'Leading: '}
-              <span className="bee-display">{rows.filter((row) => row.rank === 1).map((row) => row.team.name).join(' & ')}</span>
-            </p>
-          )}
-        </div>
-        <Leaderboard game={game} size="lg" showPlayers={false} />
-      </div>
-    )
-  }
-
-  if (!turn || !team || !round) return null
+  if (!turn || !team) return null
   const color = teamColor(team.color)
   const contestant = contestantName(team, turn.playerIndex)
   const shown = audienceWord(game, turn, words)
 
   if (shown) {
-    return <WordStage game={game} round={round} turn={turn} team={team} contestant={contestant} word={shown} next={next} />
+    return <WordStage game={game} turn={turn} team={team} contestant={contestant} word={shown} next={next} />
   }
 
   return (
     <div className="flex-1 grid lg:grid-cols-[1.4fr_1fr] gap-[clamp(1rem,2.5vw,2.5rem)] min-h-0">
       <section className="flex flex-col gap-[clamp(0.75rem,1.5vw,1.25rem)] min-h-0">
         <div className="flex flex-wrap items-center gap-2 md:gap-3">
-          <Pill tone="gold">{round.name}</Pill>
-          <Pill>{round.points} pts a word</Pill>
-          <Pill>{difficultyLabel(round.difficulty)} words</Pill>
-          <Pill>
-            Turn {turn.indexInRound + 1} of {round.turnsPerTeam * game.teams.length}
+          <Pill tone="gold">
+            Turn {turn.number} of {totalTurns(game)}
           </Pill>
+          <Pill>{game.settings.pointsPerWord} pts a word</Pill>
         </div>
 
         <TimerFill
@@ -239,7 +217,6 @@ function AudiencePlaying({ game }: { game: GameState }) {
  */
 function WordStage({
   game,
-  round,
   turn,
   team,
   contestant,
@@ -247,7 +224,6 @@ function WordStage({
   next,
 }: {
   game: GameState
-  round: RoundConfig
   turn: Turn
   team: Team
   contestant: string
@@ -263,14 +239,13 @@ function WordStage({
   return (
     <div className="flex-1 flex flex-col gap-[clamp(0.6rem,1.4vw,1.25rem)] min-h-0">
       <div className="flex flex-wrap items-center gap-2 md:gap-3">
-        <Pill tone="gold">{round.name}</Pill>
-        <Pill>{round.points} pts a word</Pill>
-        <Pill>
-          Turn {turn.indexInRound + 1} of {round.turnsPerTeam * game.teams.length}
+        <Pill tone="gold">
+          Turn {turn.number} of {totalTurns(game)}
         </Pill>
+        <Pill>{game.settings.pointsPerWord} pts a word</Pill>
         {turn.doubled && (
           <span className="inline-flex items-center gap-2 bee-anim-pulse rounded-full bg-[var(--bee-gold)] text-[var(--bee-ink)] px-4 py-1 bee-display text-[clamp(1rem,1.8vw,1.6rem)] tracking-wider border-2 border-[var(--bee-ink)]">
-            <Token available size="sm" label={false} /> Double Word: 2× or −{round.points}
+            <Token available size="sm" label={false} /> Double Word: 2× or −{game.settings.pointsPerWord}
           </span>
         )}
         {turn.distraction && (
@@ -297,8 +272,7 @@ function WordStage({
       <div key={word.id} className="bee-plate bee-marquee flex-1 grid place-items-center text-center px-[clamp(1rem,3vw,3rem)] py-[clamp(1rem,2.5vw,2.5rem)] bee-anim-pop min-h-0">
         <div className="min-w-0 max-w-full">
           <p className="bee-label text-[clamp(0.9rem,1.5vw,1.4rem)]" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
-            {difficultyLabel(word.difficulty)}
-            {word.partOfSpeech ? ` · ${word.partOfSpeech}` : ''}
+            {word.partOfSpeech || 'The word'}
           </p>
           <FitWord word={word.word} size={`clamp(3rem, min(${vw}vw, ${extras ? 30 : 42}vh), 26rem)`} />
           {word.pronunciation && <p className="font-mono text-[clamp(1.1rem,2vw,2rem)] mt-2 opacity-80">{word.pronunciation}</p>}

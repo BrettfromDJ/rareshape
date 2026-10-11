@@ -1,13 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { MAX_ROUNDS, MAX_TEAMS, TEAM_COLORS, defaultRounds, nextTeamColor, teamColor, uid } from '../_lib/defaults'
-import { difficultyLabel, wordCounts } from '../_lib/engine'
+import { MAX_TEAMS, TEAM_COLORS, nextTeamColor, teamColor, uid } from '../_lib/defaults'
+import { totalTurns, wordCounts } from '../_lib/engine'
 import { plural, shuffle } from '../_lib/format'
 import { primeAudio } from '../_lib/sound'
 import { resetAll, useBee, useDispatch } from '../_lib/store'
-import type { RoundConfig, RoundDifficulty, Settings, Team } from '../_lib/types'
-import { DIFFICULTIES } from '../_lib/types'
+import type { Settings, Team } from '../_lib/types'
 import { POPUP_BLOCKED, openAudienceWindow } from './TopBar'
 import { Confirm, Pill, Toast } from './ui'
 import { WordBank } from './WordBank'
@@ -25,8 +24,8 @@ export function SetupScreen() {
   const [error, setError] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const counts = wordCounts(words, game.usedWordIds)
-  const unused = DIFFICULTIES.reduce((sum, level) => sum + counts[level].left, 0)
-  const wordsNeeded = game.rounds.reduce((sum, round) => sum + round.turnsPerTeam * game.teams.length, 0)
+  const unused = counts.left
+  const wordsNeeded = totalTurns(game)
   const hasHistory = game.log.length > 0 || undoDepth > 0
 
   const say = (message: string) => {
@@ -36,13 +35,10 @@ export function SetupScreen() {
 
   const settings = (patch: Partial<Settings>) => dispatch({ type: 'settings', patch })
   const setTeams = (teams: Team[]) => dispatch({ type: 'teams', teams })
-  const setRounds = (rounds: RoundConfig[]) => dispatch({ type: 'rounds', rounds })
 
   const start = () => {
     primeAudio()
     if (game.teams.length === 0) return setError('Add at least one team.')
-    if (game.rounds.length === 0) return setError('Add at least one round.')
-    if (game.rounds.some((round) => round.turnsPerTeam < 1)) return setError('Every round needs at least one turn per team.')
     if (unused === 0) return setError('The word bank has no unused words. Restore some or add new ones.')
     const teams = game.teams.map((team, index) => ({ ...team, name: team.name.trim() || `Team ${index + 1}` }))
     setTeams(teams)
@@ -123,72 +119,30 @@ export function SetupScreen() {
           </div>
         </section>
 
-        {/* Rounds ----------------------------------------------------------- */}
+        {/* Game ------------------------------------------------------------- */}
         <section className="bee-card p-5 flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <h2 className="bee-display text-3xl">Rounds</h2>
-            <span className="bee-hint">{plural(game.rounds.length, 'round')}</span>
-            <div className="ml-auto flex gap-2">
-              <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost" onClick={() => setRounds(defaultRounds())}>
-                Defaults
-              </button>
-              <button
-                type="button"
-                className="bee-btn bee-btn-sm bee-btn-gold"
-                disabled={game.rounds.length >= MAX_ROUNDS}
-                onClick={() => {
-                  const last = game.rounds[game.rounds.length - 1]
-                  setRounds([
-                    ...game.rounds,
-                    { id: uid('round'), name: `Round ${game.rounds.length + 1}`, points: (last?.points ?? 0) + 1, difficulty: last?.difficulty ?? 'medium', distraction: false, turnsPerTeam: last?.turnsPerTeam ?? 3 },
-                  ])
-                }}
-              >
-                + Round
-              </button>
+          <h2 className="bee-display text-3xl">The game</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="bee-field">
+              <span className="bee-label">Words each person spells</span>
+              <input type="number" min={1} max={20} className="bee-input bee-input-lg" value={game.settings.timesEach} onChange={(changeEvent) => settings({ timesEach: Math.min(20, Math.max(1, int(changeEvent.target.value, game.settings.timesEach))) })} />
+            </label>
+            <label className="bee-field">
+              <span className="bee-label">Points per word</span>
+              <input type="number" min={0} max={99} className="bee-input bee-input-lg" value={game.settings.pointsPerWord} onChange={(changeEvent) => settings({ pointsPerWord: Math.max(0, int(changeEvent.target.value, game.settings.pointsPerWord)) })} />
+            </label>
+          </div>
+          <p className="bee-hint">
+            Teams take turns in a loop until everyone has spelled {plural(game.settings.timesEach, 'word')}. That is {plural(wordsNeeded, 'turn')} in all
+            {game.teams.some((team) => team.players.length === 0) ? '; a team with no players listed gets one turn per go.' : '.'}
+          </p>
+          <div className="bee-toggle-row">
+            <div>
+              <div className="font-semibold text-lg">Distractions</div>
+              <div className="bee-hint">Every contestant gets a ridiculous task before their word: oven mitts, one leg, a British accent.</div>
             </div>
+            <input type="checkbox" className="bee-check" checked={game.settings.distractions} onChange={(changeEvent) => settings({ distractions: changeEvent.target.checked })} aria-label="Enable distractions" />
           </div>
-          <div className="flex flex-col gap-3">
-            {game.rounds.map((round, index) => (
-              <div key={round.id} className="bee-card-flat p-3 grid gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="bee-rank">{index + 1}</span>
-                  <label className="flex-1">
-                    <span className="sr-only">Round name</span>
-                    <input className="bee-input" value={round.name} onChange={(changeEvent) => setRounds(game.rounds.map((item) => (item.id === round.id ? { ...item, name: changeEvent.target.value } : item)))} />
-                  </label>
-                  <button type="button" className="bee-btn bee-btn-sm bee-btn-ghost" aria-label={`Remove ${round.name}`} disabled={game.rounds.length <= 1} onClick={() => setRounds(game.rounds.filter((item) => item.id !== round.id))}>
-                    ✕
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
-                  <label className="bee-field">
-                    <span className="bee-label">Points</span>
-                    <input type="number" min={0} max={99} className="bee-input" value={round.points} onChange={(changeEvent) => setRounds(game.rounds.map((item) => (item.id === round.id ? { ...item, points: Math.max(0, int(changeEvent.target.value, item.points)) } : item)))} />
-                  </label>
-                  <label className="bee-field">
-                    <span className="bee-label">Words each</span>
-                    <input type="number" min={1} max={20} className="bee-input" value={round.turnsPerTeam} onChange={(changeEvent) => setRounds(game.rounds.map((item) => (item.id === round.id ? { ...item, turnsPerTeam: Math.max(1, int(changeEvent.target.value, item.turnsPerTeam)) } : item)))} />
-                  </label>
-                  <label className="bee-field">
-                    <span className="bee-label">Difficulty</span>
-                    <select className="bee-select" value={round.difficulty} onChange={(changeEvent) => setRounds(game.rounds.map((item) => (item.id === round.id ? { ...item, difficulty: changeEvent.target.value as RoundDifficulty } : item)))}>
-                      {[...DIFFICULTIES, 'mixed' as const].map((level) => (
-                        <option key={level} value={level}>
-                          {difficultyLabel(level)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="bee-field items-start">
-                    <span className="bee-label">Distraction</span>
-                    <input type="checkbox" className="bee-check" checked={round.distraction} onChange={(changeEvent) => setRounds(game.rounds.map((item) => (item.id === round.id ? { ...item, distraction: changeEvent.target.checked } : item)))} />
-                  </label>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="bee-hint">A distraction round hands every contestant a ridiculous task before their word. Recommended for exactly one round.</p>
         </section>
 
         {/* Rules ------------------------------------------------------------ */}
@@ -205,10 +159,10 @@ export function SetupScreen() {
 
           <div className="bee-toggle-row">
             <div>
-              <div className="font-semibold text-lg">Timed rounds</div>
+              <div className="font-semibold text-lg">Timed turns</div>
               <div className="bee-hint">A countdown the host starts after reading the word.</div>
             </div>
-            <input type="checkbox" className="bee-check" checked={game.settings.timedRounds} onChange={(changeEvent) => settings({ timedRounds: changeEvent.target.checked })} aria-label="Enable timed rounds" />
+            <input type="checkbox" className="bee-check" checked={game.settings.timedRounds} onChange={(changeEvent) => settings({ timedRounds: changeEvent.target.checked })} aria-label="Enable timed turns" />
           </div>
           {game.settings.timedRounds && (
             <label className="bee-field py-3 border-b border-[var(--bee-line)]">
@@ -242,18 +196,19 @@ export function SetupScreen() {
               Manage word bank
             </button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {DIFFICULTIES.map((level) => (
-              <div key={level} className="bee-card-flat p-3 text-center">
-                <div className="bee-score text-4xl">{counts[level].left}</div>
-                <div className="bee-label">{difficultyLabel(level)}</div>
-                <div className="bee-hint text-xs">of {counts[level].total}</div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bee-card-flat p-3 text-center">
+              <div className="bee-score text-4xl">{counts.left}</div>
+              <div className="bee-label">Unused</div>
+            </div>
+            <div className="bee-card-flat p-3 text-center">
+              <div className="bee-score text-4xl">{counts.total}</div>
+              <div className="bee-label">In the bank</div>
+            </div>
           </div>
           <p className="bee-hint">
             This setup needs about {plural(wordsNeeded, 'word')}. {unused} unused words are available
-            {unused < wordsNeeded ? ' — fewer than needed, so rounds may borrow from neighbouring levels.' : '.'}
+            {unused < wordsNeeded ? ' — fewer than needed, so add more before you start.' : '.'}
             {game.usedWordIds.length > 0 && ` ${plural(game.usedWordIds.length, 'word is', 'words are')} marked used from earlier games.`}
           </p>
           {game.usedWordIds.length > 0 && (
@@ -282,8 +237,8 @@ export function SetupScreen() {
 
       <footer className="fixed bottom-0 inset-x-0 z-30 border-t-4 border-[var(--bee-ink)] bg-[var(--bee-bg-2)] px-5 md:px-8 py-4 flex flex-wrap items-center gap-4">
         <div className="text-lg">
-          <span className="bee-display text-2xl">{plural(game.teams.length, 'team')}</span> · <span className="bee-display text-2xl">{plural(game.rounds.length, 'round')}</span> ·{' '}
-          <span className="bee-display text-2xl">{plural(wordsNeeded, 'word')}</span>
+          <span className="bee-display text-2xl">{plural(game.teams.length, 'team')}</span> · <span className="bee-display text-2xl">{plural(wordsNeeded, 'turn')}</span> ·{' '}
+          <span className="bee-display text-2xl">{game.settings.pointsPerWord} {game.settings.pointsPerWord === 1 ? 'pt' : 'pts'} a word</span>
           {game.settings.timedRounds && <span className="bee-hint"> · {game.settings.timerSeconds}s clock</span>}
         </div>
         {error && (

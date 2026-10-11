@@ -4,15 +4,9 @@
  * localStorage and be mirrored to a second window unchanged.
  */
 
-export type Difficulty = 'easy' | 'medium' | 'hard' | 'nightmare'
-export const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'nightmare']
-
-export type RoundDifficulty = Difficulty | 'mixed'
-
 export interface Word {
   id: string
   word: string
-  difficulty: Difficulty
   definition: string
   partOfSpeech: string
   sentence: string
@@ -38,19 +32,14 @@ export interface Team {
   players: string[]
 }
 
-export interface RoundConfig {
-  id: string
-  name: string
-  points: number
-  difficulty: RoundDifficulty
-  /** A distraction is assigned before every word in this round. */
-  distraction: boolean
-  turnsPerTeam: number
-}
-
 export interface Settings {
   eventName: string
   trophyTitle: string
+  /** How many words each player spells over the game. */
+  timesEach: number
+  pointsPerWord: number
+  /** Every contestant gets a ridiculous task before their word. */
+  distractions: boolean
   doubleWordEnabled: boolean
   timedRounds: boolean
   timerSeconds: number
@@ -77,9 +66,8 @@ export interface TimerState {
 }
 
 export interface Turn {
+  /** 1-based position in the game's schedule. */
   number: number
-  roundIndex: number
-  indexInRound: number
   teamId: string
   playerIndex: number
   wordId: string | null
@@ -100,22 +88,15 @@ export interface LogEntry {
   id: string
   at: number
   kind: LogKind
-  roundIndex: number
   teamId: string
   playerName?: string
   wordId?: string
   word?: string
-  difficulty?: Difficulty
   outcome?: Outcome
   points: number
   doubled?: boolean
   distraction?: string
   text?: string
-}
-
-export interface Interlude {
-  kind: 'round-complete'
-  roundIndex: number
 }
 
 export interface TiebreakState {
@@ -134,7 +115,6 @@ export type EventType =
   | 'correct'
   | 'incorrect'
   | 'token'
-  | 'round-complete'
   | 'winner'
   | 'time-up'
   | 'tiebreak'
@@ -151,7 +131,6 @@ export interface GameState {
   phase: Phase
   settings: Settings
   teams: Team[]
-  rounds: RoundConfig[]
   scores: Record<string, number>
   /** Double Word token still available, per team. */
   tokens: Record<string, boolean>
@@ -161,7 +140,6 @@ export interface GameState {
   turnsTaken: Record<string, number[]>
   usedWordIds: string[]
   turn: Turn | null
-  interlude: Interlude | null
   timer: TimerState
   log: LogEntry[]
   tiebreak: TiebreakState | null

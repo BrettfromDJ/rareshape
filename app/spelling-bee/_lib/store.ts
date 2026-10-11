@@ -9,8 +9,7 @@ import { useCallback, useSyncExternalStore } from 'react'
 import { CHANNEL_NAME, STORAGE_KEYS, UNDO_DEPTH, defaultGame, defaultSettings, idleTimer } from './defaults'
 import { UNDOABLE, reduce, type Action } from './engine'
 import type { GameState, Prefs, Word } from './types'
-import { DIFFICULTIES } from './types'
-import { defaultWords } from './words'
+import { BANK_VERSION, defaultWords } from './words'
 
 type Listener = () => void
 
@@ -60,8 +59,7 @@ export function isWord(value: unknown): value is Word {
     word.word.trim().length > 0 &&
     typeof word.definition === 'string' &&
     typeof word.sentence === 'string' &&
-    typeof word.partOfSpeech === 'string' &&
-    DIFFICULTIES.includes(word.difficulty as Word['difficulty'])
+    typeof word.partOfSpeech === 'string'
   )
 }
 
@@ -72,7 +70,6 @@ function isGame(value: unknown): value is GameState {
     game.version === 1 &&
     typeof game.phase === 'string' &&
     Array.isArray(game.teams) &&
-    Array.isArray(game.rounds) &&
     Array.isArray(game.log) &&
     typeof game.settings === 'object' &&
     game.settings !== null
@@ -83,9 +80,17 @@ function isGame(value: unknown): value is GameState {
 function normalizeGame(game: GameState): GameState {
   const base = defaultGame()
   const settings = { ...defaultSettings(), ...game.settings }
+  const legacy = game as GameState & { rounds?: unknown; interlude?: unknown }
+  // A game saved by a build that still had rounds cannot continue; it goes
+  // back to setup with its teams, settings and word bank intact.
+  const fromRounds = legacy.rounds !== undefined || legacy.interlude !== undefined
+  delete legacy.rounds
+  delete legacy.interlude
+  const phase = fromRounds && game.phase !== 'setup' ? 'setup' : game.phase
   return {
     ...base,
     ...game,
+    phase,
     settings,
     scores: game.scores ?? {},
     tokens: game.tokens ?? {},
@@ -95,7 +100,8 @@ function normalizeGame(game: GameState): GameState {
     finalOrder: Array.isArray(game.finalOrder) ? game.finalOrder : [],
     timer: game.timer ?? idleTimer(settings.timerSeconds * 1000),
     // Saves from before steals were removed can sit in a steal stage.
-    turn: game.turn && String(game.turn.stage).startsWith('steal') ? { ...game.turn, stage: 'resolved' } : game.turn,
+    turn: fromRounds ? null : game.turn && String(game.turn.stage).startsWith('steal') ? { ...game.turn, stage: 'resolved' } : game.turn,
+    tiebreak: fromRounds ? null : game.tiebreak,
   }
 }
 
@@ -132,6 +138,27 @@ function set(patch: Partial<Snapshot>): void {
   emit()
 }
 
+/**
+ * The built-in list changes between builds. A saved bank from an older list
+ * is swapped for the current one, keeping words the host added themselves.
+ */
+function migrateBank(stored: Word[] | null): Word[] {
+  let version = 0
+  try {
+    version = Number(window.localStorage.getItem(STORAGE_KEYS.bankVersion) ?? 0)
+  } catch {
+    version = 0
+  }
+  if (stored && version === BANK_VERSION) return stored
+  const builtIn = defaultWords()
+  const names = new Set(builtIn.map((word) => word.word.toLowerCase()))
+  const custom = (stored ?? []).filter((word) => word.custom && !names.has(word.word.toLowerCase()))
+  const merged = [...builtIn, ...custom]
+  write(STORAGE_KEYS.words, merged)
+  write(STORAGE_KEYS.bankVersion, BANK_VERSION)
+  return merged
+}
+
 function boot(): void {
   if (booted || typeof window === 'undefined') return
   booted = true
@@ -142,8 +169,7 @@ function boot(): void {
   const undo = read(STORAGE_KEYS.undo, (value): value is GameState[] => Array.isArray(value) && value.every(isGame))
   undoStack = undo ?? []
 
-  const initialWords = words ?? defaultWords()
-  if (!words) write(STORAGE_KEYS.words, initialWords)
+  const initialWords = migrateBank(words)
 
   snapshot = {
     game: game ? normalizeGame(game) : defaultGame(),
@@ -280,6 +306,7 @@ export function resetAll(): void {
   undoStack = []
   const words = defaultWords()
   write(STORAGE_KEYS.words, words)
+  write(STORAGE_KEYS.bankVersion, BANK_VERSION)
   snapshot = { game: defaultGame(), words, prefs: DEFAULT_PREFS, undoDepth: 0, storageError: null, ready: true }
   emit()
   channel?.postMessage({ kind: 'game', game: snapshot.game } satisfies Message)

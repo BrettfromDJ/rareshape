@@ -65,7 +65,6 @@ export function ResultsScreen({ onAudienceMode }: { onAudienceMode: () => void }
           <div className="grid grid-cols-2 gap-3">
             <Stat label="Correct" value={String(stats.totalCorrect)} />
             <Stat label="Missed" value={String(stats.totalIncorrect)} />
-            <Stat label="Hardest word spelled" value={stats.hardestWord ? stats.hardestWord.word : '—'} detail={stats.hardestWord ? `${stats.hardestWord.difficulty} · ${stats.hardestWord.team.name}` : 'Nobody got a hard one'} />
             <Stat label="Most missed" value={stats.mostMissed ? stats.mostMissed.word : '—'} detail={stats.mostMissed ? `missed ${plural(stats.mostMissed.misses, 'time')}` : 'Nothing was missed twice'} />
             <Stat label="Longest word spelled" value={stats.longestWord ? stats.longestWord.word : '—'} detail={stats.longestWord ? `${stats.longestWord.word.length} letters · ${stats.longestWord.team.name}` : 'Nobody got one right'} />
             <Stat label="Tokens unused" value={String(stats.tokensLeft.length)} detail={stats.tokensLeft.length ? stats.tokensLeft.map((team) => team.name).join(', ') : 'Everyone played theirs'} />

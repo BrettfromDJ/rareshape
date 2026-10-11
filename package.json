@@ -17,7 +17,8 @@
     "size": "tsx scripts/check-bundle-size.ts",
     "eject": "tsx scripts/build-eject.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test:tools && tsx scripts/check-state.ts && tsx scripts/check-randomize.ts && tsx scripts/check-exports.ts && tsx scripts/check-eject.ts && tsx scripts/check-a11y.ts && pnpm size",
-    "check:index": "tsx scripts/check-index.ts"
+    "check:index": "tsx scripts/check-index.ts",
+    "bee:artifact": "tsx scripts/build-bee-artifact.ts"
   },
   "dependencies": {
     "@rareshape/core": "workspace:*",

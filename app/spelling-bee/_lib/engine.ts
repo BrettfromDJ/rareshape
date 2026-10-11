@@ -6,25 +6,20 @@
 import { DEFAULT_EVENT_NAME, DEFAULT_TROPHY_TITLE, idleTimer, uid } from './defaults'
 import { pickDistraction } from './distractions'
 import type {
-  Difficulty,
   EventType,
   GameState,
   LogEntry,
   Outcome,
-  RoundConfig,
-  RoundDifficulty,
   Settings,
   Team,
   TiebreakState,
   Turn,
   Word,
 } from './types'
-import { DIFFICULTIES } from './types'
 
 export type Action =
   | { type: 'settings'; patch: Partial<Settings> }
   | { type: 'teams'; teams: Team[] }
-  | { type: 'rounds'; rounds: RoundConfig[] }
   | { type: 'start' }
   | { type: 'reveal' }
   | { type: 'toggle-definition' }
@@ -39,7 +34,6 @@ export type Action =
   | { type: 'activate-token' }
   | { type: 'set-contestant'; playerIndex: number }
   | { type: 'next' }
-  | { type: 'start-round' }
   | { type: 'adjust'; teamId: string; delta: number; reason: string }
   | { type: 'pause'; paused: boolean }
   | { type: 'end' }
@@ -64,7 +58,6 @@ export const UNDOABLE: ReadonlySet<Action['type']> = new Set<Action['type']>([
   'activate-token',
   'set-contestant',
   'next',
-  'start-round',
   'adjust',
   'end',
   'tiebreak-reveal',
@@ -74,16 +67,6 @@ export const UNDOABLE: ReadonlySet<Action['type']> = new Set<Action['type']>([
   'restore-word',
   'restore-all-words',
 ])
-
-const DIFFICULTY_RANK: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2, nightmare: 3 }
-
-export function difficultyRank(difficulty: Difficulty): number {
-  return DIFFICULTY_RANK[difficulty]
-}
-
-export function difficultyLabel(difficulty: RoundDifficulty): string {
-  return difficulty === 'mixed' ? 'Mixed' : difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
-}
 
 // ---------------------------------------------------------------------------
 // Selectors
@@ -122,38 +105,40 @@ export function wordById(words: Word[], id: string | null | undefined): Word | u
   return words.find((word) => word.id === id)
 }
 
-export function currentRound(state: GameState): RoundConfig | undefined {
-  const index = state.turn?.roundIndex ?? state.interlude?.roundIndex ?? 0
-  return state.rounds[index]
-}
-
 export function contestantName(team: Team | undefined, playerIndex: number): string {
   if (!team) return 'Nobody'
   return team.players[playerIndex] ?? 'Anyone on the team'
 }
 
-export function turnsInRound(state: GameState, round: RoundConfig): number {
-  return round.turnsPerTeam * state.teams.length
+/** Words a team spells over the game: every player goes `timesEach` times. */
+export function turnsForTeam(team: Team, settings: Settings): number {
+  return Math.max(1, team.players.length) * Math.max(1, settings.timesEach)
+}
+
+/**
+ * The order of play: teams take turns in a loop, each team dropping out once
+ * everyone on it has had their go. Derived from setup, so nothing is stored.
+ */
+export function schedule(state: GameState): string[] {
+  const order: string[] = []
+  const longest = Math.max(0, ...state.teams.map((team) => turnsForTeam(team, state.settings)))
+  for (let pass = 0; pass < longest; pass += 1) {
+    for (const team of state.teams) {
+      if (pass < turnsForTeam(team, state.settings)) order.push(team.id)
+    }
+  }
+  return order
 }
 
 export function totalTurns(state: GameState): number {
-  return state.rounds.reduce((sum, round) => sum + turnsInRound(state, round), 0)
+  return schedule(state).length
 }
 
 /** Which team spells the turn after this one, so the host can announce it. */
 export function upNext(state: GameState): { team: Team; playerIndex: number } | null {
   const turn = state.turn
   if (!turn) return null
-  const round = state.rounds[turn.roundIndex]
-  if (!round) return null
-  let roundIndex = turn.roundIndex
-  let indexInRound = turn.indexInRound + 1
-  if (indexInRound >= turnsInRound(state, round)) {
-    roundIndex += 1
-    indexInRound = 0
-    if (!state.rounds[roundIndex]) return null
-  }
-  const team = state.teams[indexInRound % state.teams.length]
+  const team = teamById(state, schedule(state)[turn.number])
   if (!team) return null
   const playerIndex =
     team.id === turn.teamId
@@ -164,74 +149,37 @@ export function upNext(state: GameState): { team: Team; playerIndex: number } | 
   return { team, playerIndex }
 }
 
-export function wordCounts(words: Word[], usedIds: string[]): Record<Difficulty, { total: number; left: number }> {
+export function wordCounts(words: Word[], usedIds: string[]): { total: number; left: number } {
   const used = new Set(usedIds)
-  const counts = { easy: { total: 0, left: 0 }, medium: { total: 0, left: 0 }, hard: { total: 0, left: 0 }, nightmare: { total: 0, left: 0 } }
-  for (const word of words) {
-    counts[word.difficulty].total += 1
-    if (!used.has(word.id)) counts[word.difficulty].left += 1
-  }
-  return counts
+  return { total: words.length, left: words.filter((word) => !used.has(word.id)).length }
 }
 
 // ---------------------------------------------------------------------------
 // Word drawing
 // ---------------------------------------------------------------------------
 
-function draw(
-  words: Word[],
-  usedIds: string[],
-  difficulty: RoundDifficulty,
-  exclude: string[] = [],
-): { wordId: string | null; note: string | null } {
+function draw(words: Word[], usedIds: string[], exclude: string[] = []): { wordId: string | null; note: string | null } {
   const blocked = new Set([...usedIds, ...exclude])
   const fresh = words.filter((word) => !blocked.has(word.id))
   if (fresh.length === 0) {
     return { wordId: null, note: 'Every word in the bank has been used. Restore some words or add new ones.' }
   }
-  const random = (pool: Word[]): Word => pool[Math.floor(Math.random() * pool.length)] as Word
-  if (difficulty === 'mixed') return { wordId: random(fresh).id, note: null }
-
-  const exact = fresh.filter((word) => word.difficulty === difficulty)
-  if (exact.length) return { wordId: random(exact).id, note: null }
-
-  const wanted = DIFFICULTY_RANK[difficulty]
-  const nearest = [...DIFFICULTIES]
-    .filter((level) => level !== difficulty)
-    .sort((a, b) => Math.abs(DIFFICULTY_RANK[a] - wanted) - Math.abs(DIFFICULTY_RANK[b] - wanted))
-  for (const level of nearest) {
-    const pool = fresh.filter((word) => word.difficulty === level)
-    if (pool.length) {
-      return {
-        wordId: random(pool).id,
-        note: `No unused ${difficultyLabel(difficulty).toLowerCase()} words left, so this one is ${level}.`,
-      }
-    }
-  }
-  return { wordId: random(fresh).id, note: null }
+  const pick = fresh[Math.floor(Math.random() * fresh.length)] as Word
+  return { wordId: pick.id, note: null }
 }
 
 // ---------------------------------------------------------------------------
 // Turn construction
 // ---------------------------------------------------------------------------
 
-function makeTurn(
-  state: GameState,
-  words: Word[],
-  roundIndex: number,
-  indexInRound: number,
-  number: number,
-): { turn: Turn; lastDistraction: string | null } {
-  const round = state.rounds[roundIndex] as RoundConfig
-  const team = state.teams[indexInRound % state.teams.length] as Team
+function makeTurn(state: GameState, words: Word[], number: number): { turn: Turn; lastDistraction: string | null } {
+  const team = teamById(state, schedule(state)[number - 1]) as Team
   const playerIndex = team.players.length ? (state.rotation[team.id] ?? 0) % team.players.length : -1
-  const drawn = draw(words, state.usedWordIds, round.difficulty)
-  const distraction = round.distraction ? pickDistraction(state.lastDistraction) : null
+  const drawn = draw(words, state.usedWordIds)
+  const distraction = state.settings.distractions ? pickDistraction(state.lastDistraction) : null
   return {
     turn: {
       number,
-      roundIndex,
-      indexInRound,
       teamId: team.id,
       playerIndex,
       wordId: drawn.wordId,
@@ -283,7 +231,6 @@ function beginGame(state: GameState, words: Word[], keepUsed: boolean): GameStat
     turnsTaken: Object.fromEntries(state.teams.map((team) => [team.id, []])),
     usedWordIds: keepUsed ? state.usedWordIds : [],
     turn: null,
-    interlude: null,
     timer: idleTimer(state.settings.timerSeconds * 1000),
     log: [],
     tiebreak: null,
@@ -295,7 +242,7 @@ function beginGame(state: GameState, words: Word[], keepUsed: boolean): GameStat
     lastEvent: null,
     lastDistraction: null,
   }
-  const first = makeTurn(base, words, 0, 0, 1)
+  const first = makeTurn(base, words, 1)
   return { ...base, turn: first.turn, lastDistraction: first.lastDistraction }
 }
 
@@ -305,20 +252,18 @@ function beginGame(state: GameState, words: Word[], keepUsed: boolean): GameStat
 
 function resolveTurn(state: GameState, words: Word[], outcome: Outcome): GameState {
   const turn = state.turn as Turn
-  const round = state.rounds[turn.roundIndex] as RoundConfig
   const team = teamById(state, turn.teamId)
   const word = wordById(words, turn.wordId)
-  const base = round.points
+  const base = Math.max(0, state.settings.pointsPerWord)
   let points = 0
   if (outcome === 'correct') points = turn.doubled ? base * 2 : base
   if (outcome === 'incorrect') points = turn.doubled ? -base : 0
 
   const entry = logEntry({
     kind: outcome === 'skipped' ? 'skip' : 'turn',
-    roundIndex: turn.roundIndex,
     teamId: turn.teamId,
     playerName: contestantName(team, turn.playerIndex),
-    ...(word ? { wordId: word.id, word: word.word, difficulty: word.difficulty } : {}),
+    ...(word ? { wordId: word.id, word: word.word } : {}),
     outcome,
     points,
     doubled: turn.doubled,
@@ -339,7 +284,6 @@ function resolveTurn(state: GameState, words: Word[], outcome: Outcome): GameSta
 function advance(state: GameState, words: Word[]): GameState {
   const turn = state.turn as Turn
   const team = teamById(state, turn.teamId) as Team
-  const round = state.rounds[turn.roundIndex] as RoundConfig
   const taken = state.turnsTaken[team.id] ?? []
   const rotation = { ...state.rotation }
   if (team.players.length) rotation[team.id] = (turn.playerIndex + 1) % team.players.length
@@ -349,23 +293,15 @@ function advance(state: GameState, words: Word[]): GameState {
     turnsTaken: { ...state.turnsTaken, [team.id]: turn.playerIndex >= 0 ? [...taken, turn.playerIndex] : taken },
     timer: idleTimer(state.settings.timerSeconds * 1000),
   }
-  const indexInRound = turn.indexInRound + 1
-  if (indexInRound < turnsInRound(state, round)) {
-    const made = makeTurn(next, words, turn.roundIndex, indexInRound, turn.number + 1)
+  if (turn.number < totalTurns(state)) {
+    const made = makeTurn(next, words, turn.number + 1)
     return { ...next, turn: made.turn, lastDistraction: made.lastDistraction, lastEvent: null }
   }
-  const isLast = turn.roundIndex >= state.rounds.length - 1
-  if (isLast) return finish({ ...next, turn: { ...turn, stage: 'resolved' } }, words)
-  return {
-    ...next,
-    turn: null,
-    interlude: { kind: 'round-complete', roundIndex: turn.roundIndex },
-    lastEvent: event('round-complete'),
-  }
+  return finish(next, words)
 }
 
 function tiebreakRound(state: GameState, words: Word[], teamIds: string[], wordNumber: number, exclude: string[] = []): TiebreakState {
-  const drawn = draw(words, state.usedWordIds, 'hard', exclude)
+  const drawn = draw(words, state.usedWordIds, exclude)
   return { teamIds, wordId: drawn.wordId, wordNote: drawn.note, revealed: false, marks: {}, picking: false, wordNumber }
 }
 
@@ -376,7 +312,6 @@ function finish(state: GameState, words: Word[]): GameState {
   const cleared: GameState = {
     ...state,
     turn: null,
-    interlude: null,
     timer: { ...state.timer, running: false, endsAt: null },
   }
   if (tied.length > 1 && state.teams.length > 1) {
@@ -431,11 +366,8 @@ export function reduce(state: GameState, action: Action, words: Word[]): GameSta
     }
     case 'teams':
       return { ...state, teams: action.teams }
-    case 'rounds':
-      return { ...state, rounds: action.rounds }
-
     case 'start': {
-      if (state.teams.length === 0 || state.rounds.length === 0) return state
+      if (state.teams.length === 0 || totalTurns(state) === 0) return state
       return beginGame(state, words, true)
     }
 
@@ -495,9 +427,8 @@ export function reduce(state: GameState, action: Action, words: Word[]): GameSta
     case 'replace': {
       const turn = state.turn
       if (!turn || (turn.stage !== 'ready' && turn.stage !== 'revealed')) return state
-      const round = state.rounds[turn.roundIndex] as RoundConfig
       const exclude = turn.wordId ? [turn.wordId] : []
-      const drawn = draw(words, state.usedWordIds, round.difficulty, exclude)
+      const drawn = draw(words, state.usedWordIds, exclude)
       if (!drawn.wordId) return { ...state, turn: { ...turn, wordNote: drawn.note } }
       const wasRevealed = turn.stage === 'revealed'
       return {
@@ -521,7 +452,6 @@ export function reduce(state: GameState, action: Action, words: Word[]): GameSta
           ...state.log,
           logEntry({
             kind: 'token',
-            roundIndex: turn.roundIndex,
             teamId: turn.teamId,
             playerName: contestantName(team, turn.playerIndex),
             points: 0,
@@ -546,15 +476,6 @@ export function reduce(state: GameState, action: Action, words: Word[]): GameSta
       return advance(state, words)
     }
 
-    case 'start-round': {
-      const interlude = state.interlude
-      if (!interlude) return state
-      const roundIndex = interlude.roundIndex + 1
-      if (!state.rounds[roundIndex]) return finish(state, words)
-      const made = makeTurn(state, words, roundIndex, 0, state.log.filter((e) => e.kind === 'turn' || e.kind === 'skip').length + 1)
-      return { ...state, interlude: null, turn: made.turn, lastDistraction: made.lastDistraction, lastEvent: null }
-    }
-
     case 'adjust': {
       if (!teamById(state, action.teamId) || !Number.isFinite(action.delta) || action.delta === 0) return state
       return {
@@ -564,7 +485,6 @@ export function reduce(state: GameState, action: Action, words: Word[]): GameSta
           ...state.log,
           logEntry({
             kind: 'adjust',
-            roundIndex: state.turn?.roundIndex ?? state.interlude?.roundIndex ?? Math.max(0, state.rounds.length - 1),
             teamId: action.teamId,
             points: action.delta,
             text: action.reason.trim() || 'Manual adjustment',
@@ -605,9 +525,8 @@ export function reduce(state: GameState, action: Action, words: Word[]): GameSta
       const entries = tb.teamIds.map((teamId) =>
         logEntry({
           kind: 'tiebreak',
-          roundIndex: state.rounds.length - 1,
           teamId,
-          ...(word ? { wordId: word.id, word: word.word, difficulty: word.difficulty } : {}),
+          ...(word ? { wordId: word.id, word: word.word } : {}),
           outcome: tb.marks[teamId] ? 'correct' : 'incorrect',
           points: 0,
           text: `Tiebreaker word ${tb.wordNumber}`,
@@ -654,7 +573,6 @@ export function reduce(state: GameState, action: Action, words: Word[]): GameSta
         turnsTaken: {},
         usedWordIds: [],
         turn: null,
-        interlude: null,
         timer: idleTimer(state.settings.timerSeconds * 1000),
         log: [],
         tiebreak: null,
@@ -673,7 +591,6 @@ export function reduce(state: GameState, action: Action, words: Word[]): GameSta
         ...state,
         phase: 'setup',
         turn: null,
-        interlude: null,
         tiebreak: null,
         paused: false,
         timer: idleTimer(state.settings.timerSeconds * 1000),
@@ -706,7 +623,6 @@ export interface GameStats {
   teams: TeamStats[]
   totalCorrect: number
   totalIncorrect: number
-  hardestWord: { word: string; team: Team; difficulty: Difficulty } | null
   mostMissed: { word: string; misses: number } | null
   longestWord: { word: string; team: Team } | null
   tokensLeft: Team[]
@@ -730,11 +646,7 @@ export function gameStats(state: GameState): GameStats {
     }
   })
 
-  const spelled = state.log.filter((entry) => entry.kind === 'turn' && entry.outcome === 'correct' && entry.word && entry.difficulty)
-  const hardest = [...spelled].sort((a, b) => {
-    const byRank = difficultyRank(b.difficulty as Difficulty) - difficultyRank(a.difficulty as Difficulty)
-    return byRank || (b.word?.length ?? 0) - (a.word?.length ?? 0)
-  })[0]
+  const spelled = state.log.filter((entry) => entry.kind === 'turn' && entry.outcome === 'correct' && entry.word)
 
   const misses = new Map<string, number>()
   for (const entry of state.log) {
@@ -750,10 +662,6 @@ export function gameStats(state: GameState): GameStats {
     teams,
     totalCorrect: teams.reduce((sum, row) => sum + row.correct, 0),
     totalIncorrect: teams.reduce((sum, row) => sum + row.incorrect, 0),
-    hardestWord:
-      hardest && hardest.word && hardest.difficulty && teamById(state, hardest.teamId)
-        ? { word: hardest.word, team: teamById(state, hardest.teamId) as Team, difficulty: hardest.difficulty }
-        : null,
     mostMissed: mostMissed ? { word: mostMissed[0], misses: mostMissed[1] } : null,
     longestWord:
       longest && longest.word && teamById(state, longest.teamId) ? { word: longest.word, team: teamById(state, longest.teamId) as Team } : null,

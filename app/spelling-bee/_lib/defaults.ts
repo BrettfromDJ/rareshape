@@ -1,8 +1,9 @@
-import type { GameState, RoundConfig, Settings, Team, TeamColorId, TimerState } from './types'
+import type { GameState, Settings, Team, TeamColorId, TimerState } from './types'
 
 export const STORAGE_KEYS = {
   game: 'rareshape.bee.v1.game',
   words: 'rareshape.bee.v1.words',
+  bankVersion: 'rareshape.bee.v1.bankVersion',
   undo: 'rareshape.bee.v1.undo',
   prefs: 'rareshape.bee.v1.prefs',
 } as const
@@ -13,7 +14,6 @@ export const DEFAULT_EVENT_NAME = 'The Williams Land Spelling Bee'
 export const DEFAULT_TROPHY_TITLE = 'Most Literate Adult on the Land'
 
 export const MAX_TEAMS = 8
-export const MAX_ROUNDS = 8
 export const UNDO_DEPTH = 40
 
 export interface TeamColor {
@@ -53,21 +53,15 @@ export function defaultSettings(): Settings {
   return {
     eventName: DEFAULT_EVENT_NAME,
     trophyTitle: DEFAULT_TROPHY_TITLE,
+    timesEach: 3,
+    pointsPerWord: 1,
+    distractions: false,
     doubleWordEnabled: true,
     timedRounds: true,
     timerSeconds: 30,
     autoRotate: true,
     audienceShowsWord: true,
   }
-}
-
-export function defaultRounds(): RoundConfig[] {
-  return [
-    { id: uid('round'), name: 'Round 1', points: 1, difficulty: 'easy', distraction: false, turnsPerTeam: 3 },
-    { id: uid('round'), name: 'Round 2', points: 2, difficulty: 'medium', distraction: false, turnsPerTeam: 3 },
-    { id: uid('round'), name: 'Round 3', points: 3, difficulty: 'hard', distraction: true, turnsPerTeam: 3 },
-    { id: uid('round'), name: 'Final round', points: 5, difficulty: 'nightmare', distraction: false, turnsPerTeam: 2 },
-  ]
 }
 
 export function defaultTeams(): Team[] {
@@ -89,14 +83,12 @@ export function defaultGame(): GameState {
     phase: 'setup',
     settings,
     teams: defaultTeams(),
-    rounds: defaultRounds(),
     scores: {},
     tokens: {},
     rotation: {},
     turnsTaken: {},
     usedWordIds: [],
     turn: null,
-    interlude: null,
     timer: idleTimer(settings.timerSeconds * 1000),
     log: [],
     tiebreak: null,

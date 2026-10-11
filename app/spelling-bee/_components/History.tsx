@@ -32,7 +32,6 @@ export function HistoryList({ game, limit }: { game: GameState; limit?: number }
     <ol className="flex flex-col gap-2">
       {entries.map((entry) => {
         const team = teamById(game, entry.teamId)
-        const round = game.rounds[entry.roundIndex]
         const tone =
           entry.outcome === 'correct' ? 'var(--bee-green)' : entry.outcome === 'incorrect' ? 'var(--bee-red-soft)' : 'var(--bee-dim)'
         return (
@@ -40,7 +39,7 @@ export function HistoryList({ game, limit }: { game: GameState; limit?: number }
             {team && <TeamSwatch team={team} size="sm" />}
             <span className="flex-1 min-w-0">
               <span className="block truncate">{describe(game, entry)}</span>
-              <span className="bee-hint text-xs">{round?.name ?? 'Tiebreaker'}</span>
+              <span className="bee-hint text-xs">{entry.kind === 'tiebreak' ? 'Tiebreaker' : new Date(entry.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
             </span>
             <span className="bee-score text-2xl bee-tabular" style={{ color: entry.points === 0 ? tone : entry.points > 0 ? 'var(--bee-green)' : 'var(--bee-red-soft)' }}>
               {entry.kind === 'token' ? '2×' : formatPoints(entry.points)}
@@ -107,11 +106,6 @@ export function PrintSummary({ game, stats }: { game: GameState; stats?: GameSta
         <li>
           Total: {data.totalCorrect} correct, {data.totalIncorrect} missed
         </li>
-        {data.hardestWord && (
-          <li>
-            Hardest word spelled: “{data.hardestWord.word}” ({data.hardestWord.difficulty}) by {data.hardestWord.team.name}
-          </li>
-        )}
         {data.mostMissed && (
           <li>
             Most missed word: “{data.mostMissed.word}” ({data.mostMissed.misses}×)
@@ -130,7 +124,6 @@ export function PrintSummary({ game, stats }: { game: GameState; stats?: GameSta
         <thead>
           <tr>
             <th>#</th>
-            <th>Round</th>
             <th>Team</th>
             <th>What happened</th>
             <th>Points</th>
@@ -140,7 +133,6 @@ export function PrintSummary({ game, stats }: { game: GameState; stats?: GameSta
           {game.log.map((entry, index) => (
             <tr key={entry.id}>
               <td>{index + 1}</td>
-              <td>{game.rounds[entry.roundIndex]?.name ?? 'Tiebreaker'}</td>
               <td>{teamById(game, entry.teamId)?.name ?? ''}</td>
               <td>{describe(game, entry)}</td>
               <td>{entry.kind === 'token' ? '' : formatPoints(entry.points)}</td>

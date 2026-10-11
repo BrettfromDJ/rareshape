@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { teamColor } from '../_lib/defaults'
-import { contestantName, currentRound, difficultyLabel, standings, teamById, turnsInRound, upNext, wordById } from '../_lib/engine'
+import { contestantName, teamById, totalTurns, upNext, wordById } from '../_lib/engine'
 import { formatPoints } from '../_lib/format'
 import { useShortcuts } from '../_lib/hooks'
 import { canSpeak, playCue, primeAudio, speak } from '../_lib/sound'
@@ -75,7 +75,6 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
   useTimerDriver(game, prefs.muted)
 
   const turn = game.turn
-  const round = currentRound(game)
   const team = teamById(game, turn?.teamId)
   const word = wordById(words, turn?.wordId)
   const stage = turn?.stage ?? null
@@ -110,7 +109,7 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
       t: timed ? () => dispatch({ type: 'timer-reset' }) : undefined,
       c: stage === 'revealed' ? act(() => dispatch({ type: 'mark', result: 'correct' })) : undefined,
       x: stage === 'revealed' ? act(() => dispatch({ type: 'mark', result: 'incorrect' })) : undefined,
-      n: stage === 'resolved' ? act(() => dispatch({ type: 'next' })) : game.interlude ? act(() => dispatch({ type: 'start-round' })) : undefined,
+      n: stage === 'resolved' ? act(() => dispatch({ type: 'next' })) : undefined,
       d: stage === 'revealed' && word?.definition ? () => dispatch({ type: 'toggle-definition' }) : undefined,
       s: stage === 'revealed' && word?.sentence ? () => dispatch({ type: 'toggle-sentence' }) : undefined,
       p: stage === 'revealed' ? pronounce : undefined,
@@ -161,25 +160,17 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
           </>
         }
       >
-        {round && (
-          <>
-            <Pill tone="gold">{round.name}</Pill>
-            <Pill>{round.points} pts</Pill>
-            <Pill>{difficultyLabel(round.difficulty)}</Pill>
-            {turn && (
-              <Pill>
-                Turn {turn.indexInRound + 1}/{turnsInRound(game, round)}
-              </Pill>
-            )}
-          </>
+        {turn && (
+          <Pill tone="gold">
+            Turn {turn.number} of {totalTurns(game)}
+          </Pill>
         )}
+        <Pill>{game.settings.pointsPerWord} pts a word</Pill>
       </TopBar>
 
       <main className="flex-1 grid lg:grid-cols-[1.55fr_1fr] gap-4 min-h-0">
         <section className="flex flex-col gap-4 min-w-0">
-          {game.interlude && round && <RoundComplete game={game} onStart={act(() => dispatch({ type: 'start-round' }))} />}
-
-          {!game.interlude && turn && team && color && round && (
+          {turn && team && color && (
             <>
               <div key={turn.number} className="bee-card p-4 md:p-5 bee-anim-rise" style={{ background: color.bg, color: color.fg }}>
                 <div className="flex flex-wrap items-start gap-4">
@@ -235,7 +226,7 @@ export function HostScreen({ onAudienceMode }: { onAudienceMode: () => void }) {
             </>
           )}
 
-          {!game.interlude && !turn && (
+          {!turn && (
             <div className="bee-card p-6">
               <p className="text-lg mb-4">The game has no current turn. This should not happen; you can end the game or go back to setup.</p>
               <div className="flex gap-3">
@@ -353,7 +344,7 @@ function WordCard({ game, word, onPronounce }: { game: GameState; word: Word | u
           <p className="text-lg mt-1">
             {word ? (
               <>
-                A <strong>{difficultyLabel(word.difficulty).toLowerCase()}</strong> word is loaded. Reveal it when the contestant is ready
+                A word is loaded. Reveal it when the contestant is ready
                 {game.settings.audienceShowsWord ? '; it goes up on the audience screen too, so make sure they face away.' : '; the audience screen keeps it hidden.'}
               </>
             ) : (
@@ -375,8 +366,7 @@ function WordCard({ game, word, onPronounce }: { game: GameState; word: Word | u
       <div className="flex flex-wrap items-start gap-4">
         <div className="flex-1 min-w-0">
           <p className="bee-label" style={{ color: 'var(--bee-ink)', opacity: 0.6 }}>
-            Host only · {difficultyLabel(word.difficulty)}
-            {word.partOfSpeech ? ` · ${word.partOfSpeech}` : ''}
+            Host only{word.partOfSpeech ? ` · ${word.partOfSpeech}` : ''}
           </p>
           <p className="bee-display text-[clamp(3rem,6.5vw,6.5rem)] leading-none tracking-wider break-words mt-1">{word.word}</p>
           {word.pronunciation && <p className="font-mono text-lg mt-2 opacity-80">{word.pronunciation}</p>}
@@ -427,8 +417,8 @@ function WordCard({ game, word, onPronounce }: { game: GameState; word: Word | u
 function ActionPanel({ game, team, word, act }: { game: GameState; team: Team; word: Word | undefined; act: (fn: () => void) => () => void }) {
   const dispatch = useDispatch()
   const turn = game.turn
-  const round = currentRound(game)
-  if (!turn || !round) return null
+  if (!turn) return null
+  const points = Math.max(0, game.settings.pointsPerWord)
   const timed = game.settings.timedRounds
 
   const timerControls = timed && (
@@ -488,7 +478,7 @@ function ActionPanel({ game, team, word, act }: { game: GameState; team: Team; w
               ⏭ Skip word <Kbd>K</Kbd>
             </button>
             <span className="bee-hint self-center ml-auto">
-              Worth {turn.doubled ? `${round.points * 2} (doubled), or −${round.points} if missed` : `${round.points} ${round.points === 1 ? 'point' : 'points'}`}
+              Worth {turn.doubled ? `${points * 2} (doubled), or −${points} if missed` : `${points} ${points === 1 ? 'point' : 'points'}`}
               {game.timer.expired ? " · Time's up" : ''}
             </span>
           </div>
@@ -496,7 +486,7 @@ function ActionPanel({ game, team, word, act }: { game: GameState; team: Team; w
       )
 
     case 'resolved': {
-      const isLast = turn.roundIndex === game.rounds.length - 1 && turn.indexInRound === turnsInRound(game, round) - 1
+      const isLast = turn.number >= totalTurns(game)
       const tone = turn.outcome === 'correct' ? 'var(--bee-green)' : turn.outcome === 'incorrect' ? 'var(--bee-red-soft)' : 'var(--bee-dim)'
       return (
         <div className="bee-card p-4 flex flex-wrap items-center gap-4" style={{ borderColor: tone }}>
@@ -520,33 +510,6 @@ function ActionPanel({ game, team, word, act }: { game: GameState; team: Team; w
 }
 
 // ---------------------------------------------------------------------------
-
-function RoundComplete({ game, onStart }: { game: GameState; onStart: () => void }) {
-  const round = currentRound(game)
-  const nextRound = game.rounds[(game.interlude?.roundIndex ?? 0) + 1]
-  const rows = standings(game)
-  const leaders = rows.filter((row) => row.rank === 1)
-  return (
-    <div className="bee-card p-6 md:p-8 text-center bee-anim-pop">
-      <p className="bee-label">That&rsquo;s the end of</p>
-      <p className="bee-display text-6xl md:text-8xl text-[var(--bee-gold)]">{round?.name}</p>
-      {leaders.length > 0 && (
-        <p className="text-xl mt-3">
-          {leaders.length > 1 ? 'Tied at the top: ' : 'In the lead: '}
-          <span className="bee-display text-2xl">{leaders.map((row) => row.team.name).join(' & ')}</span> with {leaders[0]?.score}
-        </p>
-      )}
-      {nextRound && (
-        <p className="bee-hint mt-2">
-          Next: {nextRound.name} · {nextRound.points} pts a word · {difficultyLabel(nextRound.difficulty)} words{nextRound.distraction ? ' · distractions on' : ''}
-        </p>
-      )}
-      <button type="button" className="bee-btn bee-btn-xl bee-btn-gold mt-6" onClick={onStart}>
-        {nextRound ? `Start ${nextRound.name}` : 'See the results'} → <Kbd>N</Kbd>
-      </button>
-    </div>
-  )
-}
 
 // ---------------------------------------------------------------------------
 
