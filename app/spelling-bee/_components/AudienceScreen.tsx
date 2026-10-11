@@ -106,24 +106,66 @@ export function AudienceScreen({
 }
 
 function AudienceLobby({ game }: { game: GameState }) {
+  const kids = game.settings.mode === 'kids'
+  const count = game.teams.length
+  const columns = count <= 2 ? count || 1 : count <= 4 ? 2 : count <= 6 ? 3 : 4
   return (
-    <div className="flex-1 grid place-items-center text-center">
-      <div className="bee-stagger">
+    <div className="flex-1 flex flex-col gap-[clamp(0.75rem,2vw,1.5rem)] min-h-0">
+      <div className="text-center bee-stagger">
         <p className="bee-label text-[clamp(1rem,2vw,1.8rem)]" style={{ ['--i' as string]: 0 }}>
-          Coming up
+          {kids ? 'Tonight\u2019s spellers' : 'Tonight\u2019s teams'}
         </p>
-        <p className="bee-display text-[clamp(3rem,9vw,9rem)] mt-2" style={{ ['--i' as string]: 1 }}>
+        <p className="bee-display text-[clamp(2.4rem,6vw,6rem)] leading-none mt-1" style={{ ['--i' as string]: 1 }}>
           {game.settings.eventName}
         </p>
-        <div className="flex flex-wrap justify-center gap-3 mt-6" style={{ ['--i' as string]: 2 }}>
-          {game.teams.map((team) => (
-            <TeamChip key={team.id} team={team} className="text-[clamp(1.2rem,2.4vw,2.2rem)] px-5 py-2" />
-          ))}
-        </div>
-        <p className="bee-label mt-8 text-[clamp(0.9rem,1.6vw,1.4rem)]" style={{ ['--i' as string]: 3 }}>
-          Trophy: {game.settings.trophyTitle}
-        </p>
       </div>
+
+      {count === 0 ? (
+        <p className="bee-label text-center text-[clamp(1rem,2vw,1.8rem)] mt-6">The host is still setting up.</p>
+      ) : kids ? (
+        <ul className="flex-1 flex flex-wrap content-center justify-center gap-[clamp(0.6rem,1.5vw,1.25rem)] bee-stagger">
+          {game.teams.map((team, index) => {
+            const color = teamColor(team.color)
+            return (
+              <li
+                key={team.id}
+                className="rounded-2xl border-[3px] border-[var(--bee-ink)] px-[clamp(1rem,2.5vw,2.5rem)] py-[clamp(0.6rem,1.5vw,1.25rem)] bee-display text-[clamp(1.8rem,4.5vw,4.5rem)] leading-none"
+                style={{ background: color.bg, color: color.fg, boxShadow: '0 6px 0 var(--bee-ink)', ['--i' as string]: index + 2 }}
+              >
+                {team.name}
+              </li>
+            )
+          })}
+        </ul>
+      ) : (
+        <ul className="flex-1 grid gap-[clamp(0.6rem,1.5vw,1.25rem)] min-h-0 bee-stagger" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+          {game.teams.map((team, index) => {
+            const color = teamColor(team.color)
+            return (
+              <li
+                key={team.id}
+                className="rounded-2xl border-[3px] border-[var(--bee-ink)] p-[clamp(0.75rem,2vw,1.75rem)] flex flex-col min-h-0"
+                style={{ background: color.bg, color: color.fg, boxShadow: '0 6px 0 var(--bee-ink)', ['--i' as string]: index + 2 }}
+              >
+                <p className="bee-display leading-none break-words text-[clamp(1.8rem,4.2vw,4.2rem)]">{team.name}</p>
+                <p className="mt-[0.4em] text-[clamp(1rem,2.2vw,2.1rem)] leading-snug break-words" style={{ opacity: 0.9 }}>
+                  {team.players.length ? team.players.join(' \u00b7 ') : 'Players to be announced'}
+                </p>
+                {game.settings.doubleWordEnabled && (
+                  <p className="mt-auto pt-2 inline-flex items-center gap-2 text-[clamp(0.85rem,1.5vw,1.3rem)]" style={{ opacity: 0.85 }}>
+                    <Token available size="sm" label={false} /> One Double Word to play
+                  </p>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      <p className="bee-label text-center text-[clamp(0.9rem,1.6vw,1.4rem)]">
+        Playing for: {game.settings.trophyTitle}
+        {count > 0 && ` \u00b7 ${game.settings.timesEach} ${game.settings.timesEach === 1 ? 'word' : 'words'} each \u00b7 ${game.settings.pointsPerWord} ${game.settings.pointsPerWord === 1 ? 'pt' : 'pts'} a word`}
+      </p>
     </div>
   )
 }
