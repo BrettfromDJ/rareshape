@@ -137,21 +137,30 @@ export function totalTurns(state: GameState): number {
 }
 
 /**
- * The final round is the last pass through the line-up: everyone's last word.
- * Returns the 1-based number of its first turn, or null when the game is a
- * single pass, which has no "last" to build up to.
+ * The final round is everyone's last word: for each team, its last turn per
+ * player. A team of two spends its last two turns in the final round. Needs
+ * at least two words each, or there is no "last" to build up to.
  */
+function lastWordTurn(state: GameState, turnNumber: number): boolean {
+  if (state.settings.timesEach < 2) return false
+  const order = schedule(state)
+  const teamId = order[turnNumber - 1]
+  const team = teamById(state, teamId)
+  if (!team) return false
+  let left = 0
+  for (let n = turnNumber - 1; n < order.length; n += 1) if (order[n] === teamId) left += 1
+  return left <= Math.max(1, team.players.length)
+}
+
+/** The 1-based number of the first final-round turn, or null when there is none. */
 export function finalRoundStart(state: GameState): number | null {
-  const longest = Math.max(0, ...state.teams.map((team) => turnsForTeam(team, state.settings)))
-  if (longest < 2) return null
-  let before = 0
-  for (const team of state.teams) before += Math.min(turnsForTeam(team, state.settings), longest - 1)
-  return before + 1
+  const total = totalTurns(state)
+  for (let n = 1; n <= total; n += 1) if (lastWordTurn(state, n)) return n
+  return null
 }
 
 export function isFinalRound(state: GameState, turnNumber: number): boolean {
-  const start = finalRoundStart(state)
-  return state.settings.finalRoundDouble && start !== null && turnNumber >= start
+  return state.settings.finalRoundDouble && lastWordTurn(state, turnNumber)
 }
 
 /** What a correct answer on this turn earns before any Double Word token. */
